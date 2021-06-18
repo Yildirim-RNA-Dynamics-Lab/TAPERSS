@@ -29,12 +29,11 @@ using namespace std;
 
 #define RMSD_LIMIT 0.5
 
-struct CMB_Manager
-{
-    int *count_per_lib;
+#define MAX_STRINGS 100
 
-};
+long int rna_dat_tracker = 0;
 
+enum flag{NO_FLAG, USED, NOT_USABLE};
 
 struct atom_info
 {
@@ -200,7 +199,6 @@ struct DimerLib
     char*             name;
     int               count; //Number of structures in Library
     
-    enum flag{NO_FLAG, USED, NOT_USABLE};
     flag*              flags;
 
     DimerLib(int n, int a_n)
@@ -233,6 +231,14 @@ struct DimerLib
         }
         energy = e;
         memcpy(name, n, sizeof(char) * 3);
+    }
+
+    void clear_flags()
+    {
+        for(int i = 0; i < count; i++)
+        {
+            flags[i] = NO_FLAG;
+        }
     }
 };
 
@@ -278,6 +284,18 @@ struct DimerLibArray
         iterator++;
     }
 
+    void reset_flags(bool *reset)
+    {
+        for(int i = 0; i < count; i++)
+        {
+            if(reset[i] == true)
+            {
+                library[i]->clear_flags();
+                printf("flags for %d reset\n", i);
+            }
+        }
+    }
+
     void print_dimer_info(int i)
     {
         printf("DNT: %s, # Models: %d, # Atoms Per Model: %d\n", library[i]->name, library[i]->count, library[i]->atom_data->count);
@@ -301,6 +319,203 @@ struct DimerLibArray
     }
 };
 
+struct CMB_Manager
+{
+    int *count_per_lib;         //Number of structures in each library
+    bool **attach_attempted;    //Tracks if all structures in each respective library has been tested
+    int last_attempted[2];
+
+    bool *libs_completed;
+    
+    int strs_built;
+
+    int count;                  //For deallocation
+
+    CMB_Manager(DimerLibArray& LA)
+    {
+        count = LA.count;
+
+        count_per_lib = (int *)malloc(sizeof(int) * LA.count);
+        attach_attempted = (bool **)malloc(sizeof(bool *) * LA.count);
+
+        for(int i = 0; i < LA.count; i++)
+        {
+            count_per_lib[i] = LA[i]->count;
+            attach_attempted[i] = (bool *)calloc(LA[i]->count, sizeof(bool));
+        }
+
+        last_attempted[0] = 0;
+        last_attempted[1] = 0;
+
+        strs_built = 0;
+        libs_completed = (bool *)calloc(count, sizeof(bool));
+    }
+
+    ~CMB_Manager()
+    {
+        for(int i = 0; i < count; i++)
+        {
+            free(attach_attempted[i]);
+        }
+        free(attach_attempted);
+        free(count_per_lib);
+        free(libs_completed);
+    }
+
+    void attach_attempt(int i, int j)
+    {
+        attach_attempted[i][j] = true;
+        last_attempted[0] = i;
+        last_attempted[1] = j;
+    }
+
+    bool is_at_end()
+    {
+        if(last_attempted[1] == count_per_lib[last_attempted[0]] - 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    void check_lib_completion()
+    {
+        int counter = 0;
+        for(int i = 0; i < last_attempted[0] + 1; i++)
+        {
+            libs_completed[i] = false;
+            if(attach_attempted[i][count_per_lib[i] - 1] == true)
+            {
+                libs_completed[i] = true;
+                counter++;
+                printf("Lib %d complete! Max = %d\n", i, count_per_lib[i] - 1);
+            }
+            else
+            {
+                printf("Lib %d not complete! Max = %d\n", i, count_per_lib[i] - 1);
+            }
+        }
+        if(counter == last_attempted[0] + 1)
+            ;
+        else
+            libs_completed[0] = false;
+        return;
+    }
+
+    void clear_attempts()
+    {
+        for(int i = 0; i < count; i++)
+        {
+            if(libs_completed[i] == true)
+            {
+                printf("reseting attempts for %d\n", i);
+                for(int j = 0; j < count_per_lib[i]; j++)
+                {
+                    attach_attempted[i][j] = false;
+                }
+            }
+        }
+    }
+
+    int get_reset_count()
+    {
+        int n_reset = 0;
+        for(int i = 0; i < last_attempted[0] + 1; i++)
+        {
+            if(libs_completed[i] == true)
+            {
+                n_reset++;
+            }
+        }
+        //printf("n_reset = %d\n", n_reset);
+        return n_reset;
+    }
+
+    void successful_construction()
+    {
+        strs_built++;
+    }
+
+};
+
+struct output_string
+{
+    FILE *output_file;
+    char **string_storage;
+    int iterator;
+    int num_allocated;
+    int max_string;
+
+    bool all_init = false;
+
+    output_string(const char *F, int max_s)
+    {
+        
+        output_file = fopen(F, "w");
+        string_storage = (char **)malloc(sizeof(char *) * max_s);
+        iterator = 0;
+        max_string = max_s;
+        num_allocated = 0;
+    }
+    ~output_string()
+    {
+        for(int i = 0; i < max_string; i++)
+        {
+            if(iterator < max_string)
+            {
+                fprintf(output_file, "%s", string_storage[i]);
+            }
+            free(string_storage[i]);
+        }
+        free(string_storage);
+        fclose(output_file);
+    }
+
+    void add_string(char *s, int max_atoms)
+    {
+        if(iterator == max_string - 1)
+        {
+            if(all_init)
+            {
+                strcpy(string_storage[iterator], s);
+                iterator = 0;
+            }
+            else
+            {
+                all_init = true;
+                int size = strlen(s);
+                string_storage[iterator] = (char *)malloc(sizeof(char) * (size + (max_atoms * 3)));
+                num_allocated++;
+                strcpy(string_storage[iterator], s);
+                //printf("itr = %d\n", iterator);
+                iterator = 0;
+            }
+            for(int i = 0; i < max_string; i++)
+            {
+                fprintf(output_file, "%s", string_storage[i]);
+            }
+            return;
+        }
+        else
+        {
+            if(all_init)
+            {
+                strcpy(string_storage[iterator], s);
+                iterator++;
+            }
+            else
+            {
+                int size = strlen(s);
+                string_storage[iterator] = (char *)malloc(sizeof(char) * (size + (3 * max_atoms)));
+                num_allocated++;
+                strcpy(string_storage[iterator], s);
+                iterator++;
+            }
+        }
+        return;
+    }
+};
+
 struct RNA_data
 {
     gsl_matrix *data_matrix;
@@ -308,14 +523,18 @@ struct RNA_data
     float energy;
     atom_info *atom_data;
     char *name;
-    int *flag;
+    flag *_flag;
     int count; //Number of atoms in structure
     
     int position_in_lib[2];
     int count_per_sub[2];
     int sub_starts_at[2];
 
+    int position_max;
+
     char** target;
+    
+    long int id;
 
     RNA_data(DimerLibArray& L, int i, int j)
     {
@@ -326,10 +545,13 @@ struct RNA_data
         name = (char *)malloc(sizeof(char) * 3);
         memcpy(name, L[i]->name, sizeof(char) * 3);
         count = L[i]->atom_data->count;
-        flag = &(L[i]->flags[j]);
+        _flag = &(L[i]->flags[j]);
         position_in_lib[0] = i;
         position_in_lib[1] = j;
+        position_max = L[i]->count - 1;
         make_submatrices();
+        id = rna_dat_tracker++;
+        DEBUG(printf("ID: %ld allocated\n", id));
     }
 
     void overwrite(DimerLibArray& L, int i, int j)
@@ -338,14 +560,17 @@ struct RNA_data
         energy = L[i]->energy[j];
         memcpy(name, L[i]->name, sizeof(char) * 3);
         count = L[i]->atom_data->count;
-        flag = &(L[i]->flags[j]);
+        _flag = &(L[i]->flags[j]);
         position_in_lib[0] = i;
         position_in_lib[1] = j;
         update_submatrices();
+        //printf("ID: %d %d allocated\n", position_in_lib[0], position_in_lib[1]);
     }
 
     ~RNA_data()
     {
+        DEBUG(printf("ID: %ld deallocated\n", id));
+        
         gsl_matrix_free(data_matrix);
         free(name);
         gsl_matrix_free(submatrices[0]);
@@ -389,7 +614,7 @@ struct RNA_data
         }
     }
 
-    void update_submatrices()
+    void update_submatrices() /* Need to be rewritten for efficiency */
     {
         gsl_matrix_free(submatrices[0]);
         gsl_matrix_free(submatrices[1]);
@@ -469,7 +694,7 @@ struct RNA_data
         atom_data = A.atom_data;
         
         energy = A.energy;
-        flag = A.flag;
+        _flag = A._flag;
 
         position_in_lib[0] = A.position_in_lib[0];
         position_in_lib[1] = A.position_in_lib[1];
@@ -504,10 +729,10 @@ struct RNA_data
     {
         for(int i = 0; i < data_matrix->size1; i++)
         {
-            string_index += snprintf(&s[string_index], buffer_size - string_index, "%-4s %-4d %-4c %-4d ", atom_data->name[i], atom_data->index[i], atom_data->residue[i], atom_data->dnt_pos[i]);
+            string_index += snprintf(&s[string_index], buffer_size - string_index, "%-6s%5d %4s %3c  %4d    ", "ATOM",  atom_data->index[i], atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i]);
             for(int j = 0; j < data_matrix->size2; j++)
             {
-                string_index += snprintf(&s[string_index], buffer_size - string_index, "%-3.2f ", gsl_matrix_get(data_matrix,i,j));
+                string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f", gsl_matrix_get(data_matrix,i,j));
             }
             string_index += snprintf(&s[string_index], buffer_size - string_index, "\n");
         }
@@ -527,15 +752,16 @@ struct RNA_data
         }
     }
 
-    int to_string_offset(int res, int position, char *s, int buffer_size, int string_index)
+    int to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset)
     {
         for(int i = 0; i < data_matrix->size1; i++)
         {
             if(atom_data->dnt_pos[i] != (res + 1))
                 continue;
-            string_index += snprintf(&s[string_index], buffer_size - string_index, "%-4s %-4d %-4c %-4d ", atom_data->name[i], atom_data->index[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
+            *idx_offset += 1;
+            string_index += snprintf(&s[string_index], buffer_size - string_index, "%-6s%5d %4s %3c  %4d    ", "ATOM",  *idx_offset, atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
             for(int j = 0; j < data_matrix->size2; j++)
-                string_index += snprintf(&s[string_index], buffer_size - string_index, "%-3.2f ", gsl_matrix_get(data_matrix,i,j));
+                string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f", gsl_matrix_get(data_matrix,i,j));
             string_index += snprintf(&s[string_index], buffer_size - string_index, "\n");
         }
         return string_index;
@@ -549,20 +775,29 @@ struct RNA_data_array
     int iterator;
     int iterator_max;
     
+    char *string_out;
+    int string_buffer;
+    int string_index;
+    bool string_initialized = false;
+
+    int atom_sum;
+
     RNA_data_array(int size)
     {
-        iterator_max = size;
+        iterator_max = size - 1;
         sequence = (RNA_data**)malloc(sizeof(RNA_data*) * size);
         iterator = -1;
         count = 0;
     }
     ~RNA_data_array()
     {
-        for(int i = 0; i < iterator; i++)
+        //printf("iterator is @ %d\n", iterator);
+        for(int i = 0; i < count; i++)
         {
             delete sequence[i];
         }
         free(sequence);
+        free(string_out);
     }
     RNA_data* operator[](int i)
     {
@@ -577,6 +812,7 @@ struct RNA_data_array
     {
         sequence[++iterator] = A;
         count++;
+        *A->_flag = USED;
     }
     RNA_data* current()
     {
@@ -585,14 +821,37 @@ struct RNA_data_array
 
     bool is_complete()
     {
-        return iterator + 1 == iterator_max ? true : false;
+        return iterator == iterator_max ? true : false;
     }
 
     void rollback()
     {
+        DEBUG(printf("attach: %ld deleted @ rollback @ %d\n", sequence[iterator]->id, iterator));
         delete sequence[iterator];
         iterator--;
         count--;
+    }
+
+    void safe_rollback()
+    {
+        if(sequence[iterator]->position_in_lib[1] == sequence[iterator]->position_max)
+            ;
+        else
+            delete sequence[iterator];
+        iterator--;
+        count--;
+    }
+
+    void rollback_by(int amount)
+    {
+        for(int i = iterator; i > (iterator - (amount + 1)); i--)
+        {
+            DEBUG(printf("attach: %ld deleted @ rollback_by @ %d\n", sequence[i]->id, i));
+            delete sequence[i];
+        }
+        iterator -= (amount + 1);
+        count -= (amount + 1);
+        //printf("moving to pos: %d\n", iterator);
     }
 
     bool is_empty()
@@ -601,6 +860,7 @@ struct RNA_data_array
             return true;
         return false;
     }
+
     void printall()
     {
         sequence[0]->print();
@@ -609,34 +869,78 @@ struct RNA_data_array
             sequence[i]->print_offset(1, i);
         }
     }
-    char* to_string()
+
+    void initialize_string()
     {
-        int line_sum = 0;
+        get_atom_sum();
+        printf("atomsum = %d\n", atom_sum);
+
+        string_buffer = 54 * atom_sum;
+        string_out = (char *)malloc(sizeof(char) * string_buffer);
+        string_index = 0;
+
+        string_initialized = true;
+    }
+
+    int get_atom_sum()
+    {
+        if(string_initialized) return atom_sum;
+        atom_sum = 0;
         for(int i = 0; i < count; i++)
         {
-            line_sum += sequence[i]->count;
+            atom_sum += sequence[i]->count;
         }
-        
-        //printf("linesum = %d\n", line_sum);
+        return atom_sum;
+    }
 
-        int buffer_size = 54 * line_sum;
-        char *rtn_str = (char *)malloc(sizeof(char) * buffer_size);
-        int string_index = 0;
+    int out_string_header()
+    {
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#INDEX ");
+        for(int i = 0; i < count; i++)
+        {
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d ", sequence[i]->position_in_lib[1]);
+        }
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        return string_index;
+    }
 
-        //printf("buffer_size = %d\n", buffer_size);
+    char* to_string()
+    {
 
-        string_index = sequence[0]->to_string(rtn_str, buffer_size, string_index);
+        int idx_offset;
 
-        //printf("str_idx = %d\n", string_index);
+        if(string_initialized)
+        {
+            string_index = 0;
+        }
+        else
+        {
+            initialize_string();
+        }
+
+        string_index = out_string_header();
+        string_index = sequence[0]->to_string(string_out, string_buffer, string_index);
+        idx_offset = sequence[0]->count;
 
         for(int i = 1; i < count; i++)
         {
-            string_index = sequence[i]->to_string_offset(1, i, rtn_str, buffer_size, string_index);
+            string_index = sequence[i]->to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
             //printf("str_idx = %d\n", string_index);
         }
 
-        printf("%s", rtn_str);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
 
+        return string_out;
+    }
+
+    int *get_index()
+    {
+        int *ar = (int *)malloc(sizeof(int) * count);
+        for(int i = 0; i < count; i++)
+        {
+            ar[i] = sequence[i]->position_in_lib[1];
+        }
+        return ar;
     }
 };
 
@@ -1028,37 +1332,52 @@ attach_status check_attachment(RNA_data_array& sequence, RNA_data *base, RNA_dat
     //printf("RMSD = %f\n", rmsd_v);
     if(rmsd_v > RMSD_LIMIT)
     {
+        *attach->_flag = NOT_USABLE;
         return FAILED;
     }
     if(!overlap_check(sequence, attach))
     {
         //printf("Overlap detected!\n");
+        *attach->_flag = NOT_USABLE;
         return FAILED;
     }
     return ATTACHED;
 }
 
-bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled)
+bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_Manager& manager, output_string& o_string)
 {
     int working_position = assembled.iterator + 1; //Position in sequence where new DNT will be attached.
     //printf("Working postion: %d, iterator:%d, iterator_max:%d\n", working_position, assembled.iterator, assembled.iterator_max);
     DimerLib *Library = Lib[working_position];
-    RNA_data *base;        //Already attached base which will be attached to
-    RNA_data *attach;
-    attach_status status;
+    RNA_data *base;         //Already attached base which will have new DNT attached to
+    RNA_data *attach;       //DNT which will be attached
+    attach_status status = FAILED;   //Output from checking functions
 
-    attach = new RNA_data(Lib, working_position, 0);
+    DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
 
+    attach = new RNA_data(Lib, working_position, 0); // For initialization only
+    int *idxs = assembled.get_index();
+    
+    printf("New Iteration\n");
     for(int i = 0; i < Library->count; i++)
-    {
-        if(Library->flags[i] == 1)
+    {   
+        if(Library->flags[i] != NO_FLAG)
         {
             continue;
         }
+        for(int j = 0; j < assembled.count; j++)
+        {
+            printf("%d ",idxs[j]);
+        }
+        printf("%d\n", i);
         //printf("count for %s library: %d\n", Library->name, i);
         if(assembled.is_empty())
         {
-            assembled.add_move(new RNA_data(Lib, working_position, i));
+            printf("sequence is empty\n");
+            attach->overwrite(Lib, working_position, i);
+            assembled.add_move(attach);
+            manager.attach_attempt(working_position, i);
+            DEBUG(printf("attach: %ld moved @ empty\n", attach->id));
             status = NOT_CHECKED;
             break;
         }
@@ -1066,18 +1385,46 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled)
         attach->overwrite(Lib, working_position, i);
         rotate(base, attach);
         attach->update_submatrices();
+        manager.attach_attempt(working_position, i);
         if((status = check_attachment(assembled, base, attach)) == ATTACHED)
         {
             break;
         }
     }
+    free(idxs);
     if(status == FAILED)
     {
-        //printf("ALL FAILED\n");
-        *base->flag = 1;
+        printf("ALL FAILED\n");
+        DEBUG(printf("attach: %ld deleted @ All failed\n", attach->id));
+        delete attach;
+        //printf("flagging index %d,%d\n", base->position_in_lib[0], base->position_in_lib[1]);
+        DEBUG(printf("All failed: checking assembled 0: %ld\n", assembled[0]->id));
+        DEBUG(printf("assembled count = %d\n", assembled.count));
+        DEBUG(printf("last added = %d, max in lib: %d\n", Library->flags[Library->count - 1], Library->count));
+        if(manager.is_at_end())
+        {
+            manager.check_lib_completion();
+            if((manager.get_reset_count()) == manager.last_attempted[0] + 1)
+            {
+                return true;
+            }
+            printf("lib completed = %d; n_reset = %d\n", manager.last_attempted[0] + 1, manager.get_reset_count());
+            
+            assembled.rollback_by(manager.get_reset_count() - 1);
+            Lib.reset_flags(manager.libs_completed);
+            manager.clear_attempts();
+        }
+        else
+        {
+            assembled.rollback();
+        }
+        /*printf("Rolling back b/c: FAILED\n");
+        //printf("last attempt: %d %d\n", manager.last_attempted[0], manager.last_attempted[1]);
         assembled.rollback();
-        //printf("assembled iterator: %d\n", assembled.iterator);
+        manager.check_lib_completion();
+        manager.clear_attempts();*/
         return false;
+        //printf("assembled iterator: %d\n", assembled.iterator);
     }
     else if(status == NOT_CHECKED)
     {
@@ -1088,33 +1435,62 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled)
     {
         //printf("addition successful\n");
         assembled.add_move(attach);
+        DEBUG(printf("attach: %ld moved @ Attached @ %d\n", attach->id, working_position));
     }
     if(assembled.is_complete())
-        return true;            /* Use CMB_manager to decide next addition by moving iterator back by one if not at end of lib,
-                                or back by however much once end of each respective library is reached. On each successful addition, save structure to
-                                string. On each 1000 ( or TBD) write out data to file and overwrite previous strings. Flags could be complex*/
+    {
+        o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+        manager.strs_built++;
+        if(manager.is_at_end())
+        {
+            manager.check_lib_completion();
+            if((manager.get_reset_count()) == Lib.count)
+            {
+                return true;
+            }
+            //printf("lib completed = %d\n", manager.get_reset_count());
+            
+            assembled.rollback_by(manager.get_reset_count());
+            Lib.reset_flags(manager.libs_completed);
+            manager.clear_attempts();
+        }
+        else
+        {
+            DEBUG(printf("Rolling back b/c: COMPLETED NOT AT LIB END\n"));
+            assembled.rollback();
+        }
+    }
+    /* Use CMB_manager to decide next addition by moving iterator back by one if not at end of lib, or back by
+    however much once end of each respective library is reached. On each successful addition, save structure to
+    string. On each 1000 ( or TBD) write out data to file and overwrite previous strings. Flags could be complex*/
     return false;
 }
 
 int main()
 {
     int N_diNts = 0;
-    char sequence[] = "AUGC";
+    char sequence[] = "CCC";
     char **Libs2Load = get_diNt_names(sequence, &N_diNts);
     DimerLibArray Library = load_libs(Libs2Load, N_diNts);
     RNA_data_array RNA(N_diNts);
     RNA.add_move(new RNA_data(Library, 0, 0));
     
-    while(!combinatorial_addition(Library, RNA));
+    CMB_Manager manager(Library);
 
-    /* ****MAKE A HASH FOR DINUCLEOTIDE LIBRARY FOR SIMPLICITY & EFFICIENCY *** */
+    output_string output_s("testing_IVANCMB.txt", MAX_STRINGS);
+
+    while(!combinatorial_addition(Library, RNA, manager, output_s));
+
+    /* *** MAKE A HASH FOR DINUCLEOTIDE LIBRARY FOR SIMPLICITY & EFFICIENCY *** */
     /* ALSO MAKE HASH FOR GET_TARGET FOR EFFICIENCY */
     /* CHECK FOR COLLISIONS WITH NON NEIGHBORING NTs TO FLAG AS UNUSABLE TO IMPROVE EFFICIENCY */
 
     /* PDB FORMAT: printf("%-6s%5d %4s %3s  %4d    %8.3f%8.3f%8.3f\n", "ATOM", index , name, residue, residue ID, X, Y, Z)*/
 
 
-    RNA.to_string();
+    //RNA.to_string();
 
     free_libs(Libs2Load, N_diNts);
+
+    printf("# of Structures Built: %d\n", manager.strs_built);
 }
