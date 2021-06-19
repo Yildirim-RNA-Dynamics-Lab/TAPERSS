@@ -381,13 +381,18 @@ struct CMB_Manager
     void check_lib_completion()
     {
         int counter = 0;
-        for(int i = 0; i < last_attempted[0] + 1; i++)
+
+        int first_completed = last_attempted[0];
+
+        for(int i = last_attempted[0]; i >= 0; i--)
         {
             libs_completed[i] = false;
             if(attach_attempted[i][count_per_lib[i] - 1] == true)
             {
                 libs_completed[i] = true;
                 counter++;
+                if(i < first_completed)
+                    first_completed = i;
                 printf("Lib %d complete! Max = %d\n", i, count_per_lib[i] - 1);
             }
             else
@@ -395,6 +400,19 @@ struct CMB_Manager
                 printf("Lib %d not complete! Max = %d\n", i, count_per_lib[i] - 1);
             }
         }
+        if(counter != (count - first_completed))
+        {
+            bool swap = true;
+            for(int i = last_attempted[0]; i >= first_completed; i--)
+            {
+                if(libs_completed[i] == false)
+                {
+                    swap = false;
+                }
+                libs_completed[i] = swap;
+            }
+        }
+        
         if(counter == last_attempted[0] + 1)
             ;
         else
@@ -1469,7 +1487,7 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_M
 int main()
 {
     int N_diNts = 0;
-    char sequence[] = "CCC";
+    char sequence[] = "AUGCG";
     char **Libs2Load = get_diNt_names(sequence, &N_diNts);
     DimerLibArray Library = load_libs(Libs2Load, N_diNts);
     RNA_data_array RNA(N_diNts);
