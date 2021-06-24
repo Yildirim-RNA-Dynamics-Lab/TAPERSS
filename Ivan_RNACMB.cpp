@@ -28,19 +28,261 @@ using namespace std;
 #define RADIUS_O 1.00
 
 #define RMSD_LIMIT 0.5
+#define INTERACTION_DISTANCE 3.8
 
 #define MAX_STRINGS 100
 
 long int rna_dat_tracker = 0;
 
 enum flag{NO_FLAG, USED, NOT_USABLE};
+enum dinucleotide{AA, AC, AG, AU, CA, CC, CG,CU, GA, GC, GG, GU, UA, UC, UG, UU};
+enum atom_id{N1, N2, N3, N4, N6, N7, N9, C2, C4, C5, C6, C8, C1p, C2p, C3p, C4p, C5p, O2, O4, O6, O2p, O3p, O4p, O5p, O1P, O2P, P};
+enum atom_charge{POSITIVE = 1, NEGATIVE = -1, NEUTRAL = 0}; //simplistic charge model for rudimentary energy calculations.
+
+atom_id get_atom_id(char *name)
+{
+    atom_id atom;
+    switch(name[0])
+    {
+        case 'N':
+            switch(name[1])
+            {
+                case '1':
+                    atom = N1;
+                    break;
+                case '2':
+                    atom = N2;
+                    break;
+                case '3':
+                    atom = N3;
+                    break;
+                case '4':
+                    atom = N4;
+                    break;
+                case '6':
+                    atom = N6;
+                    break;
+                case '7':
+                    atom = N7;
+                    break;
+                case '9':
+                    atom = N9;
+                    break;
+            }
+            break;
+        case 'O':
+            switch (name[1])
+            {
+            case '1':
+                atom = O1P;
+                break;
+            case '2':
+                if(name[2] == '\'')
+                    atom = O2p;
+                else if(name[2] == 'P')
+                    atom = O2P;
+                else
+                    atom = O2;
+                break;
+            case '3':
+                atom = O3p;
+                break;
+            case '4':
+                if(name[2] == '\'')
+                    atom = O4p;
+                else
+                    atom = O4;
+                break;
+            case '5':
+                atom = O5p;
+                break;
+            case '6':
+                atom = O6;
+                break;
+            }
+            break;
+        case 'C':
+            switch(name[1])
+            {
+                case '1':
+                    atom = C1p;
+                    break;
+                case '2':
+                    if(name[2] == '\'')
+                        atom = C2p;
+                    else
+                        atom = C2;
+                    break;
+                case '3':
+                    atom = C3p;
+                    break;
+                case '4':
+                    if(name[2] == '\'')
+                        atom = C4p;
+                    else
+                        atom = C4;
+                    break;
+                case '5':
+                    if(name[2] == '\'')
+                        atom = C5p;
+                    else
+                        atom = C5;
+                    break;
+                case '6':
+                    atom = C6;
+                    break;
+                case '8':
+                    atom = C8;
+                    break;
+            }
+            break;
+        case 'P':
+            atom = P;
+            break;
+    }
+    return atom;
+}
+
+atom_charge get_atom_charge(atom_id name, char res)
+{
+    atom_charge charge;
+    switch (name)
+    {
+        case N1:
+            switch (res)
+            {
+                case 'A':
+                    charge = NEGATIVE;
+                    break;
+                case 'G':
+                    charge = POSITIVE;
+                    break;
+            }
+            break;
+        case N2:
+            charge = POSITIVE;
+            break;
+        case N3:
+            switch(res)
+            {
+                case 'U':
+                    charge = POSITIVE;
+                    break;
+                default:
+                    charge = NEGATIVE;
+                    break;
+            }
+            break;
+        case N4:
+            charge = POSITIVE;
+            break;
+        case N6:
+            charge = POSITIVE;
+            break;
+        case N7:
+            charge = NEGATIVE;
+            break;
+        case O2:
+            charge = NEGATIVE;
+            break;
+        case O4:
+            charge = NEGATIVE;
+            break;
+        case O6:
+            charge = NEGATIVE;
+            break;
+        default:
+            charge = NEUTRAL;
+            break;
+    }
+    return charge;
+}
+
+dinucleotide get_dnt(char *name)
+{
+    dinucleotide fast_name;
+    switch(name[0])
+    {
+        case 'A':
+            switch(name[1])
+            {
+                case 'A':
+                    fast_name = AA;
+                    break;
+                case 'C':
+                    fast_name = AC;
+                    break;
+                case 'G':
+                    fast_name = AG;
+                    break;
+                case 'U':
+                    fast_name = AU;
+                    break;
+            }
+            break;
+        case 'C':
+            switch(name[1])
+            {
+                case 'A':
+                    fast_name = CA;
+                    break;
+                case 'C':
+                    fast_name = CC;
+                    break;
+                case 'G':
+                    fast_name = CG;
+                    break;
+                case 'U':
+                    fast_name = CU;
+                    break;
+            }
+            break;
+        case 'G':
+            switch(name[1])
+            {
+                case 'A':
+                    fast_name = GA;
+                    break;
+                case 'C':
+                    fast_name = GC;
+                    break;
+                case 'G':
+                    fast_name = GG;
+                    break;
+                case 'U':
+                    fast_name = GU;
+                    break;
+            }
+            break;
+        case 'U':
+            switch(name[1])
+            {
+                case 'A':
+                    fast_name = UA;
+                    break;
+                case 'C':
+                    fast_name = UC;
+                    break;
+                case 'G':
+                    fast_name = UG;
+                    break;
+                case 'U':
+                    fast_name = UU;
+                    break;
+            }
+            break;
+    }
+    return fast_name;
+}
 
 struct atom_info
 {
-    char**  name;
-    int*    index;
-    char*   residue;
-    int*    dnt_pos;
+    char**       name;
+    int*         index;
+    char*        residue;
+    int*         dnt_pos;
+    atom_id*     atom_ids;
+    atom_charge* charges;
 
     int     count;      //Number of atoms per structure
     int     iterator;
@@ -52,11 +294,13 @@ struct atom_info
 
     atom_info(int n)
     {
-        name    = (char**)malloc(sizeof(char*) * n);
-        index   = (int*)  malloc(sizeof(int)   * n);
-        residue = (char*) malloc(sizeof(char)  * n);
-        dnt_pos = (int*)  malloc(sizeof(int)   * n);
-        count   = n;
+        name     = (char**)       malloc(sizeof(char*)  * n);
+        index    = (int*)         malloc(sizeof(int)    * n);
+        residue  = (char*)        malloc(sizeof(char)   * n);
+        dnt_pos  = (int*)         malloc(sizeof(int)    * n);
+        atom_ids = (atom_id*)     malloc(sizeof(atom_id)* n);
+        charges  = (atom_charge*) malloc(sizeof(atom_charge) * n);
+        count    = n;
         for(int i = 0; i < n; i++)
         {
             name[i] = (char*)malloc(sizeof(char) * 5);
@@ -108,6 +352,8 @@ struct atom_info
         free(index);
         free(residue);
         free(dnt_pos);
+        free(atom_ids);
+        free(charges);
         free(name);
     }
 
@@ -117,6 +363,8 @@ struct atom_info
         index  [iterator] = i;
         residue[iterator] = r;
         dnt_pos[iterator] = p;
+        atom_ids[iterator]= get_atom_id(N);
+        charges[iterator] = get_atom_charge(atom_ids[iterator], r);
         iterator++;
     }
 
@@ -195,17 +443,19 @@ struct DimerLib
 {
     gsl_matrix**      data_matrices;
     atom_info*        atom_data;
-    double*           energy;
+    float*           energy;
     char*             name;
     int               count; //Number of structures in Library
-    
-    flag*              flags;
+    dinucleotide      dnt_id;
+
+    flag*             flags; 
 
     DimerLib(int n, int a_n)
     {
         data_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * n);
         name          = (char*)       malloc(sizeof(char)        * 3);
         flags         = (flag*)calloc(n, sizeof(flag));
+        energy        = (float*)malloc(sizeof(float) * n);
         count         = n;
         atom_data     = new atom_info(a_n);
     }
@@ -223,16 +473,16 @@ struct DimerLib
         delete atom_data;
     }
     
-    void save_lib(gsl_matrix** d_m, double* e, char* n)
+    void save_lib(gsl_matrix** d_m, float* e, char* n)
     {
         for(int i = 0; i < count; i++)
         {
             data_matrices[i] = d_m[i];
         }
-        energy = e;
+        memcpy(energy, e, sizeof(float) * count);
         memcpy(name, n, sizeof(char) * 3);
+        dnt_id = get_dnt(n);
     }
-
     void clear_flags()
     {
         for(int i = 0; i < count; i++)
@@ -259,7 +509,9 @@ struct DimerLibArray
     ~DimerLibArray()
     {
         for(int i = 0; i < count; i++)
+        {
             delete library[i];
+        }
         free(library);
     }
 
@@ -278,7 +530,7 @@ struct DimerLibArray
         library[iterator]->atom_data->add_atom(N, i, r, p);
     }
 
-    void add_lib(gsl_matrix** d_m, double* e, char* n)
+    void add_lib(gsl_matrix** d_m, float* e, char* n)
     {
         library[iterator]->save_lib(d_m, e, n);
         iterator++;
@@ -291,7 +543,7 @@ struct DimerLibArray
             if(reset[i] == true)
             {
                 library[i]->clear_flags();
-                printf("flags for %d reset\n", i);
+                //printf("flags for %d reset\n", i);
             }
         }
     }
@@ -393,12 +645,12 @@ struct CMB_Manager
                 counter++;
                 if(i < first_completed)
                     first_completed = i;
-                printf("Lib %d complete! Max = %d\n", i, count_per_lib[i] - 1);
+                //printf("Lib %d complete! Max = %d\n", i, count_per_lib[i] - 1);
             }
-            else
+            /*else
             {
                 printf("Lib %d not complete! Max = %d\n", i, count_per_lib[i] - 1);
-            }
+            }*/
         }
         if(counter != (count - first_completed))
         {
@@ -426,7 +678,7 @@ struct CMB_Manager
         {
             if(libs_completed[i] == true)
             {
-                printf("reseting attempts for %d\n", i);
+                //printf("reseting attempts for %d\n", i);
                 for(int j = 0; j < count_per_lib[i]; j++)
                 {
                     attach_attempted[i][j] = false;
@@ -468,7 +720,6 @@ struct output_string
 
     output_string(const char *F, int max_s)
     {
-        
         output_file = fopen(F, "w");
         string_storage = (char **)malloc(sizeof(char *) * max_s);
         iterator = 0;
@@ -544,13 +795,15 @@ struct RNA_data
     flag *_flag;
     int count; //Number of atoms in structure
     
+    int *submatrix_rows[2];
+
     int position_in_lib[2];
     int count_per_sub[2];
     int sub_starts_at[2];
 
     int position_max;
 
-    char** target;
+    atom_id *target;
     
     long int id;
 
@@ -593,6 +846,8 @@ struct RNA_data
         free(name);
         gsl_matrix_free(submatrices[0]);
         gsl_matrix_free(submatrices[1]);
+        free(submatrix_rows[0]);
+        free(submatrix_rows[1]);
         free(submatrices);
     }
     
@@ -609,6 +864,7 @@ struct RNA_data
                 count_per_sub[i] = 11; //Number of atoms in target for C & U
             
             submatrices[i] = gsl_matrix_alloc(count_per_sub[i], 3);
+            submatrix_rows[i] = (int *)malloc(sizeof(int) * count_per_sub[i]);
 
             int rel_idx = 0;
 
@@ -616,35 +872,38 @@ struct RNA_data
             {
                 for(int k = 0; k < count_per_sub[i]; k++)
                 {
-                    if(!strcmp(target[k], atom_data->name[j]) && (atom_data->dnt_pos[j] - 1) == i)
+                    if((target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == i)
                     {
-                        //printf("target: %s  name: %s \n", target[k], atom_data->name[j]);
+                        //printf("target: %d  name: %d:%s \n", target[k], atom_data->atom_ids[j], atom_data->name[j]);
                         //printf("Rel_idx: %d\n", rel_idx);
                         //printf("dnt_pos: %d\n", atom_data->dnt_pos[j]);
                         gsl_matrix_set(submatrices[i], rel_idx, 0, gsl_matrix_get(data_matrix, j, 0));
                         gsl_matrix_set(submatrices[i], rel_idx, 1, gsl_matrix_get(data_matrix, j, 1));
                         gsl_matrix_set(submatrices[i], rel_idx, 2, gsl_matrix_get(data_matrix, j, 2));
+                        submatrix_rows[i][k] = j;
                         rel_idx++;
                     }
                 }
             }
-            free_target(count_per_sub[i]);
+            free(target);
         }
     }
 
-    void update_submatrices() /* Need to be rewritten for efficiency */
+    void update_submatrices()
     {
-        gsl_matrix_free(submatrices[0]);
+        for(int i = 0; i < 2; i++)
+        {
+            for(int j = 0; j < count_per_sub[i]; j++)
+            {
+                gsl_matrix_set(submatrices[i], j, 0, gsl_matrix_get(data_matrix, submatrix_rows[i][j], 0));
+                gsl_matrix_set(submatrices[i], j, 1, gsl_matrix_get(data_matrix, submatrix_rows[i][j], 1));
+                gsl_matrix_set(submatrices[i], j, 2, gsl_matrix_get(data_matrix, submatrix_rows[i][j], 2));
+            }
+        }
+        /*gsl_matrix_free(submatrices[0]);
         gsl_matrix_free(submatrices[1]);
         free(submatrices);
-        make_submatrices();
-    }
-
-    void free_target(int size)
-    {
-        for(int z = 0; z < size; z++)
-            free(target[z]);
-        free(target);
+        make_submatrices();*/
     }
 
     gsl_matrix* get_target_matrix(int res)
@@ -661,42 +920,26 @@ struct RNA_data
 
     void get_target(int res)
     {
-        char targetA[][5] = {"N9", "C8", "N7", "C5", "C6", "N1", "C2", "N3", "C4", "C1'", "C2'", "C3'", "C4'", "O4'" }; // 14
-        char targetC[][5] = {"N1", "C2", "N3", "C4", "C5", "C6", "C1'", "C2'", "C3'", "C4'", "O4'"}; // 11
-        char targetG[][5] = {"N9", "C8", "N7", "C5", "C6", "N1", "C2", "N3", "C4", "C1'", "C2'", "C3'", "C4'", "O4'"}; // 14
-        char targetU[][5] = {"N1", "C2", "N3", "C4", "C5", "C6", "C1'", "C2'", "C3'", "C4'", "O4'"}; // 11
+        atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
+        atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p}; // 11
+        atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
+        atom_id targetU[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p}; // 11
 
         if( name[res] == 'A' ){
-            target = (char **)malloc(sizeof(char *) * 14);
-            for(int i = 0; i < 14; i++)
-            {
-                target[i] = (char *)malloc(sizeof(char) * 5);
-                strcpy(target[i], targetA[i]);
-            }
+            target = (atom_id *)malloc(sizeof(atom_id) * 14);
+            memcpy(target, targetA, sizeof(atom_id) * 14);
         }
         else if( name[res] == 'C' ){
-            target = (char **)malloc(sizeof(char *) * 11);
-            for(int i = 0; i < 11; i++)
-            {
-                target[i] = (char *)malloc(sizeof(char) * 5);
-                strcpy(target[i], targetC[i]);
-            }
+            target = (atom_id *)malloc(sizeof(atom_id) * 11);
+            memcpy(target, targetC, sizeof(atom_id) * 11);
         }
         else if( name[res] == 'G' ){
-            target = (char **)malloc(sizeof(char *) * 14);
-            for(int i = 0; i < 14; i++)
-            {
-                target[i] = (char *)malloc(sizeof(char) * 5);
-                strcpy(target[i], targetG[i]);
-            }
+            target = (atom_id *)malloc(sizeof(atom_id) * 14);
+            memcpy(target, targetG, sizeof(atom_id) * 14);
         }
         else if( name[res] == 'U' ){
-            target = (char **)malloc(sizeof(char *) * 11);
-            for(int i = 0; i < 11; i++)
-            {
-                target[i] = (char *)malloc(sizeof(char) * 5);
-                strcpy(target[i], targetU[i]);
-            }
+            target = (atom_id *)malloc(sizeof(atom_id) * 11);
+            memcpy(target, targetU, sizeof(atom_id) * 11);
         }
         else{
             printf("input file has problems, please check\n"); exit(0);
@@ -792,6 +1035,7 @@ struct RNA_data_array
     int count;
     int iterator;
     int iterator_max;
+    float structure_energy;
     
     char *string_out;
     int string_buffer;
@@ -806,6 +1050,7 @@ struct RNA_data_array
         sequence = (RNA_data**)malloc(sizeof(RNA_data*) * size);
         iterator = -1;
         count = 0;
+        structure_energy = 0;
     }
     ~RNA_data_array()
     {
@@ -919,6 +1164,8 @@ struct RNA_data_array
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d ", sequence[i]->position_in_lib[1]);
         }
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\n", structure_energy);
         return string_index;
     }
 
@@ -1022,7 +1269,7 @@ DimerLibArray load_libs(char **LibNames, int N_diNts)
     enum {model_count = 0, atom_count = 1};
     DimerLibArray RTN(N_diNts);
     gsl_matrix*   matrix;
-    double*       energies;
+    float*        energies;
     gsl_matrix**  data_mats;
     int*          model_id;
     int           model_info[2];
@@ -1046,12 +1293,12 @@ DimerLibArray load_libs(char **LibNames, int N_diNts)
 
         get_model_count(LibFile, model_info);
         printf("Models: %d, Atoms per model: %d\n", model_info[model_count], model_info[atom_count]);
-        
+
         RTN.alloc_lib(model_info[model_count], model_info[atom_count]);
         data_mats = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * model_info[model_count]);
         for(int i = 0; i < model_info[model_count]; i++)
             data_mats[i] = gsl_matrix_alloc(model_info[atom_count], 3);
-        energies = (double*)malloc(sizeof(double) * model_info[model_count]);
+        energies = (float*)malloc(sizeof(float) * model_info[model_count]);
 
         int iterator = 0;
         int row = 0;
@@ -1071,6 +1318,7 @@ DimerLibArray load_libs(char **LibNames, int N_diNts)
             if(!strcmp(header, "ENERGY") )
             {
                 char *str1;
+                str1 = strtok(NULL, " ");
                 str1 = strtok(NULL, " ");
                 energies[iterator] = atof(str1);
                 //printf("Iterator = %d\n", iterator);
@@ -1313,7 +1561,7 @@ bool overlap_check(RNA_data_array& sequence, RNA_data *attach)
                 {
                     continue;
                 }
-                switch(sequence[i]->atom_data->name[j][0]) //Need to change target to hash table/linked list to quickly check if current atoms is in target without massive performance loss.
+                switch(sequence[i]->atom_data->name[j][0])
                 {
                     case 'C': radius_1 = RADIUS_C; break; 
                     case 'N': radius_1 = RADIUS_N; break; 
@@ -1339,6 +1587,68 @@ bool overlap_check(RNA_data_array& sequence, RNA_data *attach)
         }
     }
     return true;
+}
+
+void update_energy(RNA_data_array& sequence)
+{
+    float energy = 0.0;
+    gsl_vector_view A, B;
+    for(int i = 0; i < sequence.count; i++)
+    {
+        energy += sequence[i]->energy;
+    }
+    for(int i = 0; i < sequence.count - 1; i++)
+    {
+        for(int j = sequence.count - 1; j > (sequence.count - 1) - (sequence.count - (i + 2)); j--)
+        {
+            if(i != j)
+            {
+                //printf("testing %d with %d\n", i, j);
+                for(int k = 0; k < sequence[i]->count; k++)
+                {
+                    if(i != 0)
+                    {
+                        if(sequence[i]->atom_data->dnt_pos[k] != 2)
+                        {
+                            continue;
+                        }
+                    }
+                    if(sequence[i]->atom_data->charges[k] == NEUTRAL)
+                    {
+                        continue;
+                    } 
+                    for(int l = 0; l < sequence[j]->count; l++)
+                    {
+                        if(sequence[j]->atom_data->dnt_pos[l] != 2)
+                        {
+                            continue;
+                        }
+                        if(sequence[j]->atom_data->charges[l] == NEUTRAL)
+                        {
+                            continue;
+                        }
+                        A = gsl_matrix_row(sequence[i]->data_matrix, k);
+                        B = gsl_matrix_row(sequence[j]->data_matrix, l);
+                        if(distance(&A.vector, &B.vector) < INTERACTION_DISTANCE)
+                        {
+                            if(sequence[i]->atom_data->charges[k] == sequence[j]->atom_data->charges[l])
+                            {
+                                energy += 1;
+                                //printf("Repulsive interaction on %d with %d (%s ---- %s)\n", i , j, sequence[i]->atom_data->name[k], sequence[j]->atom_data->name[l]);
+                            }
+                            else
+                            {
+                                //printf("Attractive interaction on %d with %d (%s ---- %s)\n", i , j, sequence[i]->atom_data->name[k], sequence[j]->atom_data->name[l]);
+                                energy -= 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    //printf("energy = %f\n", energy);
+    sequence.structure_energy = energy;
 }
 
 enum attach_status{FAILED, ATTACHED, NOT_CHECKED};
@@ -1374,24 +1684,24 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_M
     DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
 
     attach = new RNA_data(Lib, working_position, 0); // For initialization only
-    int *idxs = assembled.get_index();
+    //int *idxs = assembled.get_index();
     
-    printf("New Iteration\n");
+    //printf("New Iteration\n");
     for(int i = 0; i < Library->count; i++)
     {   
         if(Library->flags[i] != NO_FLAG)
         {
             continue;
         }
-        for(int j = 0; j < assembled.count; j++)
-        {
-            printf("%d ",idxs[j]);
-        }
-        printf("%d\n", i);
+        //for(int j = 0; j < assembled.count; j++)
+        //{
+        //    printf("%d ",idxs[j]);
+        //}
+        //printf("%d\n", i);
         //printf("count for %s library: %d\n", Library->name, i);
         if(assembled.is_empty())
         {
-            printf("sequence is empty\n");
+            //printf("sequence is empty\n");
             attach->overwrite(Lib, working_position, i);
             assembled.add_move(attach);
             manager.attach_attempt(working_position, i);
@@ -1409,10 +1719,10 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_M
             break;
         }
     }
-    free(idxs);
+    //free(idxs);
     if(status == FAILED)
     {
-        printf("ALL FAILED\n");
+        DEBUG(printf("ALL FAILED\n"));
         DEBUG(printf("attach: %ld deleted @ All failed\n", attach->id));
         delete attach;
         //printf("flagging index %d,%d\n", base->position_in_lib[0], base->position_in_lib[1]);
@@ -1426,7 +1736,7 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_M
             {
                 return true;
             }
-            printf("lib completed = %d; n_reset = %d\n", manager.last_attempted[0] + 1, manager.get_reset_count());
+            //printf("lib completed = %d; n_reset = %d\n", manager.last_attempted[0] + 1, manager.get_reset_count());
             
             assembled.rollback_by(manager.get_reset_count() - 1);
             Lib.reset_flags(manager.libs_completed);
@@ -1457,6 +1767,7 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_M
     }
     if(assembled.is_complete())
     {
+        update_energy(assembled);
         o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
         manager.strs_built++;
         if(manager.is_at_end())
@@ -1487,7 +1798,7 @@ bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_M
 int main()
 {
     int N_diNts = 0;
-    char sequence[] = "AUGCG";
+    char sequence[] = "ACGU";
     char **Libs2Load = get_diNt_names(sequence, &N_diNts);
     DimerLibArray Library = load_libs(Libs2Load, N_diNts);
     RNA_data_array RNA(N_diNts);
