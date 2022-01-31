@@ -604,8 +604,9 @@ int RNA_data_array::out_string_header()
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
         if (GLOBAL_PERFORM_HAIRPIN_CHECK)
         {
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\n", WC_rmsd);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd);
         }
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
     }
     else
     {
