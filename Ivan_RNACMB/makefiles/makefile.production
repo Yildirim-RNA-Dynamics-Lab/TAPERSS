@@ -1,0 +1,27 @@
+CC = /usr/bin/g++
+
+CFLAGS = -O3
+CFLAGS += -Wall
+CFLAGS += -W
+CFLAGS += -Werror
+CFLAGS += -pedantic
+CFLAGS += -std=c++11 
+
+LIBS = -lgsl
+LIBS += -lgslcblas
+
+OBJDIR = ./bin/obj/
+BINDIR = ./bin/
+SRCDIR = ./src/
+INCDIR = ./include/
+
+_OBJ = Atom_info.o Combinatorial.o DimerLib.o Hairpin.o InputHandler.o Kabsch.o output_string.o RNA_data.o RNA_Math.o  StructureBuilders.o Main.o 
+OBJ = $(patsubst %,$(OBJDIR)%,$(_OBJ))
+
+vpath %.cpp $(SRCDIR)
+
+$(OBJDIR)%.o: %.cpp
+	$(CC) $(CFLAGS) -o $@ -c $< $(LIBS) -I $(INCDIR)
+
+$(BINDIR)Ivan_RNACMB: $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) -I $(INCDIR)

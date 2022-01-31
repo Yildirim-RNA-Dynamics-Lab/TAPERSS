@@ -1,0 +1,57 @@
+C++ Combinatorial Method for RNA structure Prediction.
+Developed by Ivan Riveros in part using code from Kye Won Wang
+
+Compilation (From Ivan_RNACMB directory): 'make -f makefile.production' OR 'make -f makefile.debug'
+
+How to use:
+This program can use either an input file or an inputfile + several flags in the standard input to understand what is being asked of it. [At the moment only the input file method can be used for all methods, which will fixed.]
+To run with an input file:
+./bin/Ivan_RNACMB -i Inputfile.txt
+How to format inputfile.txt:
+                                OPTION1 = [SELECTION1]
+                                OPTION2 = [SELECTION2]
+Be mindful of the spaces around the '='. They must be included for input to be correctly read. Example input shown in ExampleInput.txt
+
+Options:
+    SEQUENCE        Give the sequence to perform the specified action.
+    OUTPUT          Define the output file name.
+    OUTPUTACTION    Select how the output file will be written to.
+                        Output options:
+                            "w" - overwrite file (default if none is given).
+                            "a" - append to end of given outputfile.
+    TYPE            Select action to be taken.
+                            Available actions:
+                                "cmb"       -       Perform combinatorial run
+                                "str"       -       Create a single structure from sequence and given index
+                                "strlist"   -       Create several structures using a previous simulation output or equivalently formatted file.
+    STRUCTCHECK     Select the type of structural checks to be performed. Structures that pass the check are written to file those that don't are discarded.
+                            Available options:
+                                "hairpin"   -   Check if structure resembles an RNA hairpin.
+                                "none"      -   Perform no structural check.
+    INPUTFILE       Define the input file to be used with "strlist" action.
+    INDICES         Indices in form "0-0-0-0-0" to be used with "str" action. Number of indices must the
+                    length of your sequence - 1.
+    RMSD            Set RMSD cutoff value for overlapped dinucleotides.
+    WCRMSD          Set RMSD cutoff value when comparing a WC structure and the closing basepairs of an RNA hairpin if the hairpin structcheck is selected.
+    LIBRARY         Define a library location prototype. Give the filename/location of any library file but replace the dinucleotide sequence with XX. Program
+                    will search for any files with that name structure.
+                        Example: ./LIBRARY_FILES/AA_library_combined.txt => ./LIBRARY_FILES/XX_library_combined.txt
+    WCLIBRARY       Same as the library option but for any Watson-Crick Libraries.
+
+To run using flags (Note library file prototype must be defined in the input file):
+./bin/Ivan_RNACMB -i [INPUTFILE] -s [SEQUENCE] -o [OUTPUT] -[other flags]
+Flags:
+    -o  [FILENAME]      Name output file to write to.
+    -s  [SEQUENCE]      Sequence to use in performing action
+    -t  [ACTION]        Select action to be taken.
+                            Available actions:
+                                "cmb" - Perform combinatorial run
+                                "str" - Create a single structure from sequence and given index
+    -x  [INDICES]       Indices in form "0-0-0-0-0" to be used with "str" action. Number of indices must the
+                        length of your sequence - 1.
+    -c                  Include all coordinates in output file.
+    -r  [RMSD]          Set RMSD cutoff value for overlapped dinucleotides.
+    -a                  Append output to end of selected output file.
+
+
+
