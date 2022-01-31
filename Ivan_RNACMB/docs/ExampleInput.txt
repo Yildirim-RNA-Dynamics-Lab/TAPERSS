@@ -1,0 +1,7 @@
+SEQUENCE = AGA
+OUTPUT = AGA_Output.txt
+TYPE = CMB
+STRUCTCHECK = NONE
+RMSD = 0.5
+LIBRARY = ../../LIBRARY_FILES/XX_library_combined.txt
+WCLIBRARY = ../../LIBRARY_FILES/WC_XX_library.txt

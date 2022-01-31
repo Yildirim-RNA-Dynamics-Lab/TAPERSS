@@ -4,6 +4,7 @@
 #include "RNACMB.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
+#include "RNA_Math.hpp"
 
 struct RNA_data
 {
@@ -88,6 +89,7 @@ struct RNA_data_array
     bool is_empty();
     void update_WC_rmsd(float rmsd_val);
     void reset_interactions();
+    void update_energy();
     void printall();
     void initialize_string();
     int get_atom_sum();

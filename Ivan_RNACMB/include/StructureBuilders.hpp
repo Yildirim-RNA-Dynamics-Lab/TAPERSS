@@ -4,7 +4,7 @@
 #include "DimerLib.hpp"
 #include "RNA_data.hpp"
 #include "output_string.hpp"
-#include "Combinatorial.hpp"
+#include "Attaching_Functions.hpp"
 #include "Hairpin.hpp"
 
 void create_custom_structure(DimerLibArray& Lib, DimerLibArray& WC_Lib,RNA_data_array& assembled, output_string& o_string, int *indices);

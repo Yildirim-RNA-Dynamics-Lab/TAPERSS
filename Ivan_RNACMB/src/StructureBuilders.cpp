@@ -22,7 +22,7 @@ void create_custom_structure(DimerLibArray& Lib, DimerLibArray& WC_Lib,RNA_data_
             
     }
     if(GLOBAL_PERFORM_HAIRPIN_CHECK){ is_hairpin(assembled, WC_Lib);}
-    update_energy(assembled);
+    assembled.update_energy();
     o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
 }
 
@@ -43,7 +43,7 @@ void create_custom_structure_list(DimerLibArray& Lib, DimerLibArray& WC_Lib,RNA_
             assembled.add_move(custom_attach);
         }
         if(GLOBAL_PERFORM_HAIRPIN_CHECK){ is_hairpin(assembled, WC_Lib);}
-        update_energy(assembled);
+        assembled.update_energy();
         o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
     }
 }

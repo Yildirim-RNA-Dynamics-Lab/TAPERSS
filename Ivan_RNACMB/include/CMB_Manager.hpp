@@ -1,5 +1,5 @@
-#ifndef COMBINATORIAL_HPP
-#define COMBINATORIAL_HPP
+#ifndef CMB_MANAGER_HPP
+#define CMB_MANAGER_HPP
 
 #include "RNACMB.hpp"
 #include "Atom_info.hpp"
@@ -7,8 +7,6 @@
 #include "RNA_data.hpp"
 #include "output_string.hpp"
 #include "Hairpin.hpp"
-
-enum attach_status{FAILED, ATTACHED, NOT_CHECKED};
 
 struct CMB_Manager
 {
@@ -29,11 +27,5 @@ struct CMB_Manager
     int get_reset_count();
     void successful_construction();
 };
-
-void update_energy(RNA_data_array& sequence);
-attach_status rotate(RNA_data *reference, RNA_data *rotated);
-bool overlap_check(RNA_data_array& sequence, RNA_data *attach);
-attach_status check_attachment(RNA_data_array& sequence, RNA_data *attach);
-bool combinatorial_addition(DimerLibArray& Lib, RNA_data_array& assembled, CMB_Manager& manager, output_string& o_string, DimerLibArray& WC_Lib);
 
 #endif

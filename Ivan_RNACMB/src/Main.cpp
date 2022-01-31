@@ -3,7 +3,7 @@
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
 #include "RNA_data.hpp"
-#include "Combinatorial.hpp"
+#include "Combinatorial_Addition.hpp"
 #include "output_string.hpp"
 #include "Hairpin.hpp"
 #include "InputHandler.hpp"

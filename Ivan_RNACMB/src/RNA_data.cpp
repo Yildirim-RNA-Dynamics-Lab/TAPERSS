@@ -483,6 +483,75 @@ void RNA_data_array::reset_interactions()
     }
 }
 
+void RNA_data_array::update_energy()
+{
+    float energy_ = 0.0;
+    gsl_vector_view A, B;
+    for (int i = 0; i < count; i++)
+    {
+        energy_ += sequence[i]->energy;
+    }
+    for (int i = 0; i < count - 1; i++)
+    {
+        for (int j = count - 1; j > i + 1; j--)
+        {
+            if (i != j)
+            {
+                for (int k = 0; k < sequence[i]->count; k++)
+                {
+                    if (i != 0)
+                    {
+                        if (sequence[i]->atom_data->dnt_pos[k] != 2)
+                        {
+                            continue;
+                        }
+                    }
+                    if (sequence[i]->atom_data->charges[k] == NEUTRAL)
+                    {
+                        continue;
+                    }
+                    if (sequence[i]->has_interaction[k] == true)
+                    {
+                        continue;
+                    }
+                    for (int l = 0; l < sequence[j]->count; l++)
+                    {
+                        if (sequence[j]->has_interaction[l] == true)
+                        {
+                            continue;
+                        }
+                        if (sequence[j]->atom_data->dnt_pos[l] != 2)
+                        {
+                            continue;
+                        }
+                        if (sequence[j]->atom_data->charges[l] == NEUTRAL)
+                        {
+                            continue;
+                        }
+                        A = gsl_matrix_row(sequence[i]->data_matrix, k);
+                        B = gsl_matrix_row(sequence[j]->data_matrix, l);
+                        if (distance(&A.vector, &B.vector) < INTERACTION_DISTANCE)
+                        {
+                            if (sequence[i]->atom_data->charges[k] == sequence[j]->atom_data->charges[l])
+                            {
+                                // energy += 1;
+                            }
+                            else
+                            {
+                                energy_ -= 1;
+                                sequence[j]->has_interaction[l] = true;
+                                sequence[i]->has_interaction[k] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        reset_interactions();
+    }
+    structure_energy = energy_;
+}
+
 void RNA_data_array::printall()
 {
     sequence[0]->print();
@@ -587,7 +656,6 @@ char *RNA_data_array::to_string()
     for (int i = 1; i < count; i++)
     {
         string_index = sequence[i]->to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
-        // printf("str_idx = %d\n", string_index);
     }
 
     string_index += snprintf(&string_out[string_index], string_buffer - string_index, "ENDMDL\n");
