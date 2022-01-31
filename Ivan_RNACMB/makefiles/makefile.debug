@@ -23,5 +23,5 @@ vpath %.cpp $(SRCDIR)
 $(OBJDIR)%.o: %.cpp
 	$(CC) $(CFLAGS) -o $@ -c $< $(LIBS) -I $(INCDIR)
 
-$(BINDIR)Ivan_RNACMB: $(OBJ)
+$(BINDIR)Ivan_RNACMB_debug: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) -I $(INCDIR)
