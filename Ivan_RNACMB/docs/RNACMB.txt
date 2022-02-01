@@ -53,5 +53,5 @@ Flags:
     -r  [RMSD]          Set RMSD cutoff value for overlapped dinucleotides.
     -a                  Append output to end of selected output file.
 
-
+:)
 
