@@ -1,7 +1,6 @@
 CC = /usr/bin/g++
 
-CFLAGS = -g
-CFLAGS += -Wall
+CFLAGS = -Wall
 CFLAGS += -W
 CFLAGS += -Werror
 CFLAGS += -pedantic
@@ -20,8 +19,18 @@ OBJ = $(patsubst %,$(OBJDIR)%,$(_OBJ))
 
 vpath %.cpp $(SRCDIR)
 
+debug: $(BINDIR)Ivan_RNACMB_debug
+production: $(BINDIR)Ivan_RNACMB
+
 $(OBJDIR)%.o: %.cpp
 	$(CC) $(CFLAGS) -o $@ -c $< $(LIBS) -I $(INCDIR)
 
 $(BINDIR)Ivan_RNACMB_debug: $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) -I $(INCDIR)
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIBS) -I $(INCDIR)
+
+$(BINDIR)Ivan_RNACMB: $(OBJ)
+	$(CC) $(CFLAGS) -O3 -o $@ $^ $(LIBS) -I $(INCDIR)
+
+clean:
+	rm $(OBJDIR)*.o
+	rm $(BINDIR)Ivan_RNACMB $(BINDIR)Ivan_RNACMB_debug
