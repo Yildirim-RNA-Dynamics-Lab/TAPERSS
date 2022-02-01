@@ -4,7 +4,8 @@ Developed by Ivan Riveros in part using code from Kye Won Wang
 Compilation (From Ivan_RNACMB directory): 'make -f makefile.production' OR 'make -f makefile.debug'
 
 How to use:
-This program can use either an input file or an inputfile + several flags in the standard input to understand what is being asked of it. [At the moment only the input file method can be used for all methods, which will fixed.]
+This program can use either an input file or an inputfile + several flags in the standard input to understand what is being asked of it. [At the moment only the input file method 
+can be used for all methods, which will fixed.]
 To run with an input file:
 ./bin/Ivan_RNACMB -i Inputfile.txt
 How to format inputfile.txt:
