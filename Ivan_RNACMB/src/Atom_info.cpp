@@ -1,5 +1,6 @@
 #include "Atom_info.hpp"
 
+/* Gets atom ID */
 atom_id get_atom_id(char *name)
 {
     atom_id atom = NOTATOM;
