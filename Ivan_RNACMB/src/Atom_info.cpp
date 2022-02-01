@@ -288,4 +288,3 @@ void atom_info::print_at(int line)
 {
     printf("%-6s%5d %4s %3c  %4d    ", "ATOM", index[line], name[line], residue[line], dnt_pos[line]);
 }
-
