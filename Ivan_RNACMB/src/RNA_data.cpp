@@ -15,7 +15,6 @@ RNA_data::RNA_data(DimerLibArray &L, int i, int j, bool WC)
     position_max = L[i]->count - 1;
     id = rna_dat_tracker++;
     is_for_WC = WC;
-    // if(WC) printf("%ld is for WC only\n", id);
     WC ? make_WC_submatrices(true) : make_submatrices();
     WC_secondary = false;
     has_interaction = (bool *)calloc(count, sizeof(bool));
@@ -77,18 +76,6 @@ void RNA_data::make_submatrices()
     for (int i = 0; i < 2; i++)
     {
         count_per_sub[i] = get_target(i);
-        /*switch (name[i])
-        {
-        case 'A':
-            count_per_sub[i] = 14;
-            break;
-        case 'G':
-            count_per_sub[i] = 14;
-            break;
-        default:
-            count_per_sub[i] = 11;
-            break;
-        }*/
         submatrices[i] = gsl_matrix_alloc(count_per_sub[i], 3);
         submatrix_rows[i] = (int *)malloc(sizeof(int) * count_per_sub[i]);
 
@@ -158,7 +145,7 @@ size_t RNA_data::get_target(int res)
     }
     else
     {
-        printf("input file has problems, please check at %d\n", __LINE__);
+        printf("RNA_data: input file has problems, please check at %d\n", __LINE__);
         exit(1);
     }
 }
@@ -195,10 +182,10 @@ void RNA_data::make_WC_submatrices(bool first_run)
             WC_secondary = true;
         }
     }
-    else
+    /*else
     {
         // printf("first run for %ld\n", id);
-    }
+    }*/
 
     WC_submatrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * 2);
 
@@ -275,7 +262,7 @@ size_t RNA_data::get_WC_target(int res)
     }
     else
     {
-        printf("input file has problems, please check at %d\n", __LINE__);
+        printf("RNA_data: input file has problems, please check at %d\n", __LINE__);
         exit(1);
     }
 }
