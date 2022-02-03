@@ -3,7 +3,6 @@
 bool combinatorial_addition(DimerLibArray &Lib, RNA_data_array &assembled, CMB_Manager &manager, output_string &o_string, DimerLibArray &WC_Lib)
 {
     int working_position = assembled.iterator + 1; // Position in sequence where new DNT will be attached.
-    // printf("Working postion: %d, iterator:%d, iterator_max:%d\n", working_position, assembled.iterator, assembled.iterator_max);
     DimerLib *Library = Lib[working_position];
     RNA_data *base;                // Already attached base which will have new DNT attached to
     RNA_data *attach;              // DNT which will be attached
