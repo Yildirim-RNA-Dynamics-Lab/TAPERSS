@@ -1,7 +1,7 @@
 C++ Combinatorial Method for RNA structure Prediction.
 Developed by Ivan Riveros in part using code from Kye Won Wang
 
-Compilation (From Ivan_RNACMB directory): 'make -f makefiles/makefile debug' OR 'make -f makefiles/makefile production'
+Compilation (From CombinatorialRNA directory): 'make -f makefiles/makefile debug' OR 'make -f makefiles/makefile production'
 
 How to use:
 This program can use either an input file or an inputfile + several flags in the standard input to understand what is being asked of it. [At the moment only the input file method 
