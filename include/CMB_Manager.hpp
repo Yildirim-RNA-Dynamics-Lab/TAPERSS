@@ -14,8 +14,8 @@ struct CMB_Manager
     bool **attach_attempted;    //Tracks if all structures in each respective library has been tested
     int last_attempted[2];
     bool *libs_completed;
-    int strs_built;
-    int hairpins_built;
+    long unsigned int strs_built;
+    long unsigned int hairpins_built;
     int count;                  //For deallocation
 
     CMB_Manager(DimerLibArray& LA);
