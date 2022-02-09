@@ -183,6 +183,8 @@ atom_info::atom_info(int n)
     atom_ids = (atom_id *)malloc(sizeof(atom_id) * n);
     charges = (atom_charge *)malloc(sizeof(atom_charge) * n);
     count = n;
+    count_per_res[0] = 0;
+    count_per_res[1] = 0;
     for (int i = 0; i < n; i++)
     {
         name[i] = (char *)malloc(sizeof(char) * 5);
@@ -247,6 +249,7 @@ void atom_info::add_atom(char *N, int i, char r, int p)
     dnt_pos[iterator] = p;
     atom_ids[iterator] = get_atom_id(N);
     charges[iterator] = get_atom_charge(atom_ids[iterator], r);
+    p == 1 ? count_per_res[0]++ : count_per_res[1]++;
     iterator++;
 }
 

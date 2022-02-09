@@ -21,9 +21,9 @@ SRC = $(patsubst %,$(SRCDIR)%.cpp,$(_OBJ))
 
 vpath %.cpp $(SRCDIR)
 
-debug: 		$(BINDIR)Ivan_RNACMB_debug
-profile: 	$(BINDIR)Ivan_RNACMB_profile
-production: $(BINDIR)Ivan_RNACMB
+debug: 		$(BINDIR)Ivan_RNACMB_sc-optim_debug
+profile: 	$(BINDIR)Ivan_RNACMB_sc-optim_profile
+production: $(BINDIR)Ivan_RNACMB_sc-optim
 
 $(OBJ): 
 	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst .o,.cpp,$@) $(LIBS) -I $(INCDIR)
@@ -31,13 +31,13 @@ $(OBJ):
 $(PRFOBJ): 
 	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) $(LIBS) -I $(INCDIR) -pg
 
-$(BINDIR)Ivan_RNACMB_debug: $(OBJ)
+$(BINDIR)Ivan_RNACMB_sc-optim_debug: $(OBJ)
 	$(CC) $(CFLAGS) -g -o $@ $(patsubst %, $(OBJDIR)%, $(OBJ)) $(LIBS) -I $(INCDIR)
 
-$(BINDIR)Ivan_RNACMB_profile: $(PRFOBJ)
+$(BINDIR)Ivan_RNACMB_sc-optim_profile: $(PRFOBJ)
 	$(CC) $(CFLAGS) -g -o $@ $(patsubst %, $(OBJDIR)%, $(PRFOBJ)) $(LIBS) -I $(INCDIR) -pg
 
-$(BINDIR)Ivan_RNACMB: $(OBJ)
+$(BINDIR)Ivan_RNACMB_sc-optim: $(OBJ)
 	$(CC) $(CFLAGS) -O3 -o $@ $(patsubst %, $(OBJDIR)%, $(OBJ)) $(LIBS) -I $(INCDIR)
 
 clean:

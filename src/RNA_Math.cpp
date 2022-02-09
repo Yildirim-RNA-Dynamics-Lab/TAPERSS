@@ -22,7 +22,7 @@ double rmsd_generic(gsl_matrix *A, gsl_matrix *B)
     return sqrt(temprmsd / (double)atom_count);
 }
 
-void center_matrix(gsl_matrix *M, double *COM)
+void get_matrix_COM(gsl_matrix *M, double *COM)
 {
     for (unsigned int i = 0; i < M->size1; i++)
     {
@@ -34,7 +34,10 @@ void center_matrix(gsl_matrix *M, double *COM)
     COM[0] /= M->size1;
     COM[1] /= M->size1;
     COM[2] /= M->size1;
+}
 
+void center_matrix(gsl_matrix *M, double *COM)
+{
     for (unsigned int i = 0; i < M->size1; i++)
     {
         gsl_matrix_set(M, i, 0, (gsl_matrix_get(M, i, 0) - COM[0]));

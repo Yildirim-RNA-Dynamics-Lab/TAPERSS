@@ -48,10 +48,10 @@ int main(int argc, char *ARGV[])
         printf("Performing combinatorial run on sequence: %s\n", GLOBAL_INPUT_SEQUENCE);
         while (!combinatorial_addition(Library, RNA, manager, output_s, WC_Library))
             ;
-        printf("# of Structures Built: %d\n", manager.strs_built);
+        printf("# of Structures Built: %ld\n", manager.strs_built);
         if (GLOBAL_PERFORM_HAIRPIN_CHECK)
         {
-            printf("# of Hairpins Built: %d\n", manager.hairpins_built);
+            printf("# of Hairpins Built: %ld\n", manager.hairpins_built);
         }
     }
     if (GLOBAL_RUN_BUILD_STRUCTURE)

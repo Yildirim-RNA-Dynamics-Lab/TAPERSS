@@ -3,7 +3,7 @@
 RNA_data::RNA_data(DimerLibArray &L, int i, int j, bool WC)
 {
     atom_data = (L[i]->atom_data);
-    data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1, L[i]->data_matrices[j]->size2);
+    data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1 + 1, L[i]->data_matrices[j]->size2);
     gsl_matrix_memcpy(data_matrix, L[i]->data_matrices[j]);
     energy = L[i]->energy[j];
     name = (char *)malloc(sizeof(char) * 3);
@@ -114,10 +114,10 @@ void RNA_data::update_submatrices()
 
 size_t RNA_data::get_target(int res)
 {
-    atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
-    atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
-    atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
-    atom_id targetU[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
+    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
+    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
+    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
+    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
 
     if (name[res] == 'A')
     {
@@ -231,10 +231,10 @@ void RNA_data::update_WC_submatrices()
 
 size_t RNA_data::get_WC_target(int res)
 {
-    const atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6 /*, C1p, C2p, C3p, C4p, O4p*/};
-    const atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
-    const atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6 /*, C1p, C2p, C3p, C4p, O4p*/};
-    const atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6 /*, C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6 /*, C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
 
     if (name[res] == 'A')
     {

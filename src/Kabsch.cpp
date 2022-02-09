@@ -43,7 +43,9 @@ gsl_matrix *kabsch_get_rotation_matrix_generic(gsl_matrix *P, gsl_matrix *Q, dou
   gsl_matrix *TEMP = gsl_matrix_alloc(dimension2, dimension2);
   gsl_matrix *R = gsl_matrix_alloc(dimension2, dimension2);
 
+  get_matrix_COM(P, COMP);
   center_matrix(P, COMP);
+  get_matrix_COM(Q, COMQ);
   center_matrix(Q, COMQ);
 
   gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, P, Q, 0.0, H);

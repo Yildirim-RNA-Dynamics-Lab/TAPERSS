@@ -1,13 +1,19 @@
 #include "DimerLib.hpp"
-
-DimerLib::DimerLib(int n, int a_n)
+/**
+ * @brief Construct a DimerLib
+ * 
+ * @param n Number of structures in a library
+ * @param a_n Number of elements in each structure (atoms + extra)
+ * @param e_n Number of extra elements in a_n
+ */
+DimerLib::DimerLib(int n, int a_n, int e_n)
 {
     data_matrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * n);
     name = (char *)malloc(sizeof(char) * 3);
     flags = (flag *)calloc(n, sizeof(flag));
     energy = (float *)malloc(sizeof(float) * n);
     count = n;
-    atom_data = new atom_info(a_n);
+    atom_data = new atom_info(a_n - e_n);
 }
 DimerLib::~DimerLib()
 {
@@ -78,9 +84,9 @@ DimerLib *DimerLibArray::operator[](int i)
     return library[i];
 }
 
-void DimerLibArray::alloc_lib(int n, int a_n)
+void DimerLibArray::alloc_lib(int n, int a_n, int e_n)
 {
-    library[iterator] = new DimerLib(n, a_n);
+    library[iterator] = new DimerLib(n, a_n, e_n);
 }
 
 void DimerLibArray::DimerLibArray::add_to_atom_info(char *N, int i, char r, int p)
@@ -144,6 +150,38 @@ void get_model_count(FILE *fp, int *i)
     rewind(fp);
 }
 
+void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
+{
+    int n_r1 = A_info->count_per_res[0];
+    int n_r2 = A_info->count_per_res[1];
+
+    gsl_matrix *A_1 = gsl_matrix_alloc(n_r1, 3);
+    gsl_matrix *A_2 = gsl_matrix_alloc(n_r2, 3);
+
+    double COMA_1[3] = {0, 0, 0};
+    double COMA_2[3] = {0, 0, 0};
+
+    for(int i = 0; i < n_r1; i++)
+    {
+        gsl_matrix_set(A_1, i, 0, gsl_matrix_get(A, i, 0));
+        gsl_matrix_set(A_1, i, 2, gsl_matrix_get(A, i, 2));
+        gsl_matrix_set(A_1, i, 3, gsl_matrix_get(A, i, 3));
+    }
+
+    for(int i = n_r1; i < n_r1 + n_r2; i++)
+    {
+        gsl_matrix_set(A_2, i, 0, gsl_matrix_get(A, i, 0));
+        gsl_matrix_set(A_2, i, 2, gsl_matrix_get(A, i, 2));
+        gsl_matrix_set(A_2, i, 3, gsl_matrix_get(A, i, 3));
+    }
+
+    get_matrix_COM(A_1, COMA_1);
+    get_matrix_COM(A_2, COMA_2);
+
+    printf("DNT has %d atoms in resid 1 and %d atoms in resid 2\n", A_info->count_per_res[0], A_info->count_per_res[1]);
+
+}
+
 void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
 {
     enum
@@ -176,12 +214,18 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         get_model_count(LibFile, model_info);
         printf("Models: %d, Atoms per model: %d\n", model_info[model_count], model_info[atom_count]);
 
-        RTN.alloc_lib(model_info[model_count], model_info[atom_count]);
+        model_info[atom_count] += 2;//Plus 2 B/C COM for each DNT will be included in data matrix
+        
+        RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
         data_mats = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * model_info[model_count]);
+        
         for (int i = 0; i < model_info[model_count]; i++)
+        {
             data_mats[i] = gsl_matrix_alloc(model_info[atom_count], 3);
+        }
 
         energies = (float *)malloc(sizeof(float) * model_info[model_count]);
+        
         int iterator = 0;
         int row = 0;
         while (fgets(line, sizeof(line), LibFile))
@@ -225,11 +269,15 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
             {
                 if (first_itr)
                     first_itr = false;
+                
+                calculate_dnt_COM(data_mats[iterator], RTN[iterator]->atom_data);
+                exit(0);
                 iterator++;
                 row = 0;
             }
         }
         fclose(LibFile);
+
         const char *default_name;
         for_WC ? default_name = WATSON_CRICK_LIBRARY_PROTOTYPE : default_name = LIBRARY_FILENAME_PROTOTYPE;
         int name_position = -1;
@@ -240,7 +288,6 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         tmp[1] = for_WC ? LibNames[i][name_position + 1] : LibNames[i][name_position + 1];
         tmp[2] = '\0';
 
-        // printf("pos: %d\nTMP = %s\n", name_position, tmp);
         RTN.add_lib(data_mats, energies, tmp);
         free(data_mats);
         free(energies);
