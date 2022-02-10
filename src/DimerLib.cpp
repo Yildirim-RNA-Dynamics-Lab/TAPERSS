@@ -38,6 +38,7 @@ void DimerLib::save_lib(gsl_matrix **d_m, float *e, char *n)
     memcpy(energy, e, sizeof(float) * count);
     memcpy(name, n, sizeof(char) * 3);
 }
+
 void DimerLib::clear_flags()
 {
     for (int i = 0; i < count; i++)
@@ -164,22 +165,30 @@ void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
     for(int i = 0; i < n_r1; i++)
     {
         gsl_matrix_set(A_1, i, 0, gsl_matrix_get(A, i, 0));
+        gsl_matrix_set(A_1, i, 1, gsl_matrix_get(A, i, 1));
         gsl_matrix_set(A_1, i, 2, gsl_matrix_get(A, i, 2));
-        gsl_matrix_set(A_1, i, 3, gsl_matrix_get(A, i, 3));
     }
 
     for(int i = n_r1; i < n_r1 + n_r2; i++)
     {
-        gsl_matrix_set(A_2, i, 0, gsl_matrix_get(A, i, 0));
-        gsl_matrix_set(A_2, i, 2, gsl_matrix_get(A, i, 2));
-        gsl_matrix_set(A_2, i, 3, gsl_matrix_get(A, i, 3));
+        gsl_matrix_set(A_2, i - n_r1, 0, gsl_matrix_get(A, i, 0));
+        gsl_matrix_set(A_2, i - n_r1, 1, gsl_matrix_get(A, i, 1));
+        gsl_matrix_set(A_2, i - n_r1, 2, gsl_matrix_get(A, i, 2));
     }
 
     get_matrix_COM(A_1, COMA_1);
     get_matrix_COM(A_2, COMA_2);
 
-    printf("DNT has %d atoms in resid 1 and %d atoms in resid 2\n", A_info->count_per_res[0], A_info->count_per_res[1]);
+    gsl_matrix_set(A, n_r1 + n_r2, 0, COMA_1[0]);
+    gsl_matrix_set(A, n_r1 + n_r2, 1, COMA_1[1]);
+    gsl_matrix_set(A, n_r1 + n_r2, 2, COMA_1[2]);
 
+    gsl_matrix_set(A, n_r1 + n_r2 + 1, 0, COMA_2[0]);
+    gsl_matrix_set(A, n_r1 + n_r2 + 1, 1, COMA_2[1]);
+    gsl_matrix_set(A, n_r1 + n_r2 + 1, 2, COMA_2[2]);
+
+    gsl_matrix_free(A_1);
+    gsl_matrix_free(A_2);
 }
 
 void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
@@ -214,7 +223,7 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         get_model_count(LibFile, model_info);
         printf("Models: %d, Atoms per model: %d\n", model_info[model_count], model_info[atom_count]);
 
-        model_info[atom_count] += 2;//Plus 2 B/C COM for each DNT will be included in data matrix
+        model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
         
         RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
         data_mats = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * model_info[model_count]);
@@ -269,9 +278,8 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
             {
                 if (first_itr)
                     first_itr = false;
-                
-                calculate_dnt_COM(data_mats[iterator], RTN[iterator]->atom_data);
-                exit(0);
+
+                calculate_dnt_COM(data_mats[iterator], RTN[RTN.iterator]->atom_data);
                 iterator++;
                 row = 0;
             }

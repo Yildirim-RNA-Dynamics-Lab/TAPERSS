@@ -45,6 +45,7 @@ struct DimerLibArray
 
 
 void get_model_count(FILE* fp, int* i);
+void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info);
 void load_libs(char **LibNames, int N_diNts, DimerLibArray& RTN, bool for_WC = false);
 
 #endif

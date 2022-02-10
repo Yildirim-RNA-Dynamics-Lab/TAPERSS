@@ -3,7 +3,7 @@
 RNA_data::RNA_data(DimerLibArray &L, int i, int j, bool WC)
 {
     atom_data = (L[i]->atom_data);
-    data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1 + 1, L[i]->data_matrices[j]->size2);
+    data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1, L[i]->data_matrices[j]->size2);
     gsl_matrix_memcpy(data_matrix, L[i]->data_matrices[j]);
     energy = L[i]->energy[j];
     name = (char *)malloc(sizeof(char) * 3);
