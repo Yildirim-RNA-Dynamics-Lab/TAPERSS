@@ -15,7 +15,7 @@ struct RNA_data
     atom_info *atom_data;
     char *name;
     flag *_flag;
-    int count; //Number of atoms in structure
+    unsigned int count; //Number of atoms in structure
     bool *has_interaction;
     
     int *submatrix_rows[2];
@@ -47,6 +47,7 @@ struct RNA_data
     size_t get_WC_target(int res);
     gsl_matrix* get_WC_target_matrix(int res);
     gsl_matrix* get_WC_target_matrix_copy(int res);
+    int get_residue_COM_index(int res);
     void print();
     void print_target(int res);
     void print_WC_target(int res);

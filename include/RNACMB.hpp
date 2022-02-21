@@ -38,6 +38,7 @@ extern char GLOBAL_IO_ACTION[5];
 extern bool GLOBAL_RUN_COMBINATORIAL;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST;
+extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING; /* This will probably be a temporary setting */
 extern bool GLOBAL_WRITE_COORDINATES;
 extern bool GLOBAL_PERFORM_HAIRPIN_CHECK;
 

@@ -81,7 +81,7 @@ void RNA_data::make_submatrices()
 
         int rel_idx = 0;
 
-        for (int j = 0; j < count; j++)
+        for (unsigned int j = 0; j < count; j++)
         {
             for (int k = 0; k < count_per_sub[i]; k++)
             {
@@ -197,7 +197,7 @@ void RNA_data::make_WC_submatrices(bool first_run)
 
         int rel_idx = 0;
 
-        for (int j = 0; j < count; j++)
+        for (unsigned int j = 0; j < count; j++)
         {
             for (unsigned int k = 0; k < count_per_WC_sub[i]; k++)
             {
@@ -280,6 +280,11 @@ gsl_matrix *RNA_data::get_WC_target_matrix_copy(int res)
     return rtn;
 }
 
+int RNA_data::get_residue_COM_index(int res)
+{
+    return (count + res);
+}
+
 void RNA_data::print()
 {
     for (unsigned int i = 0; i < data_matrix->size1; i++)
@@ -315,7 +320,7 @@ void RNA_data::print_WC_target(int res)
 
 void RNA_data::reset_interactions()
 {
-    for (int i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         has_interaction[i] = false;
     }
@@ -336,7 +341,7 @@ void RNA_data::print(int res)
 
 int RNA_data::to_string(char *s, int buffer_size, int string_index)
 {
-    for (unsigned int i = 0; i < data_matrix->size1; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         string_index += snprintf(&s[string_index], buffer_size - string_index, "%-6s%5d %4s %3c  %4d    ", "ATOM", atom_data->index[i], atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i]);
         for (unsigned int j = 0; j < data_matrix->size2; j++)
@@ -350,7 +355,7 @@ int RNA_data::to_string(char *s, int buffer_size, int string_index)
 
 void RNA_data::print_offset(int res, int position)
 {
-    for (unsigned int i = 0; i < data_matrix->size1; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         if (atom_data->dnt_pos[i] != (res + 1))
             continue;
@@ -363,7 +368,7 @@ void RNA_data::print_offset(int res, int position)
 
 int RNA_data::to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset)
 {
-    for (unsigned int i = 0; i < data_matrix->size1; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         if (atom_data->dnt_pos[i] != (res + 1))
             continue;
@@ -484,7 +489,7 @@ void RNA_data_array::update_energy()
         {
             if (i != j)
             {
-                for (int k = 0; k < sequence[i]->count; k++)
+                for (unsigned int k = 0; k < sequence[i]->count; k++)
                 {
                     if (i != 0)
                     {
@@ -501,7 +506,7 @@ void RNA_data_array::update_energy()
                     {
                         continue;
                     }
-                    for (int l = 0; l < sequence[j]->count; l++)
+                    for (unsigned int l = 0; l < sequence[j]->count; l++)
                     {
                         if (sequence[j]->has_interaction[l] == true)
                         {

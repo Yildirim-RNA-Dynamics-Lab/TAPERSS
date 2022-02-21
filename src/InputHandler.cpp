@@ -185,6 +185,11 @@ void read_input_file(char *file_name)
                 GLOBAL_RUN_BUILD_STRUCTURE_LIST = true;
                 GLOBAL_WRITE_COORDINATES = true;
             }
+            if (!strcasecmp(str1, "strlisttest"))
+            {
+                GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING = true;
+                GLOBAL_WRITE_COORDINATES = true;
+            }
             continue;
         }
         if (!strcmp(header, "STRUCTCHECK"))

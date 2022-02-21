@@ -14,7 +14,7 @@ BINDIR = ./bin/
 SRCDIR = ./src/
 INCDIR = ./include/
 
-_OBJ = Atom_info Attaching_Functions CMB_Manager Combinatorial_Addition DimerLib Hairpin InputHandler Kabsch output_string RNA_data RNA_Math StructureBuilders Main Globals
+_OBJ = Atom_info Attaching_Functions steric_clash_check CMB_Manager Combinatorial_Addition DimerLib Hairpin InputHandler Kabsch output_string RNA_data RNA_Math StructureBuilders Main Globals
 OBJ = $(patsubst %, %.o,$(_OBJ))
 PRFOBJ = $(patsubst %, %_profiled.o,$(_OBJ))
 SRC = $(patsubst %,$(SRCDIR)%.cpp,$(_OBJ))

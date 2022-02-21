@@ -73,6 +73,20 @@ int main(int argc, char *ARGV[])
         }
         free(GLOBAL_INPUT_INDICES_LIST);
     }
+    if (GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING)
+    {
+        printf("Reading input... ");
+        int num_strs = read_input_index_file(GLOBAL_INPUT_FILE, N_diNts);
+        printf("Done!\n");
+    
+        printf("Creating structures from index list for testing...\n");
+        create_custom_structure_list_testing(Library, RNA, output_s, num_strs);
+        for (int i = 0; i < num_strs; i++)
+        {
+            free(GLOBAL_INPUT_INDICES_LIST[i]);
+        }
+        free(GLOBAL_INPUT_INDICES_LIST);
+    }
 
     /* PDB FORMAT: printf("%-6s%5d %4s %3s  %4d    %8.3f%8.3f%8.3f\n", "ATOM", index , name, residue, residue ID, X, Y, Z)*/
 
