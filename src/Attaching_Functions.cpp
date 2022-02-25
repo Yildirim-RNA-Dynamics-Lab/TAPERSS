@@ -34,10 +34,11 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
 
 attach_status check_attachment(RNA_data_array &sequence, RNA_data *attach)
 {
-    if (!steric_clash_check(sequence, attach))
+    attach_status status;
+    if ((status = steric_clash_check_COM(sequence, attach)) != ATTACHED)
     {
         *attach->_flag = NOT_USABLE;
-        return FAILED;
+        return status;
     }
     return ATTACHED;
 }

@@ -38,6 +38,13 @@ bool combinatorial_addition(DimerLibArray &Lib, RNA_data_array &assembled, CMB_M
         {
             break;
         }
+        else if (status == FAILED_SC)
+        {
+            assembled.add_move(attach);
+            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            o_string.add_string((char *)"!!!!!!Unexpected steric class!!!!!!", sizeof("!!!!!!Unexpected steric class!!!!!!"));
+            return true;
+        }
     }
     if (status == FAILED)
     {

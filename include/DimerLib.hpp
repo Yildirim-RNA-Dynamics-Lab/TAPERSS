@@ -14,11 +14,12 @@ struct DimerLib
     float*            energy;
     char*             name;
     int               count; //Number of structures in Library
+    double*           radii[2];
     flag*             flags; 
 
     DimerLib(int n, int a_n, int e_n);
     ~DimerLib();
-    void save_lib(gsl_matrix** d_m, float* e, char* n);
+    void save_lib(gsl_matrix** d_m, float* e, char* n, double** r);
     void clear_flags();
 };
 
@@ -36,7 +37,7 @@ struct DimerLibArray
     DimerLib* operator[](int i);
     void alloc_lib(int n, int a_n, int e_n);
     void add_to_atom_info(char *N, int i, char r, int p);
-    void add_lib(gsl_matrix** d_m, float* e, char* n);
+    void add_lib(gsl_matrix** d_m, float* e, char* n, double** r);
     void reset_flags(bool *reset);
     void print_dimer_info(int i);
     void print_matrix(int i, int j);

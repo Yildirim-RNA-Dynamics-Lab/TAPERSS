@@ -26,6 +26,8 @@ struct RNA_data
     int sub_starts_at[2];
     size_t count_per_WC_sub[2];
 
+    double COM_Radii[2];
+
     int position_max;
     atom_id *target;
     
@@ -97,6 +99,7 @@ struct RNA_data_array
     int out_string_header();
     char* to_string();
     int *get_index();
+    void print_index();
 };
 
 #endif

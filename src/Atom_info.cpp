@@ -287,6 +287,24 @@ void atom_info::move(atom_info &A)
     count = A.count;
 }
 
+/**
+ * @brief Gets the index of the specified atom belonging to residue residx, or returns -1 if atom is not found.
+ * 
+ * @param atom_name atom_id of desired atom 
+ * @param residx residue number of atom (starting from 0)
+ */
+int atom_info::get_idx_of_atom(atom_id atom_name, int residx)
+{
+    for(int i = 0; i < count; i++)
+    {
+        if(dnt_pos[i] == residx + 1 && atom_ids[i] == atom_name)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void atom_info::print_at(int line)
 {
     printf("%-6s%5d %4s %3c  %4d    ", "ATOM", index[line], name[line], residue[line], dnt_pos[line]);

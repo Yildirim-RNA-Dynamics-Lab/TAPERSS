@@ -1,23 +1,42 @@
 #include "RNA_data.hpp"
 
+/**
+ * @brief Construct a new rna data::rna data object
+ * 
+ * @param L Dimer Library Array
+ * @param i Index of DimerLib (which DNT will be used)
+ * @param j Index of model in library
+ * @param WC Is this RNA_data for watson crick data
+ */
 RNA_data::RNA_data(DimerLibArray &L, int i, int j, bool WC)
 {
     atom_data = (L[i]->atom_data);
     data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1, L[i]->data_matrices[j]->size2);
     gsl_matrix_memcpy(data_matrix, L[i]->data_matrices[j]);
+    
     energy = L[i]->energy[j];
+
     name = (char *)malloc(sizeof(char) * 3);
     memcpy(name, L[i]->name, sizeof(char) * 3);
+
     count = L[i]->atom_data->count;
+        
     _flag = &(L[i]->flags[j]);
+
     position_in_lib[0] = i;
     position_in_lib[1] = j;
     position_max = L[i]->count - 1;
+
     id = rna_dat_tracker++;
+    
     is_for_WC = WC;
     WC ? make_WC_submatrices(true) : make_submatrices();
     WC_secondary = false;
+
     has_interaction = (bool *)calloc(count, sizeof(bool));
+
+    COM_Radii[0] = L[i]->radii[0][j];
+    COM_Radii[1] = L[i]->radii[1][j];
 }
 
 void RNA_data::overwrite(DimerLibArray &L, int i, int j)
@@ -656,7 +675,7 @@ char *RNA_data_array::to_string()
     return string_out;
 }
 
-int *RNA_data_array::get_index()
+int* RNA_data_array::get_index()
 {
     int *ar = (int *)malloc(sizeof(int) * count);
     for (int i = 0; i < count; i++)
@@ -664,4 +683,16 @@ int *RNA_data_array::get_index()
         ar[i] = sequence[i]->position_in_lib[1];
     }
     return ar;
+}
+
+void RNA_data_array::print_index()
+{
+    for (int i = 0; i < count; i++)
+    {
+        if(i == count -1)
+        {
+            printf("%d\n", sequence[i]->position_in_lib[1]);    
+        }
+        printf("%d-", sequence[i]->position_in_lib[1]);
+    }
 }
