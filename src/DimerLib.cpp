@@ -43,6 +43,12 @@ void DimerLib::save_lib(gsl_matrix **d_m, float *e, char *n, double** r)
     memcpy(name, n, sizeof(char) * 3);
     memcpy(radii[0], r[0], sizeof(double) * count);
     memcpy(radii[1], r[1], sizeof(double) * count);
+
+    //for(int i = 0; i < count; i++)
+    //{
+     //   printf("%d  %s: 1:%f 2:%f\n", i, name, radii[0][i], radii[1][i]);
+    //}
+    //putchar('\n');
 }
 
 void DimerLib::clear_flags()
@@ -202,7 +208,7 @@ void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
 }
 
 /**
- * @brief Calculates Steric Clash COM (SCC) radius for SC Optimization. First the distance between the Phosphate Oxygens (OP1 and OP2) and the COM is calculated.
+ * @brief Calculates Steric Clash COM (SCC) radius for SC Optimization. First the distance between the phosphate oxygens (OP1 and OP2) and the COM is calculated.
  * Then the same is done but for the functional groups of the residue (N6, N2, O6, O2, N4, O4). The greatest distance between COM and either functional group or
  * residue used to set the radius of the COM sphere. (Radius of the COM sphere = distance + 1)
  * 
@@ -371,10 +377,13 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
             {
                 if (first_itr)
                     first_itr = false;
-
-                calculate_dnt_COM(data_mats[iterator], RTN[RTN.iterator]->atom_data);
-                calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[0][iterator], 0);
-                calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
+                
+                if(!for_WC)
+                {
+                    calculate_dnt_COM(data_mats[iterator], RTN[RTN.iterator]->atom_data);
+                    calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[0][iterator], 0);
+                    calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
+                }                
                 iterator++;
                 row = 0;
             }
@@ -390,6 +399,12 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         tmp[0] = for_WC ? LibNames[i][name_position] : LibNames[i][name_position];
         tmp[1] = for_WC ? LibNames[i][name_position + 1] : LibNames[i][name_position + 1];
         tmp[2] = '\0';
+
+        for(int i = 0; i < model_info[model_count]; i++)
+        {
+            //printf("%d  %s: 1:%f 2:%f\n", i, tmp, _radii[0][i], _radii[1][i]);
+        }
+        //putchar('\n');
 
         RTN.add_lib(data_mats, energies, tmp, _radii);
         free(data_mats);

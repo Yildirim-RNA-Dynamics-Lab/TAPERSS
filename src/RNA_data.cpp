@@ -47,7 +47,9 @@ void RNA_data::overwrite(DimerLibArray &L, int i, int j)
     count = L[i]->atom_data->count;
     _flag = &(L[i]->flags[j]);
     position_in_lib[0] = i;
-    position_in_lib[1] = j;
+    position_in_lib[1] = j;    
+    COM_Radii[0] = L[i]->radii[0][j];
+    COM_Radii[1] = L[i]->radii[1][j];
     is_for_WC ? update_WC_submatrices() : update_submatrices();
 }
 
@@ -408,6 +410,7 @@ RNA_data_array::RNA_data_array(int size)
     count = 0;
     structure_energy = 0;
 }
+
 RNA_data_array::~RNA_data_array()
 {
     // printf("iterator is @ %d\n", iterator);
@@ -419,21 +422,25 @@ RNA_data_array::~RNA_data_array()
     if (string_initialized)
         free(string_out);
 }
+
 RNA_data *RNA_data_array::operator[](int i)
 {
     return sequence[i];
 }
+
 void RNA_data_array::add_copy(RNA_data *A)
 {
     *sequence[++iterator] = *A;
     count++;
 }
+
 void RNA_data_array::add_move(RNA_data *A)
 {
     sequence[++iterator] = A;
     count++;
     *A->_flag = USED;
 }
+
 RNA_data *RNA_data_array::current()
 {
     return sequence[iterator];

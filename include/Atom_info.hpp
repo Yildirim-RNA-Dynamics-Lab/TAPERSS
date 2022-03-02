@@ -14,9 +14,9 @@ struct atom_info
     int*         dnt_pos;
     atom_id*     atom_ids;
     atom_charge* charges;
-    int     count;            // Number of atoms per structure
-    int     count_per_res[2]; // Number of atoms per residue 1 and 2
-    int     iterator;
+    int          count;            // Number of atoms per structure
+    unsigned int count_per_res[2]; // Number of atoms per residue 1 and 2
+    int          iterator;
     
     atom_info();
     atom_info(int n);

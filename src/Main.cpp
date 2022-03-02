@@ -53,6 +53,9 @@ int main(int argc, char *ARGV[])
         {
             printf("# of Hairpins Built: %ld\n", manager.hairpins_built);
         }
+        printf("# of Steric Clash Checks Attempted: %ld\n", steric_clash_checks_attempted);
+        printf("# of Steric Clash Checks Skipped: %ld\n", steric_clash_checks_skipped);
+        printf("%% of Steric Clash Checks Skipped: %f\n", (float)steric_clash_checks_skipped/(float)steric_clash_checks_attempted * 100);
     }
     if (GLOBAL_RUN_BUILD_STRUCTURE)
     {

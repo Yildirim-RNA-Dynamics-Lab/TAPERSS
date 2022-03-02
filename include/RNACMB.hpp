@@ -29,6 +29,8 @@ constexpr int MAX_STRINGS = 1000;
 
 /* Global Variables */
 extern long int rna_dat_tracker;
+extern long unsigned int steric_clash_checks_attempted;
+extern long unsigned int steric_clash_checks_skipped;
 
 extern char GLOBAL_INPUT_SEQUENCE[100];
 extern char GLOBAL_INPUT_INDICES[100];
