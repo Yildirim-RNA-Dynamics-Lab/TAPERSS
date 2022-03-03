@@ -224,6 +224,15 @@ attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_
             SCC_dist[0] = distance(&attach_COM.vector, &sequence_COM.vector);
             iterator_start = 0;
             sequence_radius[0] = sequence[i]->COM_Radii[0];
+            //printf("%d::Attach: \n", this_index);
+            //print_vector(&attach_COM.vector);
+            //printf("Radius: %f\n", attach_radius);
+
+            //printf("0::Sequence: \n");
+            //print_vector(&sequence_COM.vector);
+            //printf("Radius: %f\n", sequence_radius[0]);
+    
+
             if(SCC_dist[0] > (sequence_radius[0] + attach_radius))
             {
                 steric_clash_checks_skipped++;

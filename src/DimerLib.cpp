@@ -287,6 +287,25 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 }
 
+void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, int res_id)
+{
+    gsl_vector_view V, COM;
+    double dist;
+
+    COM = gsl_matrix_row(A, A->size1 - (2 - res_id));
+
+    for(unsigned int i = (res_id == 0 ? 0 : A_info->count_per_res[0]); i < (res_id == 0 ? A_info->count_per_res[0] : A_info->count_per_res[1]);  i++)
+    {
+        V = gsl_matrix_row(A, i);
+        dist = distance(&COM.vector, &V.vector);
+        if(dist > *radius)
+        {
+            printf("%s is outside sphere!\n", A_info->name[i]);
+            *radius = dist + 0.25;
+        }
+    }
+}
+
 void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
 {
     enum
@@ -383,6 +402,8 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
                     calculate_dnt_COM(data_mats[iterator], RTN[RTN.iterator]->atom_data);
                     calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[0][iterator], 0);
                     calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
+                    check_if_all_in_sphere(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[0][iterator], 0);
+                    check_if_all_in_sphere(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
                 }                
                 iterator++;
                 row = 0;

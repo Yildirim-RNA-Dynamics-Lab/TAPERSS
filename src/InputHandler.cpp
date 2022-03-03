@@ -137,6 +137,11 @@ int read_input_index_file(char *file_name, int n_DiNts)
 void read_input_file(char *file_name)
 {
     FILE *input = fopen(file_name, "r");
+    if(input == nullptr)
+    {
+        printf("Could not open file: %s\n", file_name);
+        exit(3);
+    }
     char line[100];
     while (fgets(line, sizeof(line), input))
     {
