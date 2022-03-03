@@ -26,7 +26,7 @@ profile: 	$(BINDIR)Ivan_RNACMB_profile
 production: $(BINDIR)Ivan_RNACMB
 
 $(OBJ): 
-	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst .o,.cpp,$@) $(LIBS) -I $(INCDIR)
+	$(CC) $(CFLAGS) -g -o $(OBJDIR)$@ -c $(SRCDIR)$(subst .o,.cpp,$@) $(LIBS) -I $(INCDIR)
 
 $(PRFOBJ): 
 	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) $(LIBS) -I $(INCDIR) -pg
