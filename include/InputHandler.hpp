@@ -3,8 +3,8 @@
 
 #include "RNACMB.hpp"
 
-char** get_diNt_names(char* sequence, int *N_diNts);
-char** get_WC_partner(char* sequence, int *N_WC);
+void get_diNt_names(char* sequence, char** rtn, int N_diNts);
+void get_WC_partner(char* sequence, char** rtn, int N_Nts);
 void get_index_int(char *index, int *indices);
 int read_input_index_file(char *file_name, int n_DiNts);
 void read_input_file(char *file_name);

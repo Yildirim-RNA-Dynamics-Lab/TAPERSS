@@ -1,23 +1,23 @@
 #include "InputHandler.hpp"
 
-char **get_diNt_names(char *sequence, int *N_diNts)
+void get_diNt_names(char *sequence, char** rtn, int N_diNts)
 {
     int name_position = -1;
-    *N_diNts = strlen(sequence) - 1;
-    char **rtn = (char **)malloc(sizeof(char *) * *N_diNts);
+    //*N_diNts = strlen(sequence) - 1;
+    //char **rtn = (char **)malloc(sizeof(char *) * *N_diNts);
     while (LIBRARY_FILENAME_PROTOTYPE[name_position++] != 'X')
         ;
     name_position -= 1;
-    for (int i = 0; i < *N_diNts; i++)
+    for (int i = 0; i < N_diNts; i++)
     {
         rtn[i] = (char *)malloc(sizeof(char) * sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(rtn[i], LIBRARY_FILENAME_PROTOTYPE, sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(&rtn[i][name_position], sequence++, sizeof(char) * 2);
     }
-    return rtn;
+    //return rtn;
 }
 
-char **get_WC_partner(char *sequence, int *N_WC)
+void get_WC_partner(char *sequence, char** rtn, int N_Nts)
 {
     char WC_pair[3];
 
@@ -26,15 +26,9 @@ char **get_WC_partner(char *sequence, int *N_WC)
         ;
     name_position -= 1;
 
-    int seq_count = 0;
-    while (sequence[seq_count++] != '\0')
-        ;
-    seq_count -= 2;
-
     WC_pair[0] = sequence[0];
-    WC_pair[1] = sequence[seq_count];
+    WC_pair[1] = sequence[N_Nts - 1];
     WC_pair[2] = '\0';
-    *N_WC = 1;
 
     if (WC_pair[0] == 'A')
     {
@@ -69,12 +63,9 @@ char **get_WC_partner(char *sequence, int *N_WC)
         }
     }
 
-    char **rtn = (char **)malloc(sizeof(char *) * *N_WC);
-    rtn[0] = (char *)malloc(sizeof(WATSON_CRICK_LIBRARY_PROTOTYPE));
-
-    memcpy(rtn[0], WATSON_CRICK_LIBRARY_PROTOTYPE, sizeof(WATSON_CRICK_LIBRARY_PROTOTYPE));
+    *rtn = (char *)malloc(sizeof(WATSON_CRICK_LIBRARY_PROTOTYPE));
+    memcpy(*rtn, WATSON_CRICK_LIBRARY_PROTOTYPE, sizeof(WATSON_CRICK_LIBRARY_PROTOTYPE));
     memcpy(&rtn[0][name_position], WC_pair, sizeof(char) * 2);
-    return rtn;
 }
 
 void get_index_int(char *index, int *indices)
@@ -195,6 +186,7 @@ void read_input_file(char *file_name)
                 GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING = true;
                 GLOBAL_WRITE_COORDINATES = true;
             }
+
             continue;
         }
         if (!strcmp(header, "STRUCTCHECK"))
@@ -204,11 +196,15 @@ void read_input_file(char *file_name)
             str1[strcspn(str1, "\n")] = '\0';
             if (!strcasecmp(str1, "HAIRPIN"))
             {
-                GLOBAL_PERFORM_HAIRPIN_CHECK = true;
+                GLOBAL_PERFORM_STRUCTCHECK = HAIRPIN;
+            }
+            if(!strcasecmp(str1, "INTERNAL_LOOP"))
+            {
+                GLOBAL_PERFORM_STRUCTCHECK = INTERNAL_LOOP;
             }
             if (!strcasecmp(str1, "NONE"))
             {
-                GLOBAL_PERFORM_HAIRPIN_CHECK = false;
+                GLOBAL_PERFORM_STRUCTCHECK = NONE;
             }
         }
         if (!strcmp(header, "INPUTFILE"))

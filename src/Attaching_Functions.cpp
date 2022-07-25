@@ -1,6 +1,6 @@
 #include "Attaching_Functions.hpp"
 
-attach_status rotate(RNA_data *reference, RNA_data *rotated)
+attach_status rotate(RNAData *reference, RNAData *rotated)
 {
     double rmsd_;
     double COMP[] = {0, 0, 0};
@@ -11,7 +11,15 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
     gsl_matrix *P = rotated->get_target_matrix_copy(0);
     gsl_matrix *Q = reference->get_target_matrix_copy(1);
     gsl_matrix *R;
-
+    
+    /*
+    printf("################Residue name: %s\n", reference->name);
+    print_gsl_matrix(reference->data_matrix);
+    print_gsl_matrix(Q);
+    printf("################Residue name: %s\n", rotated->name);
+    print_gsl_matrix(P);
+    */
+    
     R = kabsch_get_rotation_matrix_generic(P, Q, COMP, COMQ);
     rmsd_ = rmsd_generic(P, Q);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
@@ -20,10 +28,12 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
         translate_matrix(COMP, MODEL, -1.0F);
         apply_rotation_matrix(R, MODEL);
         translate_matrix(COMQ, MODEL, 1.0F);
+        *rotated->_flag = USED;
     }
     else
     {
         // printf("RMSD FAIL\n");
+        *rotated->_flag = NOT_USABLE;
     }
 
     gsl_matrix_free(P);
@@ -32,7 +42,7 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
     return status;
 }
 
-attach_status check_attachment(RNA_data_array &sequence, RNA_data *attach)
+attach_status check_attachment(RNADataArray &sequence, RNAData *attach)
 {
     attach_status status;
     if ((status = steric_clash_check_COM(sequence, attach)) != ATTACHED)

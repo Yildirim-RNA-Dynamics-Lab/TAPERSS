@@ -1,4 +1,4 @@
-#include "RNA_data.hpp"
+#include "RNAData.hpp"
 
 /**
  * @brief Construct a new rna data::rna data object
@@ -8,7 +8,7 @@
  * @param j Index of model in library
  * @param WC Is this RNA_data for watson crick data
  */
-RNA_data::RNA_data(DimerLibArray &L, int i, int j, bool WC)
+RNAData::RNAData(DimerLibArray &L, int i, int j, bool WC)
 {
     atom_data = (L[i]->atom_data);
     data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1, L[i]->data_matrices[j]->size2);
@@ -39,7 +39,7 @@ RNA_data::RNA_data(DimerLibArray &L, int i, int j, bool WC)
     COM_Radii[1] = L[i]->radii[1][j];
 }
 
-void RNA_data::overwrite(DimerLibArray &L, int i, int j)
+void RNAData::overwrite(DimerLibArray &L, int i, int j)
 {
     gsl_matrix_memcpy(data_matrix, L[i]->data_matrices[j]);
     energy = L[i]->energy[j];
@@ -53,7 +53,7 @@ void RNA_data::overwrite(DimerLibArray &L, int i, int j)
     is_for_WC ? update_WC_submatrices() : update_submatrices();
 }
 
-RNA_data::~RNA_data()
+RNAData::~RNAData()
 {
     // printf("Deallocationg %ld\n", id);
     gsl_matrix_free(data_matrix);
@@ -90,7 +90,7 @@ RNA_data::~RNA_data()
     }
 }
 
-void RNA_data::make_submatrices()
+void RNAData::make_submatrices()
 {
     submatrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * 2);
 
@@ -120,7 +120,7 @@ void RNA_data::make_submatrices()
     }
 }
 
-void RNA_data::update_submatrices()
+void RNAData::update_submatrices()
 {
     for (int i = 0; i < 2; i++)
     {
@@ -133,7 +133,7 @@ void RNA_data::update_submatrices()
     }
 }
 
-size_t RNA_data::get_target(int res)
+size_t RNAData::get_target(int res)
 {
     constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
     constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
@@ -171,19 +171,19 @@ size_t RNA_data::get_target(int res)
     }
 }
 
-gsl_matrix *RNA_data::get_target_matrix(int res)
+gsl_matrix *RNAData::get_target_matrix(int res)
 {
     return submatrices[res];
 }
 
-gsl_matrix *RNA_data::get_target_matrix_copy(int res)
+gsl_matrix *RNAData::get_target_matrix_copy(int res)
 {
     gsl_matrix *rtn = gsl_matrix_alloc(count_per_sub[res], 3);
     gsl_matrix_memcpy(rtn, submatrices[res]);
     return rtn;
 }
 
-void RNA_data::make_WC_submatrices(bool first_run)
+void RNAData::make_WC_submatrices(bool first_run)
 {
     // printf("%ld: name is %s\n", id, name);
     if (!first_run)
@@ -237,7 +237,7 @@ void RNA_data::make_WC_submatrices(bool first_run)
     }
 }
 
-void RNA_data::update_WC_submatrices()
+void RNAData::update_WC_submatrices()
 {
     for (int i = 0; i < 2; i++)
     {
@@ -250,7 +250,7 @@ void RNA_data::update_WC_submatrices()
     }
 }
 
-size_t RNA_data::get_WC_target(int res)
+size_t RNAData::get_WC_target(int res)
 {
     constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6 /*, C1p, C2p, C3p, C4p, O4p*/};
     constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
@@ -288,25 +288,25 @@ size_t RNA_data::get_WC_target(int res)
     }
 }
 
-gsl_matrix *RNA_data::get_WC_target_matrix(int res)
+gsl_matrix *RNAData::get_WC_target_matrix(int res)
 {
     // printf("size of WC_submatrix = %ld\n", WC_submatrices[res]->size1);
     return WC_submatrices[res];
 }
 
-gsl_matrix *RNA_data::get_WC_target_matrix_copy(int res)
+gsl_matrix *RNAData::get_WC_target_matrix_copy(int res)
 {
     gsl_matrix *rtn = gsl_matrix_alloc(count_per_WC_sub[res], 3);
     gsl_matrix_memcpy(rtn, WC_submatrices[res]);
     return rtn;
 }
 
-int RNA_data::get_residue_COM_index(int res)
+int RNAData::get_residue_COM_index(int res)
 {
     return (count + res);
 }
 
-void RNA_data::print()
+void RNAData::print()
 {
     for (unsigned int i = 0; i < data_matrix->size1; i++)
     {
@@ -317,7 +317,7 @@ void RNA_data::print()
     }
 }
 
-void RNA_data::print_target(int res)
+void RNAData::print_target(int res)
 {
     for (int i = 0; i < count_per_sub[res]; i++)
     {
@@ -328,7 +328,7 @@ void RNA_data::print_target(int res)
     }
 }
 
-void RNA_data::print_WC_target(int res)
+void RNAData::print_WC_target(int res)
 {
     for (unsigned int i = 0; i < count_per_WC_sub[res]; i++)
     {
@@ -339,7 +339,7 @@ void RNA_data::print_WC_target(int res)
     }
 }
 
-void RNA_data::reset_interactions()
+void RNAData::reset_interactions()
 {
     for (unsigned int i = 0; i < count; i++)
     {
@@ -347,7 +347,7 @@ void RNA_data::reset_interactions()
     }
 }
 
-void RNA_data::print(int res)
+void RNAData::print(int res)
 {
     for (unsigned int i = 0; i < data_matrix->size1; i++)
     {
@@ -360,7 +360,7 @@ void RNA_data::print(int res)
     }
 }
 
-int RNA_data::to_string(char *s, int buffer_size, int string_index)
+int RNAData::to_string(char *s, int buffer_size, int string_index)
 {
     for (unsigned int i = 0; i < count; i++)
     {
@@ -374,7 +374,7 @@ int RNA_data::to_string(char *s, int buffer_size, int string_index)
     return string_index;
 }
 
-void RNA_data::print_offset(int res, int position)
+void RNAData::print_offset(int res, int position)
 {
     for (unsigned int i = 0; i < count; i++)
     {
@@ -387,7 +387,7 @@ void RNA_data::print_offset(int res, int position)
     }
 }
 
-int RNA_data::to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset)
+int RNAData::to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset)
 {
     for (unsigned int i = 0; i < count; i++)
     {
@@ -402,16 +402,27 @@ int RNA_data::to_string_offset(int res, int position, char *s, int buffer_size, 
     return string_index;
 }
 
-RNA_data_array::RNA_data_array(int size)
+void RNADataArray::initialize(int size)
 {
     iterator_max = size - 1;
-    sequence = (RNA_data **)malloc(sizeof(RNA_data *) * size);
+    sequence = (RNAData **)malloc(sizeof(RNAData *) * size);
     iterator = -1;
     count = 0;
     structure_energy = 0;
 }
 
-RNA_data_array::~RNA_data_array()
+RNADataArray::RNADataArray(){}
+
+RNADataArray::RNADataArray(const RNADataArray &RDA)
+{
+    iterator_max = RDA.iterator_max;
+    sequence = (RNAData **)malloc(sizeof(RNAData *) * RDA.iterator_max + 1);
+    iterator = RDA.iterator;
+    count = RDA.count;
+    structure_energy = RDA.structure_energy;
+}
+
+RNADataArray::~RNADataArray()
 {
     // printf("iterator is @ %d\n", iterator);
     for (int i = 0; i < count; i++)
@@ -423,35 +434,35 @@ RNA_data_array::~RNA_data_array()
         free(string_out);
 }
 
-RNA_data *RNA_data_array::operator[](int i)
+RNAData *RNADataArray::operator[](int i)
 {
     return sequence[i];
 }
 
-void RNA_data_array::add_copy(RNA_data *A)
+void RNADataArray::add_copy(RNAData *A)
 {
     *sequence[++iterator] = *A;
     count++;
 }
 
-void RNA_data_array::add_move(RNA_data *A)
+void RNADataArray::add_move(RNAData *A)
 {
     sequence[++iterator] = A;
     count++;
     *A->_flag = USED;
 }
 
-RNA_data *RNA_data_array::current()
+RNAData *RNADataArray::current()
 {
     return sequence[iterator];
 }
 
-bool RNA_data_array::is_complete()
+bool RNADataArray::is_complete()
 {
     return iterator == iterator_max ? true : false;
 }
 
-void RNA_data_array::rollback()
+void RNADataArray::rollback()
 {
     DEBUG(printf("attach: %ld deleted @ rollback @ %d\n", sequence[iterator]->id, iterator));
     delete sequence[iterator];
@@ -459,7 +470,7 @@ void RNA_data_array::rollback()
     count--;
 }
 
-void RNA_data_array::safe_rollback() // unused
+void RNADataArray::safe_rollback() // unused
 {
     if (sequence[iterator]->position_in_lib[1] == sequence[iterator]->position_max)
         ;
@@ -469,7 +480,7 @@ void RNA_data_array::safe_rollback() // unused
     count--;
 }
 
-void RNA_data_array::rollback_by(int amount)
+void RNADataArray::rollback_by(int amount)
 {
     for (int i = iterator; i > (iterator - (amount + 1)); i--)
     {
@@ -481,19 +492,19 @@ void RNA_data_array::rollback_by(int amount)
     // printf("moving to pos: %d\n", iterator);
 }
 
-bool RNA_data_array::is_empty()
+bool RNADataArray::is_empty()
 {
     if (count == 0)
         return true;
     return false;
 }
 
-void RNA_data_array::update_WC_rmsd(float rmsd_val)
+void RNADataArray::update_WC_rmsd(float rmsd_val)
 {
     WC_rmsd = rmsd_val;
 }
 
-void RNA_data_array::reset_interactions()
+void RNADataArray::reset_interactions()
 {
     for (int i = 0; i < count; i++)
     {
@@ -501,7 +512,7 @@ void RNA_data_array::reset_interactions()
     }
 }
 
-void RNA_data_array::update_energy()
+void RNADataArray::update_energy()
 {
     float energy_ = 0.0;
     gsl_vector_view A, B;
@@ -570,7 +581,7 @@ void RNA_data_array::update_energy()
     structure_energy = energy_;
 }
 
-void RNA_data_array::printall()
+void RNADataArray::printall()
 {
     sequence[0]->print();
     for (int i = 1; i < count; i++)
@@ -579,7 +590,7 @@ void RNA_data_array::printall()
     }
 }
 
-void RNA_data_array::initialize_string()
+void RNADataArray::initialize_string()
 {
     get_atom_sum();
     // printf("atomsum = %d\n", atom_sum);
@@ -592,7 +603,7 @@ void RNA_data_array::initialize_string()
     string_initialized = true;
 }
 
-int RNA_data_array::get_atom_sum()
+int RNADataArray::get_atom_sum()
 {
     if (string_initialized)
         return atom_sum;
@@ -604,7 +615,7 @@ int RNA_data_array::get_atom_sum()
     return atom_sum;
 }
 
-int RNA_data_array::out_string_header()
+int RNADataArray::out_string_header()
 {
     if (GLOBAL_WRITE_COORDINATES)
     {
@@ -620,7 +631,7 @@ int RNA_data_array::out_string_header()
             }
         }
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
-        if (GLOBAL_PERFORM_HAIRPIN_CHECK)
+        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd);
         }
@@ -641,7 +652,7 @@ int RNA_data_array::out_string_header()
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\t");
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\t", structure_energy);
-        if (GLOBAL_PERFORM_HAIRPIN_CHECK)
+        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd);
@@ -651,7 +662,7 @@ int RNA_data_array::out_string_header()
     return string_index;
 }
 
-char *RNA_data_array::to_string()
+char *RNADataArray::to_string()
 {
     int idx_offset;
 
@@ -682,7 +693,7 @@ char *RNA_data_array::to_string()
     return string_out;
 }
 
-int* RNA_data_array::get_index()
+int* RNADataArray::get_index()
 {
     int *ar = (int *)malloc(sizeof(int) * count);
     for (int i = 0; i < count; i++)
@@ -692,7 +703,7 @@ int* RNA_data_array::get_index()
     return ar;
 }
 
-void RNA_data_array::print_index()
+void RNADataArray::print_index()
 {
     for (int i = 0; i < count; i++)
     {

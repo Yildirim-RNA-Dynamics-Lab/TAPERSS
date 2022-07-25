@@ -6,7 +6,7 @@
 #include "DimerLib.hpp"
 #include "RNA_Math.hpp"
 
-struct RNA_data
+struct RNAData
 {
     gsl_matrix *data_matrix;
     gsl_matrix **submatrices; //Submatrix for each residue corresponding to the target atoms. Ordered 5' to 3'.
@@ -36,9 +36,9 @@ struct RNA_data
     
     long int id;
 
-    RNA_data(DimerLibArray& L, int i, int j, bool WC = false);
+    RNAData(DimerLibArray& L, int i, int j, bool WC = false);
     void overwrite(DimerLibArray& L, int i, int j);
-    ~RNA_data();
+    ~RNAData();
     void make_submatrices();
     void update_submatrices();
     size_t get_target(int res);
@@ -60,9 +60,9 @@ struct RNA_data
     int to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset);
 };
 
-struct RNA_data_array
+struct RNADataArray
 {
-    RNA_data **sequence;
+    RNAData **sequence;
     gsl_matrix *WC_submatrix;
     int count;
     int iterator;
@@ -79,12 +79,14 @@ struct RNA_data_array
 
     int atom_sum;
 
-    RNA_data_array(int size);
-    ~RNA_data_array();
-    RNA_data* operator[](int i);
-    void add_copy(RNA_data* A);
-    void add_move(RNA_data* A);
-    RNA_data* current();
+    RNADataArray();
+    RNADataArray(const RNADataArray &RDA);
+    void initialize(int size);
+    ~RNADataArray();
+    RNAData* operator[](int i);
+    void add_copy(RNAData* A);
+    void add_move(RNAData* A);
+    RNAData* current();
     bool is_complete();
     void rollback();
     void safe_rollback();    //unused

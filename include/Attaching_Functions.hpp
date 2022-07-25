@@ -2,12 +2,12 @@
 #define ATTACH_FUNC_HPP
 
 #include "RNACMB.hpp"
-#include "RNA_data.hpp"
+#include "RNAData.hpp"
 #include "RNA_Math.hpp"
 #include "Kabsch.hpp"
 #include "steric_clash_check.hpp"
 
-attach_status rotate(RNA_data *reference, RNA_data *rotated);
-attach_status check_attachment(RNA_data_array& sequence, RNA_data *attach);
+attach_status rotate(RNAData *reference, RNAData *rotated);
+attach_status check_attachment(RNADataArray& sequence, RNAData *attach);
 
 #endif
