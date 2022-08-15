@@ -2,5 +2,6 @@
 bin/obj/*
 /bin/*
 !bin/obj
+!bin/obj/.gitignore
 .vscode/
 .gitignore
