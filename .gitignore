@@ -1,6 +1,6 @@
-!bin
-bin/
+!/bin/
+bin/obj/*
+/bin/*
 !bin/obj
-bin/obj/
 .vscode/
-!.gitignore
+.gitignore
