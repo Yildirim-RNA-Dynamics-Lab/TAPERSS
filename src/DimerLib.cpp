@@ -301,7 +301,7 @@ void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, in
         if(dist > *radius)
         {
             printf("%s is outside sphere!\n", A_info->name[i]);
-            *radius = dist + 0.25;
+            *radius = dist + 1;
         }
     }
 }

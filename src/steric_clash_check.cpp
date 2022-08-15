@@ -171,8 +171,8 @@ attach_status steric_clash_check_COM_tester(RNA_data_array& __restrict__ sequenc
                             printf("FAILED: %d:%c->%d:%c: %f\n", i, sequence[i]->name[0], this_index, attach->name[1], SCC_dist[0]);
                             printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[0]);
                             printf("%s :: %s = %f\n", sequence[i]->atom_data->name[j], attach->atom_data->name[k], dist);
-                            print_vector(&sequence_COM.vector);
-                            print_vector(&attach_COM.vector);
+                            gsl_vector_print(&sequence_COM.vector);
+                            gsl_vector_print(&attach_COM.vector);
                             return FAILED_SC;
                         }
                        // printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[0]);
@@ -184,8 +184,8 @@ attach_status steric_clash_check_COM_tester(RNA_data_array& __restrict__ sequenc
                             printf("FAILED: %d:%c->%d:%c: %f\n", i, sequence[i]->name[1], this_index, attach->name[1], SCC_dist[1]);
                             printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[1]);
                             printf("%s :: %s = %f\n", sequence[i]->atom_data->name[j], attach->atom_data->name[k], dist);
-                            print_vector(&sequence_COM.vector);
-                            print_vector(&attach_COM.vector);
+                            gsl_vector_print(&sequence_COM.vector);
+                            gsl_vector_print(&attach_COM.vector);
                             return FAILED_SC;                            
                         }
                         //printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[1]);
@@ -197,6 +197,7 @@ attach_status steric_clash_check_COM_tester(RNA_data_array& __restrict__ sequenc
     }
     return ATTACHED;
 }
+
 
 
 attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_data* __restrict__ attach)
@@ -211,7 +212,7 @@ attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_
     double SCC_dist[2];
     double attach_radius = attach->COM_Radii[1];
     double sequence_radius[2];
-    int this_index = sequence.count;
+    //int this_index = sequence.count;
 
     attach_COM = gsl_matrix_row(attach->data_matrix, attach->get_residue_COM_index(1));    
 
@@ -225,11 +226,11 @@ attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_
             iterator_start = 0;
             sequence_radius[0] = sequence[i]->COM_Radii[0];
             //printf("%d::Attach: \n", this_index);
-            //print_vector(&attach_COM.vector);
+            //gsl_vector_print(&attach_COM.vector);
             //printf("Radius: %f\n", attach_radius);
 
             //printf("0::Sequence: \n");
-            //print_vector(&sequence_COM.vector);
+            //gsl_vector_print(&sequence_COM.vector);
             //printf("Radius: %f\n", sequence_radius[0]);
     
 
@@ -310,43 +311,12 @@ attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_
                 dist = distance(&A.vector, &B.vector);
                 if (dist < (radius_1 + radius_2))
                 {                    
-                    if(sequence[i]->atom_data->dnt_pos[j] == 1)
-                    {   
-                        if(SCC_dist[0] > (sequence_radius[0] + attach_radius))
-                        {
-                            printf("FAILED: %d:%c->%d:%c: %f\n", i, sequence[i]->name[0], this_index, attach->name[1], SCC_dist[0]);
-                            printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[0]);
-                            printf("%s :: %s = %f\n", sequence[i]->atom_data->name[j], attach->atom_data->name[k], dist);
-                            print_vector(&sequence_COM.vector);
-                            print_vector(&attach_COM.vector);
-                            return FAILED_SC;
-                        }
-                       // printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[0]);
-                    }
-                    else
-                    {
-                        if(SCC_dist[1] > (sequence_radius[1] + attach_radius))
-                        {
-                            printf("FAILED: %d:%c->%d:%c: %f\n", i, sequence[i]->name[1], this_index, attach->name[1], SCC_dist[1]);
-                            printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[1]);
-                            printf("%s :: %s = %f\n", sequence[i]->atom_data->name[j], attach->atom_data->name[k], dist);
-                            print_vector(&sequence_COM.vector);
-                            print_vector(&attach_COM.vector);
-                            return FAILED_SC;                            
-                        }
-                        //printf("New Residue Radius == %f, Model Residue Radius == %f\n", attach_radius, sequence_radius[1]);
-                    }
                     return FAILED;
                 }
             }
         }
     }
     return ATTACHED;
-}
-
-void print_vector(gsl_vector* V)
-{
-    printf("%f %f %f\n", gsl_vector_get(V, 0), gsl_vector_get(V, 1), gsl_vector_get(V, 2));
 }
 
 void SCC_record_COM_distance(RNA_data_array &sequence, RNA_data *attach)

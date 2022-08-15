@@ -23,6 +23,7 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
     }
     else
     {
+        *rotated->_flag = NOT_USABLE;
         // printf("RMSD FAIL\n");
     }
 

@@ -64,15 +64,6 @@ void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M)
     gsl_matrix_free(M_TEMP);
 }
 
-double distance(gsl_vector *A, gsl_vector *B)
-{
-    double x, y, z;
-    x = gsl_vector_get(B, 0) - gsl_vector_get(A, 0);
-    y = gsl_vector_get(B, 1) - gsl_vector_get(A, 1);
-    z = gsl_vector_get(B, 2) - gsl_vector_get(A, 2);
-    return sqrt(square(x) + square(y) + square(z));
-}
-
 void gsl_matrix_print(gsl_matrix *M)
 {
     for (unsigned int i = 0; i < M->size1; i++)
@@ -81,4 +72,9 @@ void gsl_matrix_print(gsl_matrix *M)
             printf("%3.2f ", gsl_matrix_get(M, i, j));
         putchar('\n');
     }
+}
+
+void gsl_vector_print(gsl_vector* V)
+{
+    printf("%f %f %f\n", gsl_vector_get(V, 0), gsl_vector_get(V, 1), gsl_vector_get(V, 2));
 }

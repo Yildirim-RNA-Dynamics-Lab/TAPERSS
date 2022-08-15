@@ -183,17 +183,14 @@ void read_input_file(char *file_name)
             else if (!strcasecmp(str1, "str"))
             {
                 GLOBAL_RUN_BUILD_STRUCTURE = true;
-                GLOBAL_WRITE_COORDINATES = true;
             }
             if (!strcasecmp(str1, "strlist"))
             {
                 GLOBAL_RUN_BUILD_STRUCTURE_LIST = true;
-                GLOBAL_WRITE_COORDINATES = true;
             }
             if (!strcasecmp(str1, "strlisttest"))
             {
                 GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING = true;
-                GLOBAL_WRITE_COORDINATES = true;
             }
             continue;
         }
@@ -260,6 +257,21 @@ void read_input_file(char *file_name)
             // printf("%s\n", WATSON_CRICK_LIBRARY_PROTOTYPE);
             continue;
         }
+        if (!strcmp(header, "WRITE_COORDINATES"))
+        {
+            str1 = strtok(NULL, " ");
+            str1 = strtok(NULL, " ");
+            str1[strcspn(str1, "\n")] = '\0';
+            if (!strcasecmp(str1, "TRUE"))
+            {
+                GLOBAL_WRITE_COORDINATES = true;;
+            }
+            else if (!strcasecmp(str1, "FALSE"))
+            {
+                GLOBAL_WRITE_COORDINATES = false;
+            }
+            continue;
+        }
     }
     fclose(input);
 }
@@ -279,6 +291,11 @@ void input_handler(int argc, char *ARGV[])
             {
             case 'i':
                 read_input_file(ARGV[i + 1]);
+                break;
+            case 'n':
+                printf("%s\n", ARGV[i + 1]); 
+                strcpy(GLOBAL_INPUT_FILE, ARGV[i + 1]);
+                printf("%s\n", GLOBAL_INPUT_FILE);
                 break;
             case 'o':
                 // printf("%s\n", ARGV[i + 1]);

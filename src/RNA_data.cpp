@@ -534,7 +534,7 @@ void RNA_data_array::update_energy()
                     }
                     for (unsigned int l = 0; l < sequence[j]->count; l++)
                     {
-                        if (sequence[j]->has_interaction[l] == true)
+                        if (sequence[j]->has_interaction[l] == true || sequence[i]->has_interaction[k] == true)
                         {
                             continue;
                         }
@@ -548,6 +548,8 @@ void RNA_data_array::update_energy()
                         }
                         A = gsl_matrix_row(sequence[i]->data_matrix, k);
                         B = gsl_matrix_row(sequence[j]->data_matrix, l);
+                        //gsl_vector_print(&A.vector);
+                        //gsl_vector_print(&B.vector);
                         if (distance(&A.vector, &B.vector) < INTERACTION_DISTANCE)
                         {
                             if (sequence[i]->atom_data->charges[k] == sequence[j]->atom_data->charges[l])
@@ -556,17 +558,23 @@ void RNA_data_array::update_energy()
                             }
                             else
                             {
+                                //printf("----%d, %s, %d, %s: %f\n", i + sequence[i]->atom_data->dnt_pos[k], sequence[i]->atom_data->name[k], j + sequence[j]->atom_data->dnt_pos[l], sequence[j]->atom_data->name[l], distance(&A.vector, &B.vector));
                                 energy_ -= 1;
                                 sequence[j]->has_interaction[l] = true;
                                 sequence[i]->has_interaction[k] = true;
                             }
                         }
+                        else
+                        {
+                            //printf("%d, %s, %d, %s: %f\n", i + sequence[i]->atom_data->dnt_pos[k], sequence[i]->atom_data->name[k], j + sequence[j]->atom_data->dnt_pos[l], sequence[j]->atom_data->name[l], distance(&A.vector, &B.vector));
+                        }
                     }
                 }
             }
         }
-        reset_interactions();
     }
+    //exit(0);
+    reset_interactions();
     structure_energy = energy_;
 }
 

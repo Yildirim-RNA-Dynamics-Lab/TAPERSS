@@ -3,6 +3,7 @@ CC = /usr/bin/g++
 CFLAGS = -Wall
 CFLAGS += -W
 CFLAGS += -Werror
+CFLAGS += -Winline
 CFLAGS += -pedantic
 CFLAGS += -std=c++11 
 
