@@ -24,11 +24,6 @@ struct RNADataArrayInternalLoop : public RNADataArray
         structure_energy = 0;
     }
 
-    RNAData* current()
-    {
-        return sequence[iterator];
-    }
-
     bool inLeft_or_inRight(int working_pos) //return true if in left strand
     {
         if(working_pos == iterator_max_1 + 1)
@@ -58,7 +53,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         
         gsl_matrix *MODEL = WC_pair->data_matrix;
         gsl_matrix *P1 = WC_pair->get_target_matrix_copy(0);
-        assembled_ref->make_submatrices();
+        //assembled_ref->make_submatrices();
         gsl_matrix *Q1 = assembled_ref->get_target_matrix_copy(1);
         /*
         printf("################Residue name: %s\n", WC_pair->name);
@@ -74,14 +69,14 @@ struct RNADataArrayInternalLoop : public RNADataArray
         apply_rotation_matrix(R1, MODEL);
         translate_matrix(COMQ, MODEL, 1.0F);
 
-        WC_pair->make_submatrices();
+        //WC_pair->make_submatrices();
         WC_pair->update_submatrices();
         gsl_matrix_free(P1);
         gsl_matrix_free(Q1);
         gsl_matrix_free(R1);
 
         MODEL = to_be_assembled->data_matrix;
-        to_be_assembled->make_submatrices();
+        //to_be_assembled->make_submatrices();
         gsl_matrix *P2 = to_be_assembled->get_target_matrix_copy(0);
         gsl_matrix *Q2 = WC_pair->get_target_matrix_copy(1);
 
@@ -104,7 +99,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         
         delete WC_pair;
         to_be_assembled->update_submatrices();
-        add_move(to_be_assembled);
+        //add_move(to_be_assembled);
     }
 
     char* to_string()

@@ -198,7 +198,7 @@ template <typename T> void Run()
     }
 
     free_libs(Libs2Load, N_diNts);
-    if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
+    if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK ==INTERNAL_LOOP)
     {
         free_libs(WCLibs2Load, N_WC);
     }

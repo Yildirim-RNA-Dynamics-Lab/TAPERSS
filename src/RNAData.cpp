@@ -631,7 +631,7 @@ int RNADataArray::out_string_header()
             }
         }
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
-        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
+        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
         {
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd);
         }

@@ -7,6 +7,6 @@
 #include "RNACMB.hpp"
 
 gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B);
-bool is_WC_pair(RNADataArray& sequence, DimerLibArray& WC_Lib, int i, int j);
+bool is_WC_pair(RNADataArray& sequence, DimerLibArray& WC_Lib, int i, int j, int WC_pair_idx);
 
 #endif

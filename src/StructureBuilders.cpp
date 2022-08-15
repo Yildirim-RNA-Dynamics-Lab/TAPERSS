@@ -22,7 +22,7 @@ void create_custom_structure(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataA
     }
     if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
     {
-        is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max);
+        is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0);
     }
     assembled.update_energy();
     o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
@@ -46,7 +46,7 @@ void create_custom_structure_list(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNA
         }
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
-            is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max);
+            is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0);
         }
         assembled.update_energy();
         o_string.add_string(assembled.to_string(), assembled.get_atom_sum());

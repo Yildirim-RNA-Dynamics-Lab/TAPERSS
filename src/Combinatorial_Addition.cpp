@@ -83,7 +83,7 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
         assembled.update_energy();
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
-            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max))
+            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
             {
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
@@ -123,7 +123,11 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
     attach_status status = FAILED; // Output from checking functions
 
     DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
-    base = assembled.current();
+
+    if(!assembled.is_empty())
+    {
+        base = assembled.current();
+    }
     
     //DIE;
     //printf("Base name: %s\n", base->name);
@@ -152,7 +156,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
             o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
             o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
             */
-            status = NOT_CHECKED;
+            status = ATTACHED;
             break;
         }
         base = assembled.current();
@@ -215,11 +219,17 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         assembled.update_energy();
         if (GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
         {
-            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max))
+            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
             {
+                //printf("IS WC PAIR\n");
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
-                return true;
+                //return true;
+            }
+            else 
+            {
+                //printf("IS NOT WC PAIR\n");
+                //o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
             }
         }
         else
