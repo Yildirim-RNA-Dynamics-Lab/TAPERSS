@@ -1,2 +1,5 @@
+*.o
 *
+!obj
+!obj/.gitignore
 !.gitignore
