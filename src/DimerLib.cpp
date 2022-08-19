@@ -86,6 +86,7 @@ DimerLibArray::~DimerLibArray()
 
 void DimerLibArray::initialize(int s)
 {
+    //printf("DIMERLIBARRAY:INIT s = %d\n", s);
     library = (DimerLib **)malloc(sizeof(DimerLib *) * s);
     count = s;
     iterator = 0;
@@ -94,6 +95,7 @@ void DimerLibArray::initialize(int s)
 
 DimerLib *DimerLibArray::operator[](int i)
 {
+    //printf("DIMERLIBARRAY:ACCESS i = %d\n", i);
     return library[i];
 }
 

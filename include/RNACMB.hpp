@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <type_traits>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -14,6 +15,9 @@
 #define square(a) (a * a)
 #define DEBUG_SWITCH false
 #define DEBUG(a) if(DEBUG_SWITCH == true) {a;}
+#define DIE exit(2)
+
+enum STRUCTCHECK_TYPE{HAIRPIN, INTERNAL_LOOP, NONE};
 
 /* Compile-time evaluated constants */
 constexpr float RADIUS_C = 0.75;
@@ -43,7 +47,9 @@ extern bool GLOBAL_RUN_BUILD_STRUCTURE;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING; /* This will probably be a temporary setting */
 extern bool GLOBAL_WRITE_COORDINATES;
-extern bool GLOBAL_PERFORM_HAIRPIN_CHECK;
+//extern bool GLOBAL_PERFORM_HAIRPIN_CHECK;
+//extern bool GLOBAL_PERFORM_HBOND_CHECK;
+extern STRUCTCHECK_TYPE GLOBAL_PERFORM_STRUCTCHECK;
 
 extern double GLOBAL_RMSD_LIMIT;
 extern double GLOBAL_WC_RMSD_LIMIT;

@@ -1,6 +1,6 @@
 #include "steric_clash_check.hpp"
 
-bool steric_clash_check(RNA_data_array &sequence, RNA_data *attach)
+bool steric_clash_check(RNADataArray &sequence, RNAData *attach)
 {
     gsl_vector_view A, B;
     double radius_1, radius_2;
@@ -76,7 +76,7 @@ bool steric_clash_check(RNA_data_array &sequence, RNA_data *attach)
     return true;
 }
 
-attach_status steric_clash_check_COM_tester(RNA_data_array& __restrict__ sequence, RNA_data* __restrict__ attach)
+attach_status steric_clash_check_COM_tester(RNADataArray& __restrict__ sequence, RNAData* __restrict__ attach)
 {
     gsl_vector_view A, B;
     double radius_1, radius_2;
@@ -218,6 +218,7 @@ attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_
 
     for (int i = 0; i < sequence.count; i++)
     {
+        //printf("steric clash index i: %d\n", i);
         if(i == 0)        
         {
             steric_clash_checks_attempted++;

@@ -4,7 +4,7 @@
 #include "RNACMB.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
-#include "RNA_data.hpp"
+#include "RNAData.hpp"
 #include "output_string.hpp"
 #include "Hairpin.hpp"
 

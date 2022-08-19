@@ -41,8 +41,10 @@ void CMB_Manager::attach_attempt(int i, int j)
 
 bool CMB_Manager::is_at_end()
 {
+    //printf("Library = %d, Model = %d, Total structures in library = %d\n", last_attempted[0], last_attempted[1], count_per_lib[last_attempted[0]] - 1);
     if (last_attempted[1] == count_per_lib[last_attempted[0]] - 1)
     {
+        //printf("Library = %d, Model = %d, Total structures in library = %d\n", last_attempted[0], last_attempted[1], count_per_lib[last_attempted[0]] - 1);
         return true;
     }
     return false;
@@ -115,7 +117,7 @@ int CMB_Manager::get_reset_count()
             n_reset++;
         }
     }
-    // printf("n_reset = %d\n", n_reset);
+    //printf("n_reset = %d\n", n_reset);
     return n_reset;
 }
 
@@ -123,3 +125,4 @@ void CMB_Manager::successful_construction()
 {
     strs_built++;
 }
+
