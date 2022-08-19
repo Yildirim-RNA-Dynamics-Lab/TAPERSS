@@ -5,7 +5,8 @@ CFLAGS += -W
 CFLAGS += -Werror
 CFLAGS += -Winline
 CFLAGS += -pedantic
-CFLAGS += -std=c++11 
+CFLAGS += -std=c++11
+CFLAGS += -ffast-math
 
 LIBS = -lgsl
 LIBS += -lgslcblas
