@@ -1,4 +1,5 @@
 #include "RNAData.hpp"
+#include "RNADataArrayInternalLoop.hpp"
 
 /**
  * @brief Construct a new rna data::rna data object
@@ -252,10 +253,10 @@ void RNAData::update_WC_submatrices()
 
 size_t RNAData::get_WC_target(int res)
 {
-    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6 /*, C1p, C2p, C3p, C4p, O4p*/};
-    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
-    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6 /*, C1p, C2p, C3p, C4p, O4p*/};
-    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2 /*, C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, C1p, C2p, C3p, C4p, O4p};
+    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, C1p, C2p, C3p, C4p, O4p};
+    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6, C1p, C2p, C3p, C4p, O4p};
+    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, C1p, C2p, C3p, C4p, O4p};
 
     if (name[res] == 'A')
     {
@@ -501,7 +502,7 @@ bool RNADataArray::is_empty()
 
 void RNADataArray::update_WC_rmsd(float rmsd_val)
 {
-    WC_rmsd = rmsd_val;
+    WC_rmsd1_6 = rmsd_val;
 }
 
 void RNADataArray::reset_interactions()
@@ -614,28 +615,32 @@ int RNADataArray::get_atom_sum()
     }
     return atom_sum;
 }
-
+int RNADataArray::out_string_header_coord()
+{
+    string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %d\n", ++model_count);
+    string_index += snprintf(&string_out[string_index], string_buffer - string_index, "REMARK ");
+    string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
+    for (int i = 0; i < count; i++)
+    {
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
+        if (i != count - 1)
+        {
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
+        }
+    }
+    string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
+    if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
+    {
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd1_6);
+    }
+    string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+    return string_index;
+}
 int RNADataArray::out_string_header()
 {
     if (GLOBAL_WRITE_COORDINATES)
     {
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %d\n", ++model_count);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "REMARK ");
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
-        for (int i = 0; i < count; i++)
-        {
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
-            if (i != count - 1)
-            {
-                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
-            }
-        }
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
-        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
-        {
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd);
-        }
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        string_index = out_string_header_coord();
     }
     else
     {
@@ -655,7 +660,7 @@ int RNADataArray::out_string_header()
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd1_6);
         }
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
     }

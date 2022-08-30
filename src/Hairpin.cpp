@@ -1,11 +1,37 @@
 #include "Hairpin.hpp"
 
+
+gsl_matrix *make_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B)
+{
+    gsl_matrix *WC_matrix;
+    int iterator = 0;
+
+    WC_matrix = gsl_matrix_alloc((A->size1 + B->size1), 3);
+
+    for (unsigned int i = 0; i < A->size1; i++)
+    {
+        gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(A, i, 0));
+        gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(A, i, 1));
+        gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(A, i, 2));
+        //printf("A: atom id: %c %d %s\t %f, %f, %f\n", A->atom_data->residue[A->WC_submatrix_rows[0][i]], A->atom_data->dnt_pos[A->WC_submatrix_rows[0][i]], A->atom_data->name[A->WC_submatrix_rows[0][i]], gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
+        iterator++;
+    }
+
+    for (unsigned int i = 0; i < B->size1; i++)
+    {
+        gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(B, i, 0));
+        gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(B, i, 1));
+        gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(B, i, 2));
+        //printf("B: atom id: %c %d %s\t %f, %f, %f\n", B->atom_data->residue[B->WC_submatrix_rows[1][i]], B->atom_data->dnt_pos[B->WC_submatrix_rows[1][i]], B->atom_data->name[B->WC_submatrix_rows[1][i]], gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
+        iterator++;
+    }
+    return WC_matrix;
+}
+
 gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B)
 {
     gsl_matrix *A_target;
     gsl_matrix *B_target;
-    gsl_matrix *WC_matrix;
-    int iterator = 0;
     if (A->id != B->id)
     {
         A->make_WC_submatrices();
@@ -21,27 +47,7 @@ gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B)
 
     //printf("A: ID = %ld, B: ID = %ld\n", A->id, B->id);
     //printf("WC MAT SIZE = %ld\n", (A->WC_submatrices[0]->size1));
-
-    WC_matrix = gsl_matrix_alloc((A_target->size1 + B_target->size1), 3);
-
-    for (unsigned int i = 0; i < A_target->size1; i++)
-    {
-        gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(A_target, i, 0));
-        gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(A_target, i, 1));
-        gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(A_target, i, 2));
-        //printf("A: atom id: %c %d %s\t %f, %f, %f\n", A->atom_data->residue[A->WC_submatrix_rows[0][i]], A->atom_data->dnt_pos[A->WC_submatrix_rows[0][i]], A->atom_data->name[A->WC_submatrix_rows[0][i]], gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
-        iterator++;
-    }
-
-    for (unsigned int i = 0; i < B_target->size1; i++)
-    {
-        gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(B_target, i, 0));
-        gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(B_target, i, 1));
-        gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(B_target, i, 2));
-        //printf("B: atom id: %c %d %s\t %f, %f, %f\n", B->atom_data->residue[B->WC_submatrix_rows[1][i]], B->atom_data->dnt_pos[B->WC_submatrix_rows[1][i]], B->atom_data->name[B->WC_submatrix_rows[1][i]], gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
-        iterator++;
-    }
-    return WC_matrix;
+    return make_WC_submatrix_gsl(A_target, B_target);
 }
 
 bool is_WC_pair(RNADataArray &sequence, DimerLibArray &WC_Lib, int i, int j, int WC_pair_idx)

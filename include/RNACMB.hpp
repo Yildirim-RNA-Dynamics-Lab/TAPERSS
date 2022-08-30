@@ -10,6 +10,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
+#include <cstdint>
 
 /* Semi-useful preprocessor functions */
 #define square(a) (a * a)

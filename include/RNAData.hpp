@@ -68,7 +68,7 @@ struct RNADataArray
     int iterator;
     int iterator_max;
     float structure_energy;
-    float WC_rmsd = -1.0F;
+    float WC_rmsd1_6 = -1.0F;
 
     char *string_out;
     int string_buffer;
@@ -98,6 +98,7 @@ struct RNADataArray
     void printall();
     void initialize_string();
     int get_atom_sum();
+    int out_string_header_coord();
     int out_string_header();
     char* to_string();
     int *get_index();

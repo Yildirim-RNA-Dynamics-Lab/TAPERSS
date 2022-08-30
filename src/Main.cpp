@@ -159,6 +159,10 @@ template <typename T> void Run()
         {
             printf("# of Hairpins Built: %ld\n", manager.hairpins_built);
         }
+        if (GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
+        {
+            printf("# of Internal loops Built: %ld\n", manager.internal_loops_built);
+        }
         printf("# of Steric Clash Checks Attempted: %ld\n", steric_clash_checks_attempted);
         printf("# of Steric Clash Checks Skipped: %ld\n", steric_clash_checks_skipped);
         printf("%% of Steric Clash Checks Skipped: %f\n", (float)steric_clash_checks_skipped/(float)steric_clash_checks_attempted * 100);
