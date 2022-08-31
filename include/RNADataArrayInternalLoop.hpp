@@ -16,7 +16,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
     //RNAData** sequence;
     RNADataArrayInternalLoop() : RNADataArray() {};
 
-    void initialize(int size1, int size2)
+    void initialize(int size1, int size2, int* AtomMap, int LAC)
     {
         printf("~~~~~~~~~~~Size 1: %d\n", size1);
         iterator_max_1 = size1 - 1;
@@ -25,6 +25,11 @@ struct RNADataArrayInternalLoop : public RNADataArray
         iterator = -1;
         count = 0;
         structure_energy = 0;
+        InteractionTable = gsl_matrix_alloc(LAC, LAC);
+        gsl_matrix_set_identity(InteractionTable); // Set diagonals to 1.
+        InteractionTableSum = (int *)calloc(LAC, sizeof(int));
+        InteractionTableMap = AtomMap;
+        TableRowCount = LAC;
     }
 
     bool inLeft_or_inRight(int working_pos) //return true if in left strand

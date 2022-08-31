@@ -28,7 +28,7 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
 
     WC_pair[0] = sequence[0];
     WC_pair[1] = sequence[N_Nts];
-    //printf("S: %s N_Nts = %d\n", sequence, N_Nts);
+    printf("S: %s N_Nts = %d\n", sequence, N_Nts);
     WC_pair[2] = '\0';
 
     if (WC_pair[0] == 'A')

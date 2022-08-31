@@ -31,6 +31,7 @@ constexpr float INTERACTION_DISTANCE = 3.6;
 constexpr float DEFAULT_RMSD_LIMIT = 0.5;
 constexpr float DEFAULT_WC_RMSD_LIMIT = 2.5;
 constexpr float DEFAULT_STERIC_CLASH_COM_DISTANCE_LIMIT = 11.2;
+constexpr bool STRUCTURE_BUILD_LIMIT = false;
 
 constexpr int MAX_STRINGS = 1000;
 
@@ -58,6 +59,7 @@ extern double GLOBAL_RMSD_LIMIT;
 extern double GLOBAL_WC_RMSD_LIMIT;
 extern double GLOBAL_SCC_LIMIT;
 extern int **GLOBAL_INPUT_INDICES_LIST;
+extern int GLOBAL_STRUCTURE_LIMIT_COUNT;
 
 extern char LIBRARY_FILENAME_PROTOTYPE[100];        // = "../AGAAAU_test/XX_library_combined.txt";
 extern char WATSON_CRICK_LIBRARY_PROTOTYPE[100];    // = "../AGAAAU_test/WC_XX_library.txt";

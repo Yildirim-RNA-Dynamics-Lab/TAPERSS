@@ -20,6 +20,7 @@ unsigned int get_x_location(char *sequence)
     unsigned int n = 0;
     for(unsigned int i = 0; i < size; i++)
     {
+        putchar(ptr[i]);
         if(ptr[i] != 'x')
         {
             n++;
@@ -29,6 +30,8 @@ unsigned int get_x_location(char *sequence)
             break;
         }
     }
+    putchar('\n');
+    printf("n = %d\n", n);
     return n;
 }
 
@@ -82,19 +85,20 @@ char** get_WC_wrapper(char *sequence, int *N)
 {
     char** rtn = nullptr;
     unsigned int x_loc = get_x_location(sequence);
+    int length;
     switch(GLOBAL_PERFORM_STRUCTCHECK)
     {
         case HAIRPIN:
-            *N = strlen(sequence) - 1;
-            rtn = (char **)malloc(sizeof(char *) * *N);
-            get_WC_partner(sequence, rtn, *N);
+            length = strlen(sequence) - 1;
+            rtn = (char **)malloc(sizeof(char *) * length);
+            get_WC_partner(sequence, rtn, length);
             *N = 1;
             break;
         case INTERNAL_LOOP:
             *N = 2;
             rtn = (char **)malloc(sizeof(char *) * *N);
-            get_WC_partner(sequence, rtn, strlen(sequence));
-            get_WC_partner(&sequence[x_loc - 1], &rtn[1], 3);
+            get_WC_partner(sequence, rtn, strlen(sequence) - 1);
+            get_WC_partner(&sequence[x_loc - 1], &rtn[1], 2);
             break;
         case NONE:
             break;
@@ -135,7 +139,7 @@ template <typename T> void Run()
     {
         WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
         load_libs(WCLibs2Load, N_WC, WC_Library, true);
-        RNA.initialize(leftStrand, rightStrand);
+        RNA.initialize(leftStrand, rightStrand, Library.AtomMap, Library.ChargedAtomCount);
     }
     
     RNA.add_move(new RNAData(Library, 0, 0));

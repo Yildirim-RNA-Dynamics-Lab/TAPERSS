@@ -231,9 +231,12 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
                 //printf("IS WC PAIR\n");
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.internal_loops_built++;
-                if(manager.internal_loops_built > 10) 
+                if constexpr (STRUCTURE_BUILD_LIMIT == true)
                 {
-                    return true;
+                    if(manager.internal_loops_built > GLOBAL_STRUCTURE_LIMIT_COUNT) 
+                    {
+                        return true;
+                    }
                 }
             }
             else 
