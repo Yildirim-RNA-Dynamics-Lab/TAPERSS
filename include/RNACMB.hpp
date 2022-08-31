@@ -13,11 +13,13 @@
 
 /* Semi-useful preprocessor functions */
 #define square(a) (a * a)
+#define IDX_FLAT2D(row, col, n) (row * n + col)
 #define DEBUG_SWITCH false
 #define DEBUG(a) if(DEBUG_SWITCH == true) {a;}
 #define DIE exit(2)
 
 enum STRUCTCHECK_TYPE{HAIRPIN, INTERNAL_LOOP, NONE};
+enum attach_status{FAILED, ATTACHED, NOT_CHECKED, FAILED_SC};
 
 /* Compile-time evaluated constants */
 constexpr float RADIUS_C = 0.75;
@@ -58,8 +60,5 @@ extern int **GLOBAL_INPUT_INDICES_LIST;
 
 extern char LIBRARY_FILENAME_PROTOTYPE[100];        // = "../AGAAAU_test/XX_library_combined.txt";
 extern char WATSON_CRICK_LIBRARY_PROTOTYPE[100];    // = "../AGAAAU_test/WC_XX_library.txt";
-
-
-enum attach_status{FAILED, ATTACHED, NOT_CHECKED, FAILED_SC};
 
 #endif

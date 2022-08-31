@@ -17,6 +17,7 @@ struct atom_info
     int          count;            // Number of atoms per structure
     unsigned int count_per_res[2]; // Number of atoms per residue 1 and 2
     int          iterator;
+    unsigned int num_charged_atoms = 0;
     
     atom_info();
     atom_info(int n);

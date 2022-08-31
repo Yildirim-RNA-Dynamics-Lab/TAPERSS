@@ -64,7 +64,7 @@ void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M)
     gsl_matrix_free(M_TEMP);
 }
 
-void gsl_matrix_print(gsl_matrix *M)
+void gsl_matrix_print(gsl_matrix *M, const char* name)
 {
     printf("---------------Matrix name: %s\n", name);
     for (unsigned int i = 0; i < M->size1; i++)

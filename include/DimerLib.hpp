@@ -15,7 +15,7 @@ struct DimerLib
     char*             name;
     int               count; //Number of structures in Library
     double*           radii[2];
-    flag*             flags; 
+    flag*             flags;
 
     DimerLib(int n, int a_n, int e_n);
     ~DimerLib();
@@ -29,6 +29,8 @@ struct DimerLibArray
     int count = 0;          //Number of "Libraries" in array
     int iterator;
     bool was_initialized = false;
+    unsigned int ChargedAtomCount;
+    int* AtomMap;           //Deallocation is handled by RNAData.
 
     DimerLibArray();
     DimerLibArray(int s);
@@ -38,6 +40,7 @@ struct DimerLibArray
     void alloc_lib(int n, int a_n, int e_n);
     void add_to_atom_info(char *N, int i, char r, int p);
     void add_lib(gsl_matrix** d_m, float* e, char* n, double** r);
+    void get_charged_atom_map();
     void reset_flags(bool *reset);
     void print_dimer_info(int i);
     void print_matrix(int i, int j);

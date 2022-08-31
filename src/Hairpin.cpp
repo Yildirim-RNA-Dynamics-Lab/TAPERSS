@@ -59,15 +59,14 @@ bool is_WC_pair(RNADataArray &sequence, DimerLibArray &WC_Lib, int i, int j, int
     sequence_matrix = make_WC_submatrix(sequence[i], sequence[j]);
     WC_model_matrix = make_WC_submatrix(WC_pair, WC_pair);
     R = kabsch_get_rotation_matrix_generic(WC_model_matrix, sequence_matrix, COMP, COMQ);
-    apply_rotation_matrix(R, WC_model_matrix);
     _rmsd = rmsd_generic(sequence_matrix, WC_model_matrix);
     //printf("WC RMSD: %f VS %f\n", _rmsd, GLOBAL_WC_RMSD_LIMIT);
     if (_rmsd <= GLOBAL_WC_RMSD_LIMIT)
     {
         is_WC_pair = true;
-        sequence.update_WC_rmsd(_rmsd);
         //printf("RMSD: %f\n", _rmsd);
     }
+    sequence.update_WC_rmsd(_rmsd);
     gsl_matrix_free(R);
     gsl_matrix_free(sequence_matrix);
     gsl_matrix_free(WC_model_matrix);

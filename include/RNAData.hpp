@@ -16,7 +16,6 @@ struct RNAData
     char *name;
     flag *_flag;
     unsigned int count; //Number of atoms in structure
-    bool *has_interaction;
     
     int *submatrix_rows[2];
     int *WC_submatrix_rows[2];
@@ -64,6 +63,10 @@ struct RNADataArray
 {
     RNAData **sequence;
     gsl_matrix *WC_submatrix;
+    gsl_matrix *InteractionTable;
+    int* InteractionTableMap;
+    int* InteractionTableSum;
+    int  TableRowCount;
     int count;
     int iterator;
     int iterator_max;
@@ -81,7 +84,7 @@ struct RNADataArray
 
     RNADataArray();
     RNADataArray(const RNADataArray &RDA);
-    void initialize(int size);
+    void initialize(int size, int* ChargedAtomMap, int LargestLibCount);
     ~RNADataArray();
     RNAData* operator[](int i);
     void add_copy(RNAData* A);
@@ -93,7 +96,6 @@ struct RNADataArray
     void rollback_by(int amount);
     bool is_empty();
     void update_WC_rmsd(float rmsd_val);
-    void reset_interactions();
     void update_energy();
     void printall();
     void initialize_string();

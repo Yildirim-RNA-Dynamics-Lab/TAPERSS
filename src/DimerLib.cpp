@@ -115,6 +115,45 @@ void DimerLibArray::add_lib(gsl_matrix **d_m, float *e, char *n, double** r)
     iterator++;
 }
 
+void DimerLibArray::get_charged_atom_map()
+{
+    int LargestAtomCount = 0;
+    int MapTracker = 0;
+    for(int i = 0; i < count; i++)
+    {
+        if(library[i]->atom_data->count > LargestAtomCount)
+        {
+            LargestAtomCount = library[i]->atom_data->count;
+        }        
+        
+    }
+    AtomMap = (int*)calloc(LargestAtomCount * count, sizeof(int));
+    for(int i = 0; i < count; i++)
+    {
+        for(int j = 0; j < LargestAtomCount; j++)
+        {
+            if(j < library[i]->atom_data->count)
+            {
+                if(library[i]->atom_data->charges[j] != atom_charge::NEUTRAL)
+                {
+                    AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = MapTracker;
+                    MapTracker++;
+                }
+                else
+                {
+                    AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
+                }
+                //printf("Lib: %d, Row: %d, Index: %d, Atom: %s -> %d\n", i, j, IDX_FLAT2D(i, j, LargestAtomCount), library[i]->atom_data->name[j], AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)]);
+            }
+            else
+            {
+                //printf("Lib: %d, Row: %d, Index: %d, Atom: %s\n", i, j, IDX_FLAT2D(i, j, LargestAtomCount), "DUMMY");
+            }           
+        }
+    }
+    ChargedAtomCount = LargestAtomCount;
+}
+
 void DimerLibArray::reset_flags(bool *reset)
 {
     for (int i = 0; i < count; i++)

@@ -33,8 +33,6 @@ RNAData::RNAData(DimerLibArray &L, int i, int j, bool WC)
     WC ? make_WC_submatrices(true) : make_submatrices();
     WC_secondary = false;
 
-    has_interaction = (bool *)calloc(count, sizeof(bool));
-
     COM_Radii[0] = L[i]->radii[0][j];
     COM_Radii[1] = L[i]->radii[1][j];
 }
@@ -58,7 +56,6 @@ RNAData::~RNAData()
     // printf("Deallocationg %ld\n", id);
     gsl_matrix_free(data_matrix);
     free(name);
-    free(has_interaction);
     if (is_for_WC)
     {
         gsl_matrix_free(WC_submatrices[0]);
@@ -339,14 +336,6 @@ void RNAData::print_WC_target(int res)
     }
 }
 
-void RNAData::reset_interactions()
-{
-    for (unsigned int i = 0; i < count; i++)
-    {
-        has_interaction[i] = false;
-    }
-}
-
 void RNAData::print(int res)
 {
     for (unsigned int i = 0; i < data_matrix->size1; i++)
@@ -402,13 +391,18 @@ int RNAData::to_string_offset(int res, int position, char *s, int buffer_size, i
     return string_index;
 }
 
-void RNADataArray::initialize(int size)
+void RNADataArray::initialize(int size, int* AtomMap, int LAC)
 {
     iterator_max = size - 1;
     sequence = (RNAData **)malloc(sizeof(RNAData *) * size);
     iterator = -1;
     count = 0;
     structure_energy = 0;
+    InteractionTable = gsl_matrix_alloc(LAC, LAC);
+    gsl_matrix_set_identity(InteractionTable); // Set diagonals to 1.
+    InteractionTableSum = (int *)calloc(LAC, sizeof(int));
+    InteractionTableMap = AtomMap;
+    TableRowCount = LAC;
 }
 
 RNADataArray::RNADataArray(){}
@@ -432,6 +426,9 @@ RNADataArray::~RNADataArray()
     free(sequence);
     if (string_initialized)
         free(string_out);
+    gsl_matrix_free(InteractionTable);
+    free(InteractionTableMap);
+    free(InteractionTableSum);
 }
 
 RNAData *RNADataArray::operator[](int i)
@@ -504,18 +501,13 @@ void RNADataArray::update_WC_rmsd(float rmsd_val)
     WC_rmsd = rmsd_val;
 }
 
-void RNADataArray::reset_interactions()
-{
-    for (int i = 0; i < count; i++)
-    {
-        sequence[i]->reset_interactions();
-    }
-}
-
 void RNADataArray::update_energy()
 {
     float energy_ = 0.0;
     gsl_vector_view A, B;
+
+    bool tmp_bool = false;
+
     for (int i = 0; i < count; i++)
     {
         energy_ += sequence[i]->energy;
@@ -539,16 +531,8 @@ void RNADataArray::update_energy()
                     {
                         continue;
                     }
-                    if (sequence[i]->has_interaction[k] == true)
-                    {
-                        continue;
-                    }
                     for (unsigned int l = 0; l < sequence[j]->count; l++)
                     {
-                        if (sequence[j]->has_interaction[l] == true || sequence[i]->has_interaction[k] == true)
-                        {
-                            continue;
-                        }
                         if (sequence[j]->atom_data->dnt_pos[l] != 2)
                         {
                             continue;
@@ -569,10 +553,14 @@ void RNADataArray::update_energy()
                             }
                             else
                             {
+                                //printf("Atom A: %d,%d -> %d; Atom B: %d,%d -> %d\n", i, k, InteractionTableMap[IDX_FLAT2D(i,k,TableRowCount)], j, l, InteractionTableMap[IDX_FLAT2D(j,l,TableRowCount)]);
+                                gsl_matrix_set(InteractionTable, InteractionTableMap[IDX_FLAT2D(i,k,TableRowCount)], InteractionTableMap[IDX_FLAT2D(j,l,TableRowCount)], 1);
+                                gsl_matrix_set(InteractionTable, InteractionTableMap[IDX_FLAT2D(j,l,TableRowCount)], InteractionTableMap[IDX_FLAT2D(i,k,TableRowCount)], 1);
+                                tmp_bool = true;
                                 //printf("----%d, %s, %d, %s: %f\n", i + sequence[i]->atom_data->dnt_pos[k], sequence[i]->atom_data->name[k], j + sequence[j]->atom_data->dnt_pos[l], sequence[j]->atom_data->name[l], distance(&A.vector, &B.vector));
-                                energy_ -= 1;
-                                sequence[j]->has_interaction[l] = true;
-                                sequence[i]->has_interaction[k] = true;
+                                //energy_ -= 1;
+                                //sequence[j]->has_interaction[l] = true;
+                                //sequence[i]->has_interaction[k] = true;
                             }
                         }
                         else
@@ -585,7 +573,64 @@ void RNADataArray::update_energy()
         }
     }
     //exit(0);
-    reset_interactions();
+    if(tmp_bool)
+    {
+        for(int i = 0; i < TableRowCount; i++)
+        {
+            for(int j = 0; j < TableRowCount; j++)
+            {
+                InteractionTableSum[i] += gsl_matrix_get(InteractionTable, j, i);
+            }
+            InteractionTableSum[i]--;
+            //printf("%d ", InteractionTableSum[i]);
+        }
+        //printf("\n");
+        
+        int MinVal, MinIdx, NumInteractions = 0;
+        for(int i = 0; i < TableRowCount; i++)
+        {
+            MinVal = TableRowCount;
+            MinIdx = -1;
+            for(int j = 0; j < TableRowCount; j++)
+            {
+                if(i != j && gsl_matrix_get(InteractionTable, i, j) != 0 && InteractionTableSum[i] != 0)
+                {
+                    if(InteractionTableSum[j] != 0)
+                    {
+                        if(InteractionTableSum[j] < MinVal)
+                        {
+                            MinVal = InteractionTableSum[j];
+                            MinIdx = j;
+                        }
+                    }
+                }
+            }
+            if(MinIdx != -1)
+            {
+                InteractionTableSum[i] = 0;
+                InteractionTableSum[MinIdx] = 0;
+                //printf("MinIdx: %d, i: %d\n", MinIdx, i);
+                //for(int is = 0; is < TableRowCount; is++)
+                //{
+                //   printf("%d ", InteractionTableSum[is]);
+                //}            
+                //printf("\n");
+                NumInteractions++;
+            }
+        }
+        //printf("Interactions Found = %d\n", NumInteractions);
+        /*if(NumInteractions > 5)
+        {
+            print_gsl_matrix(InteractionTable);
+            DIE;
+        }*/
+        gsl_matrix_set_identity(InteractionTable);
+        memset(InteractionTableSum, 0, TableRowCount * sizeof(int));
+        energy_ -= NumInteractions;
+        //printf("------------------\n");
+    }
+
+    //reset_interactions();
     structure_energy = energy_;
 }
 

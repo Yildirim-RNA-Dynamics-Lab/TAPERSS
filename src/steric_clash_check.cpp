@@ -200,7 +200,7 @@ attach_status steric_clash_check_COM_tester(RNADataArray& __restrict__ sequence,
 
 
 
-attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_data* __restrict__ attach)
+attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNAData* __restrict__ attach)
 {
     gsl_vector_view A, B;
     double radius_1, radius_2;
@@ -320,7 +320,7 @@ attach_status steric_clash_check_COM(RNA_data_array& __restrict__ sequence, RNA_
     return ATTACHED;
 }
 
-void SCC_record_COM_distance(RNA_data_array &sequence, RNA_data *attach)
+void SCC_record_COM_distance(RNADataArray &sequence, RNAData *attach)
 {
     gsl_vector_view A, B, D;
     double dist;

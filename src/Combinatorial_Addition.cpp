@@ -80,17 +80,18 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
     }
     if (assembled.is_complete())
     {
-        assembled.update_energy();
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
             if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
             {
+                assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
             }
         }
         else
         {
+            assembled.update_energy();
             o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
         }
         manager.strs_built++;

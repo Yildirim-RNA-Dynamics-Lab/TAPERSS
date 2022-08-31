@@ -240,7 +240,14 @@ atom_info::~atom_info()
     free(charges);
     free(name);
 }
-
+/**
+ * @brief Adds atom to atom info while setting specific parameters as needed.
+ * 
+ * @param N Name of atom
+ * @param i index of atom
+ * @param r residue atom belongs to
+ * @param p residue id (1 or 2) atom belongs to (this one might be kinda pointless and confusing on further use)
+ */
 void atom_info::add_atom(char *N, int i, char r, int p)
 {
     strcpy(name[iterator], N);
@@ -249,6 +256,10 @@ void atom_info::add_atom(char *N, int i, char r, int p)
     dnt_pos[iterator] = p;
     atom_ids[iterator] = get_atom_id(N);
     charges[iterator] = get_atom_charge(atom_ids[iterator], r);
+    if(charges[iterator] != atom_charge::NEUTRAL)
+    {
+        num_charged_atoms++;
+    }
     p == 1 ? count_per_res[0]++ : count_per_res[1]++;
     iterator++;
 }

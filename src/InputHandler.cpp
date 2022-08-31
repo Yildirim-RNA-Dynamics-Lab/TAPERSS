@@ -27,7 +27,8 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
     name_position -= 1;
 
     WC_pair[0] = sequence[0];
-    WC_pair[1] = sequence[N_Nts - 1];
+    WC_pair[1] = sequence[N_Nts];
+    //printf("S: %s N_Nts = %d\n", sequence, N_Nts);
     WC_pair[2] = '\0';
 
     if (WC_pair[0] == 'A')
@@ -35,6 +36,7 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
         if (WC_pair[1] != 'C' && WC_pair[1] != 'U')
         {
             printf("Not potential hairpin, exiting... ( this is a temporary fix while program is dumb )\n");
+            printf("Pair Attempted: %s\n", WC_pair);
             exit(2);
         }
     }
@@ -43,6 +45,7 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
         if (WC_pair[1] != 'A' && WC_pair[1] != 'G')
         {
             printf("Not potential hairpin, exiting... ( this is a temporary fix while program is dumb )\n");
+            printf("Pair Attempted: %s\n", WC_pair);
             exit(2);
         }
     }
@@ -51,6 +54,7 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
         if (WC_pair[1] != 'A' && WC_pair[1] != 'G')
         {
             printf("Not potential hairpin, exiting... ( this is a temporary fix while program is dumb )\n");
+            printf("Pair Attempted: %s\n", WC_pair);
             exit(2);
         }
     }
@@ -59,6 +63,7 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
         if (WC_pair[1] != 'C' && WC_pair[1] != 'U')
         {
             printf("Not potential hairpin, exiting... ( this is a temporary fix while program is dumb. Instead it should look through whole sequence to find h-bond pairs and then check if hairpin is possible)\n");
+            printf("Pair Attempted: %s\n", WC_pair);
             exit(2);
         }
     }
@@ -109,17 +114,19 @@ int read_input_index_file(char *file_name, int n_DiNts)
     for (int i = 0; i < str_count; i++)
     {
         GLOBAL_INPUT_INDICES_LIST[i] = (int *)malloc(n_DiNts * sizeof(int));
-        fgets(line, sizeof(line), input);
-        char *str1;
-        char *header = strtok(line, " ");
-        if (!strcmp(header, GLOBAL_INPUT_SEQUENCE))
+        if(fgets(line, sizeof(line), input) != NULL)
         {
-            str1 = strtok(NULL, " ");
-            str1 = strtok(NULL, " ");
-            str1[strcspn(str1, "\t")] = '\0'; // equivalent to chomp() from perl
-            strcpy(indices, str1);
+            char *str1;
+            char *header = strtok(line, " ");
+            if (!strcmp(header, GLOBAL_INPUT_SEQUENCE))
+            {
+                str1 = strtok(NULL, " ");
+                str1 = strtok(NULL, " ");
+                str1[strcspn(str1, "\t")] = '\0'; // equivalent to chomp() from perl
+                strcpy(indices, str1);
+            }
+            get_index_int(indices, GLOBAL_INPUT_INDICES_LIST[i]);
         }
-        get_index_int(indices, GLOBAL_INPUT_INDICES_LIST[i]);
     }
 
     return str_count;
