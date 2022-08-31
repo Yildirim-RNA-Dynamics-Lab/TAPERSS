@@ -152,13 +152,19 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         {
             attach->overwrite(Lib, working_position, i);
             manager.attach_attempt(working_position, i);
-            assembled.prepare_right(attach, WC_Lib);
+            if(assembled.prepare_right(attach, WC_Lib) == true) 
+            {
+                status = ATTACHED;
+                break;
+            }
+            else 
+            {
+                continue;
+            }
             /*
             o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
             o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
             */
-            status = ATTACHED;
-            break;
         }
         base = assembled.current();
         //printf("Base name: %s\n", base->name);
@@ -224,8 +230,11 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
             {
                 //printf("IS WC PAIR\n");
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-                manager.hairpins_built++;
-                //return true;
+                manager.internal_loops_built++;
+                if(manager.internal_loops_built > 10) 
+                {
+                    return true;
+                }
             }
             else 
             {

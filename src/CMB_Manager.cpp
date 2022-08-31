@@ -18,6 +18,7 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA)
 
     strs_built = 0;
     hairpins_built = 0;
+    internal_loops_built = 0;
     libs_completed = (bool *)calloc(count, sizeof(bool));
 }
 

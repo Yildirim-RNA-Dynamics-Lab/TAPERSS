@@ -4,11 +4,14 @@
 #include "RNAData.hpp"
 #include "RNACMB.hpp"
 #include "Kabsch.hpp"
+#include "Hairpin.hpp"
 
 enum {left = 0, right = 1};
+static double COMZERO[] = {0, 0, 0};
 
 struct RNADataArrayInternalLoop : public RNADataArray
 {
+    float WC_rmsd3_4 = -1.0F;
     int iterator_max_1;
     //RNAData** sequence;
     RNADataArrayInternalLoop() : RNADataArray() {};
@@ -44,8 +47,9 @@ struct RNADataArrayInternalLoop : public RNADataArray
         *A->_flag = USED;
     }
 
-    void prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib) 
+    bool prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib) 
     {
+        bool rmsd_pass = true;
         RNAData *WC_pair = new RNAData(WC_Lib, 1, 0, false);
         RNAData *assembled_ref = sequence[iterator_max_1];
         gsl_matrix *R1, *R2;
@@ -71,9 +75,12 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
         //WC_pair->make_submatrices();
         WC_pair->update_submatrices();
-        gsl_matrix_free(P1);
-        gsl_matrix_free(Q1);
+        //gsl_matrix_free(P1);
+        //gsl_matrix_free(Q1);
         gsl_matrix_free(R1);
+
+        memcpy(COMP, COMZERO, sizeof(COMZERO));
+        memcpy(COMQ, COMZERO, sizeof(COMZERO));
 
         MODEL = to_be_assembled->data_matrix;
         //to_be_assembled->make_submatrices();
@@ -93,6 +100,27 @@ struct RNADataArrayInternalLoop : public RNADataArray
         apply_rotation_matrix(R2, MODEL);
         translate_matrix(COMQ, MODEL, 1.0F);
 
+        memcpy(COMP, COMZERO, sizeof(COMZERO));
+        memcpy(COMQ, COMZERO, sizeof(COMZERO));
+
+        gsl_matrix *sequence_matrix;
+        gsl_matrix *WC_model_matrix;
+        gsl_matrix *R;
+        double _rmsd;
+
+        sequence_matrix = make_WC_submatrix_gsl(Q1, P2);
+        WC_model_matrix = make_WC_submatrix_gsl(P1, Q2);
+        R = kabsch_get_rotation_matrix_generic(WC_model_matrix, sequence_matrix, COMP, COMQ);
+        apply_rotation_matrix(R, WC_model_matrix);
+        _rmsd = rmsd_generic(sequence_matrix, WC_model_matrix);
+
+        if(_rmsd > GLOBAL_WC_RMSD_LIMIT)
+        {
+            rmsd_pass = false;
+        }
+        //printf("WC RMSD Resid 3 & 4: %f\n", _rmsd);
+        WC_rmsd3_4 = (float) _rmsd;
+
         gsl_matrix_free(P2);
         gsl_matrix_free(Q2);
         gsl_matrix_free(R2);
@@ -100,6 +128,13 @@ struct RNADataArrayInternalLoop : public RNADataArray
         delete WC_pair;
         to_be_assembled->update_submatrices();
         //add_move(to_be_assembled);
+        gsl_matrix_free(P1);
+        gsl_matrix_free(Q1);
+        gsl_matrix_free(sequence_matrix);
+        gsl_matrix_free(WC_model_matrix);
+        gsl_matrix_free(R);
+
+        return rmsd_pass;
     }
 
     char* to_string()
@@ -141,6 +176,52 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
         return string_out;
     }
+    int out_string_header_coord()
+    {
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %d\n", ++model_count);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "REMARK ");
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
+        for (int i = 0; i < count; i++)
+        {
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
+            if (i != count - 1)
+            {
+                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
+            }
+        }
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f ", WC_rmsd1_6);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd3_4);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        return string_index;
+    }
+    int out_string_header()
+{
+    if (GLOBAL_WRITE_COORDINATES)
+    {
+        string_index = out_string_header_coord();
+    }
+    else
+    {
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#INDEX ");
+        for (int i = 0; i < count; i++)
+        {
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
+            if (i != count - 1)
+            {
+                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
+            }
+        }
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\t");
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\t", structure_energy);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd1_6);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+    }
+    return string_index;
+}
 };
 
 #endif
