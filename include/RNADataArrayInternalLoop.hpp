@@ -18,7 +18,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
     void initialize(int size1, int size2, int* AtomMap, int LAC)
     {
-        printf("~~~~~~~~~~~Size 1: %d\n", size1);
+        //printf("~~~~~~~~~~~Size 1: %d\n", size1);
         iterator_max_1 = size1 - 1;
         iterator_max = size1 + size2 - 1;
         sequence = (RNAData **)malloc(sizeof(RNAData *) * (size1 + size2));
@@ -201,32 +201,32 @@ struct RNADataArrayInternalLoop : public RNADataArray
         return string_index;
     }
     int out_string_header()
-{
-    if (GLOBAL_WRITE_COORDINATES)
     {
-        string_index = out_string_header_coord();
-    }
-    else
-    {
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#INDEX ");
-        for (int i = 0; i < count; i++)
+        if (GLOBAL_WRITE_COORDINATES)
         {
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
-            if (i != count - 1)
-            {
-                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
-            }
+            string_index = out_string_header_coord();
         }
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\t");
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\t", structure_energy);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd1_6);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        else
+        {
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#INDEX ");
+            for (int i = 0; i < count; i++)
+            {
+                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
+                if (i != count - 1)
+                {
+                    string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
+                }
+            }
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\t");
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\t", structure_energy);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd1_6);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        }
+        return string_index;
     }
-    return string_index;
-}
 };
 
 #endif

@@ -3,6 +3,8 @@
 
 #include "RNACMB.hpp"
 
+#define LINESIZE 1000
+
 void get_diNt_names(char* sequence, char** rtn, int N_diNts);
 void get_WC_partner(char* sequence, char** rtn, int N_Nts);
 void get_index_int(char *index, int *indices);

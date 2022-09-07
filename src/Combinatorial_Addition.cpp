@@ -87,6 +87,10 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
                 assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
+                if(assembled.TMP_END == true)
+                {
+                    return true;    
+                }
             }
         }
         else
@@ -231,6 +235,10 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
                 //printf("IS WC PAIR\n");
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.internal_loops_built++;
+                if(assembled.TMP_END == true)
+                {
+                    return true;
+                }
                 if constexpr (STRUCTURE_BUILD_LIMIT == true)
                 {
                     if(manager.internal_loops_built > GLOBAL_STRUCTURE_LIMIT_COUNT) 

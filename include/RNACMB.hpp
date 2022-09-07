@@ -36,9 +36,9 @@ constexpr bool STRUCTURE_BUILD_LIMIT = false;
 constexpr int MAX_STRINGS = 1000;
 
 /* Global Variables */
-extern long int rna_dat_tracker;
-extern long unsigned int steric_clash_checks_attempted;
-extern long unsigned int steric_clash_checks_skipped;
+extern uint_fast64_t rna_dat_tracker;
+extern uint_fast64_t steric_clash_checks_attempted;
+extern uint_fast64_t steric_clash_checks_skipped;
 
 extern char GLOBAL_INPUT_SEQUENCE[100];
 extern char GLOBAL_INPUT_INDICES[100];

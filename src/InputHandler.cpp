@@ -96,8 +96,8 @@ void get_index_int(char *index, int *indices)
 int read_input_index_file(char *file_name, int n_DiNts)
 {
     FILE *input = fopen(file_name, "r");
-    char line[100];
-    char indices[100];
+    char line[LINESIZE];
+    char indices[LINESIZE];
     int str_count = 0;
 
     while (fgets(line, sizeof(line), input)) // Get line count
@@ -140,7 +140,7 @@ void read_input_file(char *file_name)
         printf("Could not open file: %s\n", file_name);
         exit(3);
     }
-    char line[100];
+    char line[LINESIZE];
     while (fgets(line, sizeof(line), input))
     {
         char *str1;

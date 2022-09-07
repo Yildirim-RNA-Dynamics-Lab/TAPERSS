@@ -250,10 +250,10 @@ void RNAData::update_WC_submatrices()
 
 size_t RNAData::get_WC_target(int res)
 {
-    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, C1p, C2p, C3p, C4p, O4p};
-    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, C1p, C2p, C3p, C4p, O4p};
-    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6, C1p, C2p, C3p, C4p, O4p};
-    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, C1p, C2p, C3p, C4p, O4p};
+    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, /*C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6, /*C1p, C2p, C3p, C4p, O4p*/};
+    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
 
     if (name[res] == 'A')
     {
@@ -585,6 +585,18 @@ void RNADataArray::update_energy()
             InteractionTableSum[i]--;
             //printf("%d ", InteractionTableSum[i]);
         }
+        //printf("IDs:%17s", " ");
+        //for(int is = 0; is < TableRowCount; is++)
+        //{
+        //    printf("%4d", is);
+        //}    
+        //printf("\n");
+        //printf("Start:%15s", " ");
+        //for(int is = 0; is < TableRowCount; is++)
+        //{
+         //   printf("%4d", InteractionTableSum[is]);
+        //}            
+        //printf("\n");
         //printf("\n");
         
         int MinVal, MinIdx, NumInteractions = 0;
@@ -598,6 +610,7 @@ void RNADataArray::update_energy()
                 {
                     if(InteractionTableSum[j] != 0)
                     {
+                        InteractionTableSum[j] -= 1;
                         if(InteractionTableSum[j] < MinVal)
                         {
                             MinVal = InteractionTableSum[j];
@@ -608,23 +621,29 @@ void RNADataArray::update_energy()
             }
             if(MinIdx != -1)
             {
+                //printf("i:%4d, MinIdx:%4d::", i, MinIdx);
                 InteractionTableSum[i] = 0;
                 InteractionTableSum[MinIdx] = 0;
-                //printf("MinIdx: %d, i: %d\n", MinIdx, i);
                 //for(int is = 0; is < TableRowCount; is++)
                 //{
-                //   printf("%d ", InteractionTableSum[is]);
+                   //printf("%4d", InteractionTableSum[is]);
                 //}            
                 //printf("\n");
                 NumInteractions++;
             }
         }
         //printf("Interactions Found = %d\n", NumInteractions);
-        /*if(NumInteractions > 5)
+        if(NumInteractions > 5)
         {
+            //printf("Numbers: \n");
+            for(int is = 0; is < TableRowCount; is++)
+            {
+                printf("%4d", is);
+            }    
+            //printf("\n");
             print_gsl_matrix(InteractionTable);
-            DIE;
-        }*/
+            TMP_END = true;
+        }
         gsl_matrix_set_identity(InteractionTable);
         memset(InteractionTableSum, 0, TableRowCount * sizeof(int));
         energy_ -= NumInteractions;
@@ -632,6 +651,7 @@ void RNADataArray::update_energy()
     }
 
     //reset_interactions();
+    //printf("Energy = %f\n", energy_);
     structure_energy = energy_;
 }
 
