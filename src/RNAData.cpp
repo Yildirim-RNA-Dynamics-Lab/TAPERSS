@@ -633,17 +633,6 @@ void RNADataArray::update_energy()
             }
         }
         //printf("Interactions Found = %d\n", NumInteractions);
-        if(NumInteractions > 5)
-        {
-            //printf("Numbers: \n");
-            for(int is = 0; is < TableRowCount; is++)
-            {
-                printf("%4d", is);
-            }    
-            //printf("\n");
-            print_gsl_matrix(InteractionTable);
-            TMP_END = true;
-        }
         gsl_matrix_set_identity(InteractionTable);
         memset(InteractionTableSum, 0, TableRowCount * sizeof(int));
         energy_ -= NumInteractions;

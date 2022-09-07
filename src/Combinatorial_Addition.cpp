@@ -87,10 +87,6 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
                 assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
-                if(assembled.TMP_END == true)
-                {
-                    return true;    
-                }
             }
         }
         else
