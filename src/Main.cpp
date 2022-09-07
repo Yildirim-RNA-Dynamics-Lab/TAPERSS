@@ -196,7 +196,14 @@ template <typename T> void Run()
         printf("Creating Single Structure of Sequence: %s, with Indices: %s\n", GLOBAL_INPUT_SEQUENCE, GLOBAL_INPUT_INDICES);
         int *indices = (int *)alloca(N_diNts * sizeof(int));
         get_index_int(GLOBAL_INPUT_INDICES, indices);
-        create_custom_structure(Library, WC_Library, RNA, output_s, indices);
+        if constexpr (is_same<T,RNADataArray>::value)
+        {
+           create_custom_structure(Library, WC_Library, RNA, output_s, indices);
+        }
+        if constexpr (is_same<T,RNADataArrayInternalLoop>::value)
+        {
+            create_custom_structure_IL(Library, WC_Library, RNA, output_s, indices);
+        }
     }
     if (GLOBAL_RUN_BUILD_STRUCTURE_LIST)
     {
