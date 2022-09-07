@@ -1,9 +1,9 @@
 #include "RNACMB.hpp"
 
 /* Set Global Defaults */
-long int rna_dat_tracker = 0;
-long unsigned int steric_clash_checks_attempted = 0;
-long unsigned int steric_clash_checks_skipped = 0;
+uint_fast64_t rna_dat_tracker = 0;
+uint_fast64_t steric_clash_checks_attempted = 0;
+uint_fast64_t steric_clash_checks_skipped = 0;
 
 char GLOBAL_INPUT_SEQUENCE[100];
 char GLOBAL_INPUT_INDICES[100];

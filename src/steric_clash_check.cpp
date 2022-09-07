@@ -212,15 +212,20 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
     double SCC_dist[2];
     double attach_radius = attach->COM_Radii[1];
     double sequence_radius[2];
+    bool passed_check[2] = {true, true};
     //int this_index = sequence.count;
 
     attach_COM = gsl_matrix_row(attach->data_matrix, attach->get_residue_COM_index(1));    
 
     for (int i = 0; i < sequence.count; i++)
     {
+        passed_check[0] = true;
+        passed_check[1] = false;
+        //printf("_______________________\n");
         //printf("steric clash index i: %d\n", i);
         if(i == 0)        
         {
+            passed_check[0] = false;
             steric_clash_checks_attempted++;
             sequence_COM = gsl_matrix_row(sequence[i]->data_matrix, sequence[i]->get_residue_COM_index(0));
             SCC_dist[0] = distance(&attach_COM.vector, &sequence_COM.vector);
@@ -233,12 +238,16 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
             //printf("0::Sequence: \n");
             //gsl_vector_print(&sequence_COM.vector);
             //printf("Radius: %f\n", sequence_radius[0]);
+
+            //printf("Distance 0: %f\n", SCC_dist[0]);
+            //printf("Limit 0: %f\n", sequence_radius[0] + attach_radius);
     
 
             if(SCC_dist[0] > (sequence_radius[0] + attach_radius))
-            {
+            {                
+                //printf("PASSED CHECK\n");
                 steric_clash_checks_skipped++;
-                continue;
+                passed_check[0] = true;
             }
         } 
         else
@@ -253,10 +262,26 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
         SCC_dist[1] = distance(&attach_COM.vector, &sequence_COM.vector);                    
         sequence_radius[1] = sequence[i]->COM_Radii[1];
 
+        //printf("Distance 1: %f\n", SCC_dist[1]);
+        //printf("Limit 1: %f\n", sequence_radius[1] + attach_radius);        
+
         if(SCC_dist[1] > (sequence_radius[1] + attach_radius))
         {
             steric_clash_checks_skipped++;
+            //printf("PASSED CHECK\n");
+            passed_check[1] = true;
+        }
+
+        //printf("_______________________\n");
+
+        if(passed_check[0] == true && passed_check[1] == true)
+        {
+            //printf("Continuing...\n");
             continue;
+        }
+        if(passed_check[0] == true && passed_check[1] == false)
+        {
+            iterator_start = sequence[i]->atom_data->count_per_res[0];
         }
 
         for (unsigned int j = iterator_start; j < sequence[i]->count; j++)
@@ -322,11 +347,12 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
 
 void SCC_record_COM_distance(RNADataArray &sequence, RNAData *attach)
 {
-    gsl_vector_view A, B, D;
+    gsl_vector_view A, B, C, D;
     double dist;
+    double limit;
     int this_index = sequence.count;
 
-    //C = gsl_matrix_row(attach->data_matrix, attach->get_residue_COM_index(0));
+    C = gsl_matrix_row(attach->data_matrix, attach->get_residue_COM_index(0));
     D = gsl_matrix_row(attach->data_matrix, attach->get_residue_COM_index(1));
 
     for (int i = 0; i < sequence.count; i++)
@@ -334,15 +360,19 @@ void SCC_record_COM_distance(RNADataArray &sequence, RNAData *attach)
         if(i == 0)        
         {
             A = gsl_matrix_row(sequence[i]->data_matrix, sequence[i]->get_residue_COM_index(0));
-            //dist = distance(&A.vector, &C.vector);
-            //printf("%d:%c->%d:%c: %f\n", i, sequence[i]->name[0], this_index, attach->name[0], dist);
+            dist = distance(&A.vector, &C.vector);
+            limit = sequence[i]->COM_Radii[0] + attach->COM_Radii[0];
+            printf("%d:%c(%f)->%d:%c(%f): %f vs %f\n", i, sequence[i]->name[0], sequence[i]->COM_Radii[0], this_index, attach->name[0], attach->COM_Radii[0],dist, limit);
             dist = distance(&A.vector, &D.vector);
-            printf("%d:%c->%d:%c: %f\n", i, sequence[i]->name[0], this_index, attach->name[1], dist);
+            limit = sequence[i]->COM_Radii[0] + attach->COM_Radii[1];
+            printf("%d:%c(%f)->%d:%c(%f): %f vs %f\n", i, sequence[i]->name[0], sequence[i]->COM_Radii[0], this_index, attach->name[0], attach->COM_Radii[1],dist, limit);
         }        
         B = gsl_matrix_row(sequence[i]->data_matrix, sequence[i]->get_residue_COM_index(1));
-        //dist = distance(&B.vector, &C.vector);
-        //printf("%d:%c->%d:%c: %f\n", i, sequence[i]->name[1], this_index, attach->name[0], dist);
+        dist = distance(&B.vector, &C.vector);
+        limit = sequence[i]->COM_Radii[0] + attach->COM_Radii[0];
+        printf("%d:%c(%f)->%d:%c(%f): %f vs %f\n", i, sequence[i]->name[0], sequence[i]->COM_Radii[0], this_index, attach->name[0], attach->COM_Radii[0],dist, limit);          
         dist = distance(&B.vector, &D.vector);
-        printf("%d:%c->%d:%c: %f\n", i, sequence[i]->name[1], this_index, attach->name[1], dist);
+        limit = sequence[i]->COM_Radii[0] + attach->COM_Radii[1];
+        printf("%d:%c(%f)->%d:%c(%f): %f vs %f\n", i, sequence[i]->name[0], sequence[i]->COM_Radii[0], this_index, attach->name[0], attach->COM_Radii[1],dist, limit);
     }
 }

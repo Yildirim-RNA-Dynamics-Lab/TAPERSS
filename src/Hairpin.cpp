@@ -13,7 +13,7 @@ gsl_matrix *make_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B)
         gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(A, i, 0));
         gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(A, i, 1));
         gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(A, i, 2));
-        //printf("A: atom id: %c %d %s\t %f, %f, %f\n", A->atom_data->residue[A->WC_submatrix_rows[0][i]], A->atom_data->dnt_pos[A->WC_submatrix_rows[0][i]], A->atom_data->name[A->WC_submatrix_rows[0][i]], gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
+        //printf("A: Size:%lu %f, %f, %f\n", A->size1, gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
         iterator++;
     }
 
@@ -22,7 +22,7 @@ gsl_matrix *make_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B)
         gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(B, i, 0));
         gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(B, i, 1));
         gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(B, i, 2));
-        //printf("B: atom id: %c %d %s\t %f, %f, %f\n", B->atom_data->residue[B->WC_submatrix_rows[1][i]], B->atom_data->dnt_pos[B->WC_submatrix_rows[1][i]], B->atom_data->name[B->WC_submatrix_rows[1][i]], gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
+        //printf("B: Size:%lu %f, %f, %f\n", B->size1,gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
         iterator++;
     }
     return WC_matrix;
@@ -56,6 +56,10 @@ bool is_WC_pair(RNADataArray &sequence, DimerLibArray &WC_Lib, int i, int j, int
     //printf("Library index: %d\n", sequence[i]->position_in_lib[1]);
     //printf("Library index: %d\n", sequence[j]->position_in_lib[1]);
     RNAData *WC_pair = new RNAData(WC_Lib, WC_pair_idx, 0, true);
+    //WC_pair->print_WC_target(0);
+    //WC_pair->print_WC_target(1);
+    //sequence[i]->print_WC_target(0);
+    //sequence[j]->print_WC_target(1);
     gsl_matrix *sequence_matrix;
     gsl_matrix *WC_model_matrix;
     gsl_matrix *R;

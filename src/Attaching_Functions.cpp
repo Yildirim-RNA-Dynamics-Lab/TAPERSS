@@ -48,6 +48,7 @@ attach_status check_attachment(RNADataArray &sequence, RNAData *attach)
     attach_status status;
     if ((status = steric_clash_check_COM(sequence, attach)) != ATTACHED)
     {
+        //SCC_record_COM_distance(sequence, attach);
         *attach->_flag = NOT_USABLE;
         return status;
     }

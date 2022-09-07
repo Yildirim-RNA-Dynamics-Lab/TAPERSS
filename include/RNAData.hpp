@@ -72,6 +72,7 @@ struct RNADataArray
     int iterator_max;
     float structure_energy;
     float WC_rmsd1_6 = -1.0F;
+    bool TMP_END = false;
 
     char *string_out;
     int string_buffer;
