@@ -4,6 +4,7 @@ CFLAGS = -Wall
 CFLAGS += -W
 CFLAGS += -Werror
 CFLAGS += -Winline
+#CFLAGS += -Wno-unused-variable
 CFLAGS += -pedantic
 CFLAGS += -std=c++17
 CFLAGS += -ffast-math

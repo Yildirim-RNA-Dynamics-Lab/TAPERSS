@@ -64,6 +64,9 @@ struct RNADataArray
     RNAData **sequence;
     gsl_matrix *WC_submatrix;
     gsl_matrix *InteractionTable;
+    gsl_vector **COMS;
+    double *Radii;
+    bool *PassedCOMCheck;
     int* InteractionTableMap;
     int* InteractionTableSum;
     int  TableRowCount;

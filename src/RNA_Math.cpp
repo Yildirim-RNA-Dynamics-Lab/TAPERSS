@@ -75,6 +75,21 @@ void gsl_matrix_print(gsl_matrix *M, const char* name)
     }
 }
 
+int array_min_idx_for_energy(int *Arr, int N)
+{
+    int MinVal = N;
+    int MinIdx = -1;
+    for(int i = 0; i < N; i++)
+    {
+        if(Arr[i] < MinVal && Arr[i] != 0)
+        {
+            MinVal = Arr[i];
+            MinIdx = i;
+        }
+    }
+    return MinIdx;
+}
+
 void gsl_vector_print(gsl_vector* V)
 {
     printf("%f %f %f\n", gsl_vector_get(V, 0), gsl_vector_get(V, 1), gsl_vector_get(V, 2));

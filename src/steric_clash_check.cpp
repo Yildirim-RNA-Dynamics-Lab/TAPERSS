@@ -1,5 +1,7 @@
 #include "steric_clash_check.hpp"
 
+static bool* PassedCOMCheck;
+
 bool steric_clash_check(RNADataArray &sequence, RNAData *attach)
 {
     gsl_vector_view A, B;
@@ -198,9 +200,34 @@ attach_status steric_clash_check_COM_tester(RNADataArray& __restrict__ sequence,
     return ATTACHED;
 }
 
+void steric_clash_checkCOM(gsl_vector** M_COMS, double* M_Radii, int Count, gsl_vector_view A_COM, double A_Radius, bool* PassArray)
+{    
+    PassArray[0] = (distance(M_COMS[0], &A_COM.vector) > (M_Radii[0] + A_Radius));
+    if(PassArray[0] == true)
+    {
+        PassArray[0] = (distance(M_COMS[1], &A_COM.vector) > (M_Radii[1] + A_Radius));
+    }
+    for(int i = 1; i < Count; i++)
+    {
+        PassArray[i] = (distance(M_COMS[i * 2 + 1] , &A_COM.vector) > (M_Radii[i * 2 + 1] + A_Radius));
+    }
+}
 
 
-attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNAData* __restrict__ attach)
+
+attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach)
+{
+    gsl_vector_view A_COM = gsl_matrix_row(Attach->data_matrix, Attach->get_residue_COM_index(1));
+    PassedCOMCheck = (bool *)malloc(sizeof(bool *) * Sequence.count);
+    steric_clash_checkCOM(Sequence.COMS, Sequence.Radii, Sequence.count, A_COM, Attach->COM_Radii[1], PassedCOMCheck);
+    if(PassedCOMCheck[0] == true)
+    {
+        return attach_status::ATTACHED;
+    }
+    return attach_status::ATTACHED;
+}
+
+attach_status steric_clash_check_COM(RNADataArray& sequence, RNAData* __restrict__ attach)
 {
     gsl_vector_view A, B;
     double radius_1, radius_2;

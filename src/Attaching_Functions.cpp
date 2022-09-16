@@ -10,6 +10,7 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
     gsl_matrix *MODEL = rotated->data_matrix;
     gsl_matrix *P = rotated->get_target_matrix_copy(0);
     gsl_matrix *Q = reference->get_target_matrix_copy(1);
+    gsl_matrix *P_WORK = kabsch_allocate_work_matrix(P);
     gsl_matrix *R;
     
     /*
@@ -19,8 +20,8 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
     printf("################Residue name: %s\n", rotated->name);
     print_gsl_matrix(P);
     */
-    
-    R = kabsch_get_rotation_matrix_generic(P, Q, COMP, COMQ);
+    kabsch_calculate_rotation_matrix_Nx3fast(P, Q, P_WORK, COMP, COMQ);
+    R = kabsch_get_rotation_matrix();
     rmsd_ = rmsd_generic(P, Q);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
     {
@@ -39,7 +40,7 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
 
     gsl_matrix_free(P);
     gsl_matrix_free(Q);
-    gsl_matrix_free(R);
+    gsl_matrix_free(P_WORK);
     return status;
 }
 

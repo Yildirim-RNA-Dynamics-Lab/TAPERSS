@@ -11,6 +11,7 @@
 #include "StructureBuilders.hpp"
 #include "RNADataArrayInternalLoop.hpp"
 
+
 using namespace std;
 
 unsigned int get_x_location(char *sequence)
@@ -153,12 +154,15 @@ template <typename T> void Run()
         exit(1);
     }
     output_string output_s(GLOBAL_OUTPUT_FILE, MAX_STRINGS, GLOBAL_IO_ACTION);
+    kabsch_create();
 
     End = clock();
 
     TimeUsed = ((double) (End - Start)) / CLOCKS_PER_SEC;
 
     printf("Time to load: %fms\n", TimeUsed * 1000);
+
+    DIE;
 
     if (GLOBAL_RUN_COMBINATORIAL)
     {
@@ -210,7 +214,10 @@ template <typename T> void Run()
         printf("Creating structures from index list...\n");
         int num_strs = read_input_index_file(GLOBAL_INPUT_FILE, N_diNts);
         printf("Done reading input...\n");
-        create_custom_structure_list(Library, WC_Library, RNA, output_s, num_strs);
+        if(GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
+        {
+            create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(Library, WC_Library, RNA, output_s, num_strs); // Need to define for IL at somepoint
+        }
         for (int i = 0; i < num_strs; i++)
         {
             free(GLOBAL_INPUT_INDICES_LIST[i]);
@@ -237,6 +244,7 @@ template <typename T> void Run()
     {
         free_libs(WCLibs2Load, N_WC);
     }
+    kabsch_destroy();
 
 }
 

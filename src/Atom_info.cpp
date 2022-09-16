@@ -250,12 +250,13 @@ atom_info::~atom_info()
  */
 void atom_info::add_atom(char *N, int i, char r, int p)
 {
+    atom_id ID = get_atom_id(N);
     strcpy(name[iterator], N);
     index[iterator] = i;
     residue[iterator] = r;
     dnt_pos[iterator] = p;
-    atom_ids[iterator] = get_atom_id(N);
-    charges[iterator] = get_atom_charge(atom_ids[iterator], r);
+    atom_ids[iterator] = ID;
+    charges[iterator] = get_atom_charge(ID, r);
     if(charges[iterator] != atom_charge::NEUTRAL)
     {
         num_charged_atoms++;
@@ -310,6 +311,7 @@ int atom_info::get_idx_of_atom(atom_id atom_name, int residx)
     {
         if(dnt_pos[i] == residx + 1 && atom_ids[i] == atom_name)
         {
+            //printf("i = %d\n", i);
             return i;
         }
     }

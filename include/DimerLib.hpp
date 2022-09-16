@@ -15,6 +15,7 @@ struct DimerLib
     char*             name;
     int               count; //Number of structures in Library
     double*           radii[2];
+    uint32_t          steric_clash_bypass[2];
     flag*             flags;
 
     DimerLib(int n, int a_n, int e_n);
