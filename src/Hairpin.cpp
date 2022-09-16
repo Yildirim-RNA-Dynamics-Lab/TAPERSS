@@ -9,16 +9,18 @@ void overwrite_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B, gsl_matrix *WC_mat
         gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(A, i, 0));
         gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(A, i, 1));
         gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(A, i, 2));
-        //printf("A: Size:%lu %f, %f, %f\n", A->size1, gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
+        printf("A: Size:%lu %f, %f, %f\n", A->size1, gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
         iterator++;
     }
 
     for (unsigned int i = 0; i < B->size1; i++)
     {
+        printf("Iterator = %d\n", iterator);
+        printf("Size of WC: %lu\n", WC_matrix->size1);
         gsl_matrix_set(WC_matrix, iterator, 0, gsl_matrix_get(B, i, 0));
         gsl_matrix_set(WC_matrix, iterator, 1, gsl_matrix_get(B, i, 1));
         gsl_matrix_set(WC_matrix, iterator, 2, gsl_matrix_get(B, i, 2));
-        //printf("B: Size:%lu %f, %f, %f\n", B->size1,gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
+        printf("B: Size:%lu %f, %f, %f\n", B->size1,gsl_matrix_get(WC_matrix, iterator, 0), gsl_matrix_get(WC_matrix, iterator, 1), gsl_matrix_get(WC_matrix, iterator, 2));
         iterator++;
     }
 }

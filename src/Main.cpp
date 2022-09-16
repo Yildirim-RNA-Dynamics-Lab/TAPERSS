@@ -162,7 +162,7 @@ template <typename T> void Run()
 
     printf("Time to load: %fms\n", TimeUsed * 1000);
 
-    DIE;
+    //DIE;
 
     if (GLOBAL_RUN_COMBINATORIAL)
     {

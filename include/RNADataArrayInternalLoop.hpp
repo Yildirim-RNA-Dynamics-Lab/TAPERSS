@@ -15,9 +15,11 @@ struct RNADataArrayInternalLoop : public RNADataArray
     int iterator_max_1;
     //RNAData** sequence;
     RNADataArrayInternalLoop() : RNADataArray() {};
+    int WC_size_left;
 
     void initialize(int size1, int size2, int* AtomMap, int LAC)
     {
+        WC_size_left = size1;
         //printf("~~~~~~~~~~~Size 1: %d\n", size1);
         iterator_max_1 = size1 - 1;
         iterator_max = size1 + size2 - 1;
@@ -30,6 +32,18 @@ struct RNADataArrayInternalLoop : public RNADataArray
         InteractionTableSum = (int *)calloc(LAC, sizeof(int));
         InteractionTableMap = AtomMap;
         TableRowCount = LAC;
+        COMS = (gsl_vector**)malloc(2 * (iterator_max + 1) * sizeof(gsl_vector*));
+        for(int i = 0; i < (iterator_max + 1) * 2; i++) 
+        { 
+            COMS[i] = gsl_vector_alloc(MATRIX_DIMENSION2);
+        }
+        Radii = (double *)malloc(2 * (iterator_max + 1) * sizeof(double));
+        PassedCOMCheck = (bool*)malloc((iterator_max + 1) * sizeof(gsl_vector*));
+        memset(PassedCOMCheck, false, iterator_max + 1);
+        for(int i = 0; i < iterator_max + 1; i++) 
+        {
+            printf("PassCOMCheck Boolean: %s\n", PassedCOMCheck[i] == true ? "true" : "false");
+        }
     }
 
     bool inLeft_or_inRight(int working_pos) //return true if in left strand
@@ -47,7 +61,16 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
     void add_move(RNAData *A)
     {
-        sequence[++iterator] = A;
+        iterator++;
+        gsl_vector_view V0 = gsl_matrix_row(A->data_matrix, A->get_residue_COM_index(0));
+        gsl_vector_view V1 = gsl_matrix_row(A->data_matrix, A->get_residue_COM_index(1));
+        gsl_vector_memcpy(COMS[iterator * 2], &V0.vector);
+        gsl_vector_memcpy(COMS[iterator * 2 + 1], &V1.vector);
+        printf("iterator: %d\n", iterator);
+        gsl_vector_print(COMS[iterator * 2]);
+        Radii[iterator * 2] = A->COM_Radii[0];
+        Radii[iterator * 2 + 1] = A->COM_Radii[1];
+        sequence[iterator] = A;
         count++;
         *A->_flag = USED;
     }
@@ -108,11 +131,15 @@ struct RNADataArrayInternalLoop : public RNADataArray
         memcpy(COMP, COMZERO, sizeof(COMZERO));
         memcpy(COMQ, COMZERO, sizeof(COMZERO));
 
-        gsl_matrix *sequence_matrix = gsl_matrix_alloc(Q1->size1 + P2->size2, MATRIX_DIMENSION2);
-        gsl_matrix *WC_model_matrix = gsl_matrix_alloc(P1->size1 + Q2->size2, MATRIX_DIMENSION2);
+        gsl_matrix *sequence_matrix = gsl_matrix_alloc(Q1->size1 + P2->size1, MATRIX_DIMENSION2);
+        gsl_matrix *WC_model_matrix = gsl_matrix_alloc(P1->size1 + Q2->size1, MATRIX_DIMENSION2);
         gsl_matrix *work_matrix;
         gsl_matrix *R;
         double _rmsd;
+
+        print_gsl_matrix(P2);
+        print_gsl_matrix(Q1);
+
 
         overwrite_WC_submatrix_gsl(Q1, P2, sequence_matrix);
         overwrite_WC_submatrix_gsl(P1, Q2, WC_model_matrix);
@@ -141,8 +168,6 @@ struct RNADataArrayInternalLoop : public RNADataArray
         gsl_matrix_free(sequence_matrix);
         gsl_matrix_free(WC_model_matrix);
         gsl_matrix_free(work_matrix);
-        gsl_matrix_free(R);
-
         return rmsd_pass;
     }
 

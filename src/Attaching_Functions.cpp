@@ -22,12 +22,14 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
     */
     kabsch_calculate_rotation_matrix_Nx3fast(P, Q, P_WORK, COMP, COMQ);
     R = kabsch_get_rotation_matrix();
+    print_gsl_matrix(R);
     rmsd_ = rmsd_generic(P, Q);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
     {
         status = ATTACHED;
         translate_matrix(COMP, MODEL, -1.0F);
         apply_rotation_matrix(R, MODEL);
+        print_gsl_matrix(R);
         translate_matrix(COMQ, MODEL, 1.0F);
         *rotated->_flag = USED;
     }

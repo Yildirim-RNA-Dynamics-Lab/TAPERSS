@@ -95,6 +95,9 @@ void kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_
   Determinant = get_determinant_3x3fast(VUt_KABSCH);
   gsl_matrix_set(DIA_KABSCH, MATRIX_DIMENSION2 - 1, MATRIX_DIMENSION2 - 1, Determinant);
   gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, DIA_KABSCH, H_KABSCH, 0.0, TEMP_KABSCH);
+  print_gsl_matrix(TEMP_KABSCH);
+  print_gsl_matrix(V_KABSCH);
+  print_gsl_matrix(R_KABSCH);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, V_KABSCH, TEMP_KABSCH, 0.0, R_KABSCH);
   gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, R_KABSCH, P, 0.0, P_WORK);
   gsl_matrix_transpose_memcpy(P, P_WORK);

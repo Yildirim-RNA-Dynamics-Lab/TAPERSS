@@ -183,7 +183,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         }
         attach->update_submatrices();
         //printf("---------Before check attachment\n");
-        if ((status = check_attachment(assembled, attach)) == ATTACHED)
+        if ((status = steric_clash_check_COMFast_IL(assembled, attach)) == ATTACHED)
         {
             break;
         }

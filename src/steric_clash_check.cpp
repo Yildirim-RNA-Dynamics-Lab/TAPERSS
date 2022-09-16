@@ -213,6 +213,39 @@ void steric_clash_checkCOM(gsl_vector** M_COMS, double* M_Radii, int Count, gsl_
     }
 }
 
+void steric_clash_checkCOM_IL(gsl_vector** M_COMS, double* M_Radii, int Count, gsl_vector_view A_COM, double A_Radius, bool* PassArray, int size1)
+{    
+    PassArray[0] = (distance(M_COMS[0], &A_COM.vector) > (M_Radii[0] + A_Radius));
+    if(PassArray[0] == true)
+    {
+        PassArray[0] = (distance(M_COMS[1], &A_COM.vector) > (M_Radii[1] + A_Radius));
+    }
+
+    for(int i = 1; i < size1; i++)
+    {
+        PassArray[i] = (distance(M_COMS[i * 2 + 1] , &A_COM.vector) > (M_Radii[i * 2 + 1] + A_Radius));
+    }
+
+    printf("PassArray[size1]: %d\n", PassArray[size1]);
+    PassArray[size1] = (distance(M_COMS[size1], &A_COM.vector) > (M_Radii[size1] + A_Radius));
+    printf("M_Radii[size1]: %f\n", M_Radii[size1]);
+    gsl_vector_print(M_COMS[size1]);
+    printf("PassArray[size1]: %d\n", PassArray[size1]);
+    printf("Size1: %d\n", size1);
+    if(PassArray[size1] == true)
+    {
+        PassArray[size1] = (distance(M_COMS[size1 + 1], &A_COM.vector) > (M_Radii[size1 + 1] + A_Radius));
+    }
+    for(int i = size1 + 1; i < Count; i++)
+    {
+        PassArray[i] = (distance(M_COMS[i * 2 + 1] , &A_COM.vector) > (M_Radii[i * 2 + 1] + A_Radius));
+    }
+    for(int i = 0; i < Count; i++) 
+    {
+        printf("PassArray Boolean: %s\n", PassArray[i] == true ? "true" : "false");
+    }
+}
+
 
 
 attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach)
@@ -223,6 +256,20 @@ attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach
     if(PassedCOMCheck[0] == true)
     {
         return attach_status::ATTACHED;
+    }
+    return attach_status::ATTACHED;
+}
+attach_status steric_clash_check_COMFast_IL(RNADataArrayInternalLoop& Sequence, RNAData* Attach)
+{
+    gsl_vector_view A_COM = gsl_matrix_row(Attach->data_matrix, Attach->get_residue_COM_index(1));
+//    PassedCOMCheck = (bool *)malloc(sizeof(bool *) * Sequence.count);
+    if(Sequence.WC_size_left >= Sequence.count)
+    {
+        steric_clash_checkCOM(Sequence.COMS, Sequence.Radii, Sequence.count, A_COM, Attach->COM_Radii[1], Sequence.PassedCOMCheck);
+    }
+    else 
+    {
+        steric_clash_checkCOM_IL(Sequence.COMS, Sequence.Radii, Sequence.count, A_COM, Attach->COM_Radii[1], Sequence.PassedCOMCheck, Sequence.WC_size_left);
     }
     return attach_status::ATTACHED;
 }
