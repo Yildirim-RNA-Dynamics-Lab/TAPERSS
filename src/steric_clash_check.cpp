@@ -225,6 +225,7 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
         //printf("steric clash index i: %d\n", i);
         if(i == 0)        
         {
+            printf("Resid = %d\n", i);
             passed_check[0] = false;
             steric_clash_checks_attempted++;
             sequence_COM = gsl_matrix_row(sequence[i]->data_matrix, sequence[i]->get_residue_COM_index(0));
@@ -239,13 +240,13 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
             //gsl_vector_print(&sequence_COM.vector);
             //printf("Radius: %f\n", sequence_radius[0]);
 
-            //printf("Distance 0: %f\n", SCC_dist[0]);
-            //printf("Limit 0: %f\n", sequence_radius[0] + attach_radius);
+            printf("Distance 0: %f\n", SCC_dist[0]);
+            printf("Limit 0: %f\n", sequence_radius[0] + attach_radius);
     
 
             if(SCC_dist[0] > (sequence_radius[0] + attach_radius))
             {                
-                //printf("PASSED CHECK\n");
+                printf("PASSED CHECK\n");
                 steric_clash_checks_skipped++;
                 passed_check[0] = true;
             }
@@ -256,19 +257,20 @@ attach_status steric_clash_check_COM(RNADataArray& __restrict__ sequence, RNADat
             iterator_start = sequence[i]->atom_data->count_per_res[0];
         }
 
+        printf("Resid = %d\n", i + 1);
         steric_clash_checks_attempted++;
 
         sequence_COM = gsl_matrix_row(sequence[i]->data_matrix, sequence[i]->get_residue_COM_index(1));
         SCC_dist[1] = distance(&attach_COM.vector, &sequence_COM.vector);                    
         sequence_radius[1] = sequence[i]->COM_Radii[1];
 
-        //printf("Distance 1: %f\n", SCC_dist[1]);
-        //printf("Limit 1: %f\n", sequence_radius[1] + attach_radius);        
+        printf("Distance 1: %f\n", SCC_dist[1]);
+        printf("Limit 1: %f\n", sequence_radius[1] + attach_radius);        
 
         if(SCC_dist[1] > (sequence_radius[1] + attach_radius))
         {
             steric_clash_checks_skipped++;
-            //printf("PASSED CHECK\n");
+            printf("PASSED CHECK\n");
             passed_check[1] = true;
         }
 
