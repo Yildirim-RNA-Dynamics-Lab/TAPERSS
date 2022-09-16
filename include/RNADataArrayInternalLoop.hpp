@@ -26,7 +26,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         count = 0;
         structure_energy = 0;
         InteractionTable = gsl_matrix_alloc(LAC, LAC);
-        gsl_matrix_set_identity(InteractionTable); // Set diagonals to 1.
+        gsl_matrix_set_zero(InteractionTable); // Set diagonals to 1.
         InteractionTableSum = (int *)calloc(LAC, sizeof(int));
         InteractionTableMap = AtomMap;
         TableRowCount = LAC;
@@ -108,14 +108,17 @@ struct RNADataArrayInternalLoop : public RNADataArray
         memcpy(COMP, COMZERO, sizeof(COMZERO));
         memcpy(COMQ, COMZERO, sizeof(COMZERO));
 
-        gsl_matrix *sequence_matrix;
-        gsl_matrix *WC_model_matrix;
+        gsl_matrix *sequence_matrix = gsl_matrix_alloc(Q1->size1 + P2->size2, MATRIX_DIMENSION2);
+        gsl_matrix *WC_model_matrix = gsl_matrix_alloc(P1->size1 + Q2->size2, MATRIX_DIMENSION2);
+        gsl_matrix *work_matrix;
         gsl_matrix *R;
         double _rmsd;
 
-        sequence_matrix = make_WC_submatrix_gsl(Q1, P2);
-        WC_model_matrix = make_WC_submatrix_gsl(P1, Q2);
-        R = kabsch_get_rotation_matrix_generic(WC_model_matrix, sequence_matrix, COMP, COMQ);
+        overwrite_WC_submatrix_gsl(Q1, P2, sequence_matrix);
+        overwrite_WC_submatrix_gsl(P1, Q2, WC_model_matrix);
+        work_matrix = kabsch_allocate_work_matrix(sequence_matrix);
+        kabsch_calculate_rotation_matrix_Nx3fast(WC_model_matrix, sequence_matrix, work_matrix, COMP, COMQ);
+        R = kabsch_get_rotation_matrix();
         apply_rotation_matrix(R, WC_model_matrix);
         _rmsd = rmsd_generic(sequence_matrix, WC_model_matrix);
 
@@ -137,6 +140,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         gsl_matrix_free(Q1);
         gsl_matrix_free(sequence_matrix);
         gsl_matrix_free(WC_model_matrix);
+        gsl_matrix_free(work_matrix);
         gsl_matrix_free(R);
 
         return rmsd_pass;

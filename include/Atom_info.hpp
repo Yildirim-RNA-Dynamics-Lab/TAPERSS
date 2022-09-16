@@ -8,16 +8,17 @@ enum atom_charge{POSITIVE = 1, NEGATIVE = -1, NEUTRAL = 0}; //simplistic charge 
 
 struct atom_info
 {
-    char**       name;
-    int*         index;
-    char*        residue;
-    int*         dnt_pos;
-    atom_id*     atom_ids;
-    atom_charge* charges;
-    int          count;            // Number of atoms per structure
-    unsigned int count_per_res[2]; // Number of atoms per residue 1 and 2
-    int          iterator;
-    unsigned int num_charged_atoms = 0;
+    char**        name;
+    int*          index;
+    char*         residue;
+    int*          dnt_pos;
+    atom_id*      atom_ids;
+    atom_charge*  charges;
+    int           count;            // Number of atoms per structure
+    uint_fast32_t count_per_res[2]; // Number of atoms per residue 1 and 2
+    uint_fast32_t iterator;
+    uint_fast32_t num_charged_atoms = 0;
+
     
     atom_info();
     atom_info(int n);

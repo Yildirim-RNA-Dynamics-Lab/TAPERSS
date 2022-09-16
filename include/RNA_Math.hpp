@@ -11,7 +11,7 @@ void translate_matrix(double *__restrict__ tV, gsl_matrix *M, double scalar);
 void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M);
 void gsl_matrix_print(gsl_matrix *M, const char* name);
 void gsl_vector_print(gsl_vector *V); 
-
+int array_min_idx_for_energy(int *Arr, int N);
 /* Inline Functions */
 
 inline double distance(gsl_vector *A, gsl_vector *B)

@@ -43,7 +43,6 @@ void DimerLib::save_lib(gsl_matrix **d_m, float *e, char *n, double** r)
     memcpy(name, n, sizeof(char) * 3);
     memcpy(radii[0], r[0], sizeof(double) * count);
     memcpy(radii[1], r[1], sizeof(double) * count);
-
     //for(int i = 0; i < count; i++)
     //{
      //   printf("%d  %s: 1:%f 2:%f\n", i, name, radii[0][i], radii[1][i]);
