@@ -11,10 +11,10 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
 
     DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
 
-    attach = new RNAData(Lib, working_position, 0); // For initialization only
+    attach = nullptr;//new RNAData(Lib, working_position, 0); // For initialization only
     for (int i = 0; i < Library->count; i++)
     {
-        if (Library->flags[i] != NO_FLAG)
+        if (Lib.Flags[working_position][i] != NO_FLAG)
         {
             continue;
         }
@@ -136,10 +136,10 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
     
     //DIE;
     //printf("Base name: %s\n", base->name);
-    attach = new RNAData(Lib, working_position, 0); // For initialization only
+    attach = nullptr;//new RNAData(Lib, working_position, 0); // For initialization only
     for (int i = 0; i < Library->count; i++)
     {
-        if (Library->flags[i] != NO_FLAG)
+        if (Lib.Flags[working_position][i] != NO_FLAG)
         {
             continue;
         }

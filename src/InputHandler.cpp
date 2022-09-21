@@ -1,34 +1,51 @@
 #include "InputHandler.hpp"
 
-void get_diNt_names(char *sequence, char** rtn, int N_diNts)
+int get_diNt_names(char *sequence, char** rtn, int *duplicates, int N_diNts)
 {
-    int name_position = -1;
+    int name_position = 0;
+    int num_duplicates = 0;
     //*N_diNts = strlen(sequence) - 1;
     //char **rtn = (char **)malloc(sizeof(char *) * *N_diNts);
-    while (LIBRARY_FILENAME_PROTOTYPE[name_position++] != 'X')
-        ;
-    name_position -= 1;
+    while (LIBRARY_FILENAME_PROTOTYPE[name_position] != 'X')
+    {
+        name_position++;
+    };
+    //name_position -= 1;
+
     for (int i = 0; i < N_diNts; i++)
     {
         rtn[i] = (char *)malloc(sizeof(char) * sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(rtn[i], LIBRARY_FILENAME_PROTOTYPE, sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(&rtn[i][name_position], sequence++, sizeof(char) * 2);
     }
-    //return rtn;
+
+
+    for (int i = N_diNts - 1; i > -1; i--)
+    {
+        for(int j = 0; j < i; j++)
+        {
+            if(!strcmp(rtn[i], rtn[j]))
+            {
+                duplicates[i] = j;
+                num_duplicates++;
+            }
+        }
+    }
+    return num_duplicates;
 }
 
-void get_WC_partner(char *sequence, char** rtn, int N_Nts)
+void get_WC_partner(char *sequence, char** rtn, int Nt1, int Nt2)
 {
     char WC_pair[3];
 
     int name_position = 0;
-    while (WATSON_CRICK_LIBRARY_PROTOTYPE[name_position++] != 'X')
-        ;
-    name_position -= 1;
+    while (WATSON_CRICK_LIBRARY_PROTOTYPE[name_position] != 'X')
+    {
+        name_position++;
+    }
 
-    WC_pair[0] = sequence[0];
-    WC_pair[1] = sequence[N_Nts];
-    printf("S: %s N_Nts = %d\n", sequence, N_Nts);
+    WC_pair[0] = sequence[Nt1];
+    WC_pair[1] = sequence[Nt2];
     WC_pair[2] = '\0';
 
     if (WC_pair[0] == 'A')

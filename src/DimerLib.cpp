@@ -8,15 +8,21 @@
  */
 DimerLib::DimerLib(int n, int a_n, int e_n)
 {
+    LibraryMemblock = gsl_block_alloc(n * a_n * MATRIX_DIMENSION2);
     data_matrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * n);
+    for(int i = 0, offset = 0; i < n; i++, offset += a_n)
+    {
+        data_matrices[i] = gsl_matrix_alloc_from_block(LibraryMemblock, offset, a_n, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+    }
+
     name = (char *)malloc(sizeof(char) * 3);
-    flags = (flag *)calloc(n, sizeof(flag));
     energy = (float *)malloc(sizeof(float) * n);
     radii[0] = (double *)malloc(sizeof(double) *n);
     radii[1] = (double *)malloc(sizeof(double) *n);
     count = n;
     atom_data = new atom_info(a_n - e_n);
 }
+
 DimerLib::~DimerLib()
 {
     // printf("DimerLib %s Destructor Called\n", name);
@@ -24,9 +30,9 @@ DimerLib::~DimerLib()
     {
         gsl_matrix_free(data_matrices[i]);
     }
+    gsl_block_free(LibraryMemblock);
     free(energy);
     free(data_matrices);
-    free(flags);
     free(name);
     free(radii[0]);
     free(radii[1]);
@@ -52,10 +58,6 @@ void DimerLib::save_lib(gsl_matrix **d_m, float *e, char *n, double** r)
 
 void DimerLib::clear_flags()
 {
-    for (int i = 0; i < count; i++)
-    {
-        flags[i] = NO_FLAG;
-    }
 }
 
 DimerLibArray::DimerLibArray()
@@ -66,6 +68,7 @@ DimerLibArray::DimerLibArray()
 DimerLibArray::DimerLibArray(int s)
 {
     library = (DimerLib **)malloc(sizeof(DimerLib *) * s);
+    Flags = (flag**)malloc(sizeof(flag) * s);
     count = s;
     iterator = 0;
     was_initialized = true;
@@ -75,11 +78,15 @@ DimerLibArray::~DimerLibArray()
 {
     if (was_initialized)
     {
-        for (int i = 0; i < count; i++)
+        for (uint64_t i = 0; i < count; i++)
         {
-            delete library[i];
+            if(is_duplicate[i] != true)
+            {
+                delete library[i];
+            }            
         }
         free(library);
+        free(is_duplicate);
     }
 }
 
@@ -87,6 +94,9 @@ void DimerLibArray::initialize(int s)
 {
     //printf("DIMERLIBARRAY:INIT s = %d\n", s);
     library = (DimerLib **)malloc(sizeof(DimerLib *) * s);
+    is_duplicate = (bool*)malloc(sizeof(bool) * s);
+    memset(is_duplicate, false, sizeof(bool) * s);
+    Flags = (flag **)malloc(sizeof(flag *) * s);
     count = s;
     iterator = 0;
     was_initialized = true;
@@ -98,9 +108,17 @@ DimerLib *DimerLibArray::operator[](int i)
     return library[i];
 }
 
+void DimerLibArray::map_duplicate(size_t dupli, size_t orig)
+{
+    library[dupli] = library[orig];
+    is_duplicate[dupli] = true;
+    iterator++;
+}
+
 void DimerLibArray::alloc_lib(int n, int a_n, int e_n)
 {
     library[iterator] = new DimerLib(n, a_n, e_n);
+    full_structure_element_sum += a_n;
 }
 
 void DimerLibArray::DimerLibArray::add_to_atom_info(char *N, int i, char r, int p)
@@ -118,7 +136,7 @@ void DimerLibArray::get_charged_atom_map()
 {
     int LargestAtomCount = 0;
     int MapTracker = 0;
-    for(int i = 0; i < count; i++)
+    for(uint64_t i = 0; i < count; i++)
     {
         if(library[i]->atom_data->count > LargestAtomCount)
         {
@@ -127,7 +145,7 @@ void DimerLibArray::get_charged_atom_map()
         
     }
     AtomMap = (int*)calloc(LargestAtomCount * count, sizeof(int));
-    for(int i = 0; i < count; i++)
+    for(uint64_t i = 0; i < count; i++)
     {
         for(int j = 0; j < LargestAtomCount; j++)
         {
@@ -153,13 +171,33 @@ void DimerLibArray::get_charged_atom_map()
     ChargedAtomCount = LargestAtomCount;
 }
 
+void DimerLibArray::initialize_flags()
+{
+    int TotalSum = 0;
+    int offset = 0;
+    for (uint64_t i = 0; i < count; i++)
+    {        
+        TotalSum += library[i]->count;
+    }
+    Flags[0] = (flag*)malloc(sizeof(flag) * TotalSum);
+    memset(&Flags[0][0], flag::NO_FLAG, sizeof(flag) * TotalSum);
+    for (uint64_t i = 1; i < count; i++)
+    {
+        offset += library[i - 1]->count;
+        Flags[i] = &Flags[0][offset];
+    }
+}
+
 void DimerLibArray::reset_flags(bool *reset)
 {
-    for (int i = 0; i < count; i++)
+    for (uint64_t i = 0; i < count; i++)
     {
         if (reset[i] == true)
         {
-            library[i]->clear_flags();
+            for(int j = 0; j < library[i]->count; j++)
+            {
+                Flags[i][j] = flag::NO_FLAG;
+            }
             // printf("flags for %d reset\n", i);
         }
     }
@@ -275,10 +313,10 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     COM_vec = gsl_matrix_row(A, A->size1 - (2 - res_id));
 
     OP_vec = gsl_matrix_row(A, A_info->get_idx_of_atom(OP1, 1));
-    dists_OP[0] = distance(&COM_vec.vector, &OP_vec.vector);
+    dists_OP[0] = distance_vec2vec(&COM_vec.vector, &OP_vec.vector);
     
     OP_vec = gsl_matrix_row(A, A_info->get_idx_of_atom(OP2, 1));
-    dists_OP[1] = distance(&COM_vec.vector, &OP_vec.vector);
+    dists_OP[1] = distance_vec2vec(&COM_vec.vector, &OP_vec.vector);
 
     if(dists_OP[1] > dists_OP[0])
     {
@@ -305,11 +343,11 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 
     FG_vec = gsl_matrix_row(A, FG_idxs[0]);
-    dists_FG[0] = distance(&COM_vec.vector, &FG_vec.vector);
+    dists_FG[0] = distance_vec2vec(&COM_vec.vector, &FG_vec.vector);
     if(FG_idxs[1] != -1)
     {
         FG_vec = gsl_matrix_row(A, FG_idxs[1]);
-        dists_FG[1] = distance(&COM_vec.vector, &FG_vec.vector);
+        dists_FG[1] = distance_vec2vec(&COM_vec.vector, &FG_vec.vector);
     }
 
     if(dists_FG[1] > dists_FG[0])
@@ -337,34 +375,34 @@ void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, in
     for(unsigned int i = (res_id == 0 ? 0 : A_info->count_per_res[0]); i < (res_id == 0 ? A_info->count_per_res[0] : A_info->count_per_res[1]);  i++)
     {
         V = gsl_matrix_row(A, i);
-        dist = distance(&COM.vector, &V.vector);
+        dist = distance_vec2vec(&COM.vector, &V.vector);
         if(dist > *radius)
         {
-            printf("%s is outside sphere!\n", A_info->name[i]);
+            printf("%s is outside COM sphere!\n", A_info->name[i]);
             *radius = dist + 1;
         }
     }
 }
 
-void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
+void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_record, bool for_WC)
 {
-    enum
-    {
-        model_count = 0,
-        atom_count = 1
-    };
+    enum { model_count = 0, atom_count = 1 };
     float *energies;
     gsl_matrix **data_mats;
     int model_info[2];
     double* _radii[2];
-
-    char tmp[3];
     char line[100];
 
     RTN.initialize(N_diNts);
 
     for (int i = 0; i < N_diNts; i++)
     {
+        if(!for_WC && duplicate_record[i] != -1)
+        {
+            RTN.map_duplicate(i, duplicate_record[i]);
+            printf("%d: %s (Points to library %d)\n", i, LibNames[i], duplicate_record[i]);
+            continue;
+        }
         bool first_itr = true;
         model_info[model_count] = model_info[atom_count] = 0;
 
@@ -382,16 +420,11 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
         
         RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
-        data_mats = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * model_info[model_count]);
         
-        for (int i = 0; i < model_info[model_count]; i++)
-        {
-            data_mats[i] = gsl_matrix_alloc(model_info[atom_count], 3);
-        }
-
-        energies = (float *)malloc(sizeof(float) * model_info[model_count]);
-        _radii[0] = (double *)malloc(sizeof(double) * model_info[model_count]);
-        _radii[1] = (double *)malloc(sizeof(double) * model_info[model_count]);
+        data_mats = RTN[i]->data_matrices;
+        energies  = RTN[i]->energy;
+        _radii[0] = RTN[i]->radii[0];
+        _radii[1] = RTN[i]->radii[1];
         
         int iterator = 0;
         int row = 0;
@@ -457,20 +490,16 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         while (default_name[name_position++] != 'X')
             ;
         name_position -= 1;
-        tmp[0] = for_WC ? LibNames[i][name_position] : LibNames[i][name_position];
-        tmp[1] = for_WC ? LibNames[i][name_position + 1] : LibNames[i][name_position + 1];
-        tmp[2] = '\0';
+        RTN[i]->name[0] = for_WC ? LibNames[i][name_position] : LibNames[i][name_position];
+        RTN[i]->name[1] = for_WC ? LibNames[i][name_position + 1] : LibNames[i][name_position + 1];
+        RTN[i]->name[2] = '\0';
 
         for(int i = 0; i < model_info[model_count]; i++)
         {
             //printf("%d  %s: 1:%f 2:%f\n", i, tmp, _radii[0][i], _radii[1][i]);
         }
-        //putchar('\n');
-
-        RTN.add_lib(data_mats, energies, tmp, _radii);
-        free(data_mats);
-        free(energies);
-        free(_radii[0]);
-        free(_radii[1]);        
+        //putchar('\n'); 
+        RTN.iterator++;    
     }
+    RTN.initialize_flags();
 }

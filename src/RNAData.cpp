@@ -9,33 +9,198 @@
  * @param j Index of model in library
  * @param WC Is this RNA_data for watson crick data
  */
-RNAData::RNAData(DimerLibArray &L, int i, int j, bool WC)
+RNAData::RNAData()
 {
-    atom_data = (L[i]->atom_data);
-    data_matrix = gsl_matrix_alloc(L[i]->data_matrices[j]->size1, L[i]->data_matrices[j]->size2);
-    gsl_matrix_memcpy(data_matrix, L[i]->data_matrices[j]);
-    
-    energy = L[i]->energy[j];
 
-    name = (char *)malloc(sizeof(char) * 3);
-    memcpy(name, L[i]->name, sizeof(char) * 3);
+}
 
-    count = L[i]->atom_data->count;
-        
-    _flag = &(L[i]->flags[j]);
-
-    position_in_lib[0] = i;
-    position_in_lib[1] = j;
-    position_max = L[i]->count - 1;
+void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlock, size_t *offset_matrix, uint16_t *ArrayMemBlock, size_t *offset_array, bool WC)
+{
+    atom_data = (L[idx]->atom_data);
+    memcpy(name, L[idx]->name, sizeof(char) * 3);
+    energy = L[idx]->energy[idx_L];
+    count = L[idx]->atom_data->count;
+    _flag = &(L.Flags[idx][idx_L]);
+    position_in_lib[0] = idx;
+    position_in_lib[1] = idx_L;
+    position_max = L[idx]->count - 1;
 
     id = rna_dat_tracker++;
     
     is_for_WC = WC;
-    WC ? make_WC_submatrices(true) : make_submatrices();
+    //WC ? make_WC_submatrices(true) : make_submatrices();
     WC_secondary = false;
 
-    COM_Radii[0] = L[i]->radii[0][j];
-    COM_Radii[1] = L[i]->radii[1][j];
+    COM_Radii[0] = L[idx]->radii[0][idx_L];
+    COM_Radii[1] = L[idx]->radii[1][idx_L];
+    
+    data_matrix = gsl_matrix_alloc_from_block(MemBlock, *offset_matrix, L[idx]->data_matrices[idx_L]->size1, L[idx]->data_matrices[idx_L]->size2, MATRIX_DIMENSION2);
+    gsl_matrix_memcpy(data_matrix, L[idx]->data_matrices[idx_L]);
+
+    *offset_matrix += L[idx]->data_matrices[idx_L]->size1 * L[idx]->data_matrices[idx_L]->size2;
+
+    submatrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * 2);
+
+    count_per_sub[0] = get_target(name[0], &target);
+    submatrices[0] = gsl_matrix_alloc_from_block(MemBlock, *offset_matrix, count_per_sub[0], MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+    *offset_matrix += count_per_sub[0] * MATRIX_DIMENSION2;
+
+    submatrix_rows[0] = &ArrayMemBlock[*offset_array];
+    *offset_array += count_per_sub[0];
+
+    count_per_sub[1] = get_target(name[1], &target);
+    submatrices[1] = gsl_matrix_alloc_from_block(MemBlock, *offset_matrix, count_per_sub[1], MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+    *offset_matrix += count_per_sub[1] * MATRIX_DIMENSION2;
+
+    submatrix_rows[1] = &ArrayMemBlock[*offset_array];
+    *offset_array += count_per_sub[1];
+
+
+    //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
+
+    
+    int rel_idx1 = 0;
+    int rel_idx2 = 0;
+    for (unsigned int j = 0; j < count; j++)
+    {
+        for (int k = 0; k < count_per_sub[0]; k++)
+        {
+            if ((target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
+            {
+                gsl_matrix_set(submatrices[0], rel_idx1, 0, gsl_matrix_get(data_matrix, j, 0));
+                gsl_matrix_set(submatrices[0], rel_idx1, 1, gsl_matrix_get(data_matrix, j, 1));
+                gsl_matrix_set(submatrices[0], rel_idx1, 2, gsl_matrix_get(data_matrix, j, 2));
+                submatrix_rows[0][rel_idx1] = j;
+                rel_idx1++;
+            }
+        }
+        for(int k = 0; k < count_per_sub[1]; k++)
+        {
+            if ((target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
+            {
+                gsl_matrix_set(submatrices[1], rel_idx2, 0, gsl_matrix_get(data_matrix, j, 0));
+                gsl_matrix_set(submatrices[1], rel_idx2, 1, gsl_matrix_get(data_matrix, j, 1));
+                gsl_matrix_set(submatrices[1], rel_idx2, 2, gsl_matrix_get(data_matrix, j, 2));
+                submatrix_rows[1][rel_idx2] = j;
+                rel_idx2++;
+            }
+        }
+    }
+
+    count_per_WC_sub[0] = get_WC_target(name[0], &WC_target);
+    WC_submatrix_rows[0] = &ArrayMemBlock[*offset_array];
+    *offset_array += count_per_WC_sub[0];
+
+    count_per_WC_sub[1] = get_WC_target(name[1], &WC_target);
+    WC_submatrix_rows[1] = &ArrayMemBlock[*offset_array];
+    *offset_array += count_per_WC_sub[1];
+
+    //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
+
+    rel_idx1 = 0;
+    rel_idx2 = 0;
+
+    for (unsigned int j = 0; j < count; j++)
+    {
+        for (unsigned int k = 0; k < count_per_WC_sub[0]; k++)
+        {
+            if ((WC_target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
+            {
+                WC_submatrix_rows[0][rel_idx1] = j;
+                rel_idx1++;
+            }
+        }
+        for (unsigned int k = 0; k < count_per_WC_sub[1]; k++)
+        {
+            if ((WC_target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
+            {
+                WC_submatrix_rows[1][rel_idx2] = j;
+                rel_idx2++;
+            }
+        }
+    }
+
+
+    //printf("IN RNAData: BFORE STERIC Array Offset: %lu\n", *offset_array);
+
+    StericIndices[0] = &ArrayMemBlock[*offset_array];
+
+    rel_idx1 = 0;
+    rel_idx2 = 0;
+
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->atom_ids[i] == P   || L[idx]->atom_data->atom_ids[i] == OP1 || 
+            L[idx]->atom_data->atom_ids[i] == OP2 || L[idx]->atom_data->atom_ids[i] == C5p || 
+            L[idx]->atom_data->atom_ids[i] == O5p)
+        {
+            continue;
+        }
+        else if(L[idx]->atom_data->dnt_pos[i] == 1)
+        {
+            //printf("RNA STERIC 1: %d\n", rel_idx1);
+            StericIndices[0][rel_idx1++] = i;
+        }
+    }
+
+    *offset_array += rel_idx1;
+    StericIndices[1] = &ArrayMemBlock[*offset_array];
+
+
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->atom_ids[i] == P   || L[idx]->atom_data->atom_ids[i] == OP1 || 
+            L[idx]->atom_data->atom_ids[i] == OP2 || L[idx]->atom_data->atom_ids[i] == C5p || 
+            L[idx]->atom_data->atom_ids[i] == O5p)
+        {
+            continue;
+        }
+        else if(L[idx]->atom_data->dnt_pos[i] == 2)
+        {
+            //printf("RNA STERIC 2: %d\n", rel_idx2);
+            StericIndices[1][rel_idx2++] = i;
+        }
+    }
+
+    *offset_array += rel_idx2;
+
+    EnergyIndices[0] = &ArrayMemBlock[*offset_array];
+    //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
+
+    rel_idx1 = 0;
+    rel_idx2 = 0;
+
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->charges[i] == atom_charge::NEUTRAL)
+        {
+            continue;
+        }
+        else if(L[idx]->atom_data->dnt_pos[i] == 1)
+        {
+            EnergyIndices[0][rel_idx1++] = i;
+        }
+    }
+
+    *offset_array += rel_idx1;
+    EnergyIndices[1] = &ArrayMemBlock[*offset_array];
+
+    //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
+
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->charges[i] == atom_charge::NEUTRAL)
+        {
+            continue;
+        }
+        else if(L[idx]->atom_data->dnt_pos[i] == 2)
+        {
+            EnergyIndices[1][rel_idx2++] = i;
+        }
+    }
+
+    *offset_array += rel_idx2;
+    //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
 }
 
 void RNAData::overwrite(DimerLibArray &L, int i, int j)
@@ -44,7 +209,7 @@ void RNAData::overwrite(DimerLibArray &L, int i, int j)
     energy = L[i]->energy[j];
     memcpy(name, L[i]->name, sizeof(char) * 3);
     count = L[i]->atom_data->count;
-    _flag = &(L[i]->flags[j]);
+    _flag = &(L.Flags[i][j]);
     position_in_lib[0] = i;
     position_in_lib[1] = j;    
     COM_Radii[0] = L[i]->radii[0][j];
@@ -56,7 +221,6 @@ RNAData::~RNAData()
 {
     // printf("Deallocationg %ld\n", id);
     gsl_matrix_free(data_matrix);
-    free(name);
     if (is_for_WC)
     {
         gsl_matrix_free(WC_submatrices[0]);
@@ -94,9 +258,9 @@ void RNAData::make_submatrices()
 
     for (int i = 0; i < 2; i++)
     {
-        count_per_sub[i] = get_target(i);
+        count_per_sub[i] = get_target(name[i], &target);
         submatrices[i] = gsl_matrix_alloc(count_per_sub[i], 3);
-        submatrix_rows[i] = (int *)malloc(sizeof(int) * count_per_sub[i]);
+        submatrix_rows[i] = (uint16_t *)malloc(sizeof(size_t) * count_per_sub[i]);
 
         int rel_idx = 0;
 
@@ -114,7 +278,6 @@ void RNAData::make_submatrices()
                 }
             }
         }
-        free(target);
     }
 }
 
@@ -131,35 +294,26 @@ void RNAData::update_submatrices()
     }
 }
 
-size_t RNAData::get_target(int res)
+size_t get_target(char res, const atom_id** dest)
 {
-    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
-    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
-    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
-    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
-
-    if (name[res] == 'A')
+    if (res == 'A')
     {
-        target = (atom_id *)malloc(sizeof(targetA));
-        memcpy(target, targetA, sizeof(targetA));
+        *dest = targetA;        
         return (sizeof(targetA) / sizeof(atom_id));
     }
-    else if (name[res] == 'C')
+    else if (res == 'C')
     {
-        target = (atom_id *)malloc(sizeof(targetC));
-        memcpy(target, targetC, sizeof(targetC));
+        *dest = targetC;
         return (sizeof(targetC) / sizeof(atom_id));
     }
-    else if (name[res] == 'G')
+    else if (res == 'G')
     {
-        target = (atom_id *)malloc(sizeof(targetG));
-        memcpy(target, targetG, sizeof(targetG));
+        *dest = targetG;        
         return (sizeof(targetG) / sizeof(atom_id));
     }
-    else if (name[res] == 'U')
+    else if (res == 'U')
     {
-        target = (atom_id *)malloc(sizeof(targetU));
-        memcpy(target, targetU, sizeof(targetU));
+        *dest = targetU;
         return (sizeof(targetU) / sizeof(atom_id));
     }
     else
@@ -210,9 +364,9 @@ void RNAData::make_WC_submatrices(bool first_run)
 
     for (int i = 0; i < 2; i++)
     {
-        count_per_WC_sub[i] = get_WC_target(i);
+        count_per_WC_sub[i] = get_WC_target(name[i], &WC_target);
         WC_submatrices[i] = gsl_matrix_alloc(count_per_WC_sub[i], 3);
-        WC_submatrix_rows[i] = (int *)malloc(sizeof(int) * count_per_WC_sub[i]);
+        WC_submatrix_rows[i] = (uint16_t *)malloc(sizeof(size_t) * count_per_WC_sub[i]);
 
         int rel_idx = 0;
 
@@ -220,7 +374,7 @@ void RNAData::make_WC_submatrices(bool first_run)
         {
             for (unsigned int k = 0; k < count_per_WC_sub[i]; k++)
             {
-                if ((target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == i)
+                if ((WC_target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == i)
                 {
                     gsl_matrix_set(WC_submatrices[i], rel_idx, 0, gsl_matrix_get(data_matrix, j, 0));
                     gsl_matrix_set(WC_submatrices[i], rel_idx, 1, gsl_matrix_get(data_matrix, j, 1));
@@ -231,7 +385,6 @@ void RNAData::make_WC_submatrices(bool first_run)
                 }
             }
         }
-        free(target);
     }
 }
 
@@ -248,35 +401,26 @@ void RNAData::update_WC_submatrices()
     }
 }
 
-size_t RNAData::get_WC_target(int res)
+size_t get_WC_target(char res, const atom_id** dest)
 {
-    constexpr atom_id targetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, /*C1p, C2p, C3p, C4p, O4p*/};
-    constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
-    constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6, /*C1p, C2p, C3p, C4p, O4p*/};
-    constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
-
-    if (name[res] == 'A')
+    if (res == 'A')
     {
-        target = (atom_id *)malloc(sizeof(targetA));
-        memcpy(target, targetA, sizeof(targetA));
+        *dest = targetA;        
         return (sizeof(targetA) / sizeof(atom_id));
     }
-    else if (name[res] == 'C')
+    else if (res == 'C')
     {
-        target = (atom_id *)malloc(sizeof(targetC));
-        memcpy(target, targetC, sizeof(targetC));
+        *dest = targetC;
         return (sizeof(targetC) / sizeof(atom_id));
     }
-    else if (name[res] == 'G')
+    else if (res == 'G')
     {
-        target = (atom_id *)malloc(sizeof(targetG));
-        memcpy(target, targetG, sizeof(targetG));
+        *dest = targetG;
         return (sizeof(targetG) / sizeof(atom_id));
     }
-    else if (name[res] == 'U')
+    else if (res == 'U')
     {
-        target = (atom_id *)malloc(sizeof(targetU));
-        memcpy(target, targetU, sizeof(targetU));
+        *dest = targetU;
         return (sizeof(targetU) / sizeof(atom_id));
     }
     else
@@ -392,25 +536,45 @@ int RNAData::to_string_offset(int res, int position, char *s, int buffer_size, i
     return string_index;
 }
 
-void RNADataArray::initialize(int size, int* AtomMap, int LAC)
+void RNADataArray::initialize(int size, DimerLibArray& Library)
 {
+    int LAC = Library.ChargedAtomCount;
     iterator_max = size - 1;
     sequence = (RNAData **)malloc(sizeof(RNAData *) * size);
+    uint64_t matrix_memsize = 0;
+    uint64_t array_memsize = 0;
+    for(int i = 0; i < size; i++)
+    {
+        matrix_memsize   += calculate_matrix_memory_needed(Library, i);
+        array_memsize    += calculate_index_array_memory_needed(Library, i);
+    }
+    printf("Array Memsize : %lu\nMatrix Memsize: %lu\n", array_memsize / sizeof(uint16_t), matrix_memsize);
+    MatrixMemBlock = gsl_block_alloc(matrix_memsize); //Allocate Block of memory to pass to individual RNAData's. This is to maintain contiguous memory.
+    ArrayMemBlock = (uint16_t *)malloc(array_memsize); // Same as ^.
+
+    size_t MatrixOffset = 0;
+    size_t ArrayOffset = 0;
+
+    for(int i = 0; i < size; i++)
+    {
+        //printf("BEFORE: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+        sequence[i] = new RNAData();
+        sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset, false);
+        printf("AFTER: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+    }
+
     iterator = -1;
     count = 0;
     structure_energy = 0;
     InteractionTable = gsl_matrix_alloc(LAC, LAC);
     gsl_matrix_set_zero(InteractionTable); // Set all to 0
     InteractionTableSum = (int *)calloc(LAC, sizeof(int));
-    InteractionTableMap = AtomMap;
+    InteractionTableMap = Library.AtomMap;
     TableRowCount = LAC;
-    COMS = (gsl_vector**)malloc(2 * size * sizeof(gsl_vector*));
-    for(int i = 0; i < size * 2; i++) 
-    { 
-        COMS[i] = gsl_vector_alloc(MATRIX_DIMENSION2);
-    }
+    COMS = gsl_matrix_alloc(2 * size, MATRIX_DIMENSION2);
     Radii = (double *)malloc(2 * size * sizeof(double));
-    PassedCOMCheck = (bool*)malloc(size * sizeof(gsl_vector*));
+    PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(gsl_vector*)); // in normal building of structure only first DNT will have valid 1st residue.
+                                                                      // in all other DNTs, only second residue is needed.
 }
 
 RNADataArray::RNADataArray(){}
@@ -427,12 +591,7 @@ RNADataArray::RNADataArray(const RNADataArray &RDA)
 RNADataArray::~RNADataArray()
 {
     // printf("iterator is @ %d\n", iterator);
-    for (int i = 0; i < count; i++)
-    {
-        delete sequence[i];
-        gsl_vector_free(COMS[i]);
-    }
-    free(COMS);
+    gsl_matrix_free(COMS);
     free(sequence);
     free(Radii);
     free(PassedCOMCheck);
@@ -441,6 +600,73 @@ RNADataArray::~RNADataArray()
     gsl_matrix_free(InteractionTable);
     free(InteractionTableMap);
     free(InteractionTableSum);
+}
+
+uint_fast64_t RNADataArray::calculate_matrix_memory_needed(DimerLibArray& L, int idx)
+{
+    uint_fast64_t memsize = 0;
+    size_t data_mat_nrows = L[idx]->data_matrices[0]->size1;
+    const atom_id *dummy = NULL;
+
+    memsize += data_mat_nrows * MATRIX_DIMENSION2;
+
+    /* Size for Submatrices */
+    memsize += get_target(L[idx]->name[0], &dummy) * MATRIX_DIMENSION2;
+    memsize += get_target(L[idx]->name[1], &dummy) * MATRIX_DIMENSION2;
+
+    /* Size for WCSubmatrices 
+    memsize += get_target(L[idx]->name[0], &dummy) * MATRIX_DIMENSION2;
+    memsize += get_target(L[idx]->name[1], &dummy) * MATRIX_DIMENSION2;
+    */
+
+    return memsize;
+}
+
+uint_fast64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L, int idx)
+{
+    uint_fast64_t memsize = 0;
+    const atom_id *dummy = NULL;
+
+    /* Size for Submatrices Rows*/
+    memsize += get_target(L[idx]->name[0], &dummy);
+    memsize += get_target(L[idx]->name[1], &dummy);
+
+    //printf("IN CALC: Array Offset: %lu\n", memsize);
+
+    /* Size for WCSubmatrices Rows */
+    memsize += get_target(L[idx]->name[0], &dummy);
+    memsize += get_target(L[idx]->name[1], &dummy);
+
+    //printf("IN CALC: Array Offset: %lu\n", memsize);
+
+    /* Size for Steric Rows */
+    //int counter = 0;
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->atom_ids[i] != P   && L[idx]->atom_data->atom_ids[i] != OP1 && 
+            L[idx]->atom_data->atom_ids[i] != OP2 && L[idx]->atom_data->atom_ids[i] != C5p && 
+            L[idx]->atom_data->atom_ids[i] != O5p)
+        {
+            memsize++;
+            //printf("CALC STERIC: %d\n", counter++);
+        }
+    }
+
+    //printf("IN CALC: Array Offset: %lu\n", memsize);
+
+    /* Size for Charged Rows */
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->charges[i] != atom_charge::NEUTRAL)
+        {
+            memsize++;
+        }
+    }
+
+    //printf("IN CALC: Array Offset: %lu\n", memsize);
+    memsize *= sizeof(uint16_t);
+
+    return memsize;
 }
 
 RNAData *RNADataArray::operator[](int i)
@@ -457,10 +683,8 @@ void RNADataArray::add_copy(RNAData *A)
 void RNADataArray::add_move(RNAData *A)
 {
     iterator++;
-    gsl_vector_view V0 = gsl_matrix_row(A->data_matrix, A->get_residue_COM_index(0));
-    gsl_vector_view V1 = gsl_matrix_row(A->data_matrix, A->get_residue_COM_index(1));
-    gsl_vector_memcpy(COMS[iterator * 2], &V0.vector);
-    gsl_vector_memcpy(COMS[iterator * 2 + 1], &V1.vector);
+    gsl_matrix_row_copy(COMS, iterator * 2, A->data_matrix, A->get_residue_COM_index(0));
+    gsl_matrix_row_copy(COMS, iterator * 2 + 1, A->data_matrix, A->get_residue_COM_index(1));
     Radii[iterator * 2] = A->COM_Radii[0];
     Radii[iterator * 2 + 1] = A->COM_Radii[1];
     sequence[iterator] = A;
@@ -567,7 +791,7 @@ void RNADataArray::update_energy()
                         B = gsl_matrix_row(sequence[j]->data_matrix, l);
                         //gsl_vector_print(&A.vector);
                         //gsl_vector_print(&B.vector);
-                        if (distance(&A.vector, &B.vector) < INTERACTION_DISTANCE)
+                        if (distance_vec2vec(&A.vector, &B.vector) < INTERACTION_DISTANCE)
                         {
                             if (sequence[i]->atom_data->charges[k] == sequence[j]->atom_data->charges[l])
                             {

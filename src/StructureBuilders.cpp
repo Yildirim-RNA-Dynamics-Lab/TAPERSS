@@ -6,11 +6,11 @@ void create_custom_structure(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataA
     RNAData *base;
     attach_status status;
     assembled.rollback();
-    assembled.add_move(new RNAData(Lib, 0, indices[0]));
+    assembled.add_move(nullptr);//new RNAData(Lib, 0, indices[0]));
     for (int i = 1; i <= assembled.iterator_max; i++)
     {
         base = assembled.current();
-        custom_attach = new RNAData(Lib, i, indices[i]);
+        custom_attach = nullptr;//new RNAData(Lib, i, indices[i]);
         
         rotate(base, custom_attach);
         custom_attach->update_submatrices();
@@ -35,11 +35,11 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
     RNAData *base;
     attach_status status;
     assembled.rollback();
-    assembled.add_move(new RNAData(Lib, 0, indices[0]));
+    assembled.add_move(nullptr);//new RNAData(Lib, 0, indices[0]));
     for (int i = 1; i <= assembled.iterator_max; i++)
     {
         base = assembled.current();
-        custom_attach = new RNAData(Lib, i, indices[i]);
+        custom_attach = nullptr;//new RNAData(Lib, i, indices[i]);
         printf("i = %d\n", i);
         if(assembled.inLeft_or_inRight(i) == true) 
         {
@@ -71,7 +71,7 @@ template <bool PerformChecks, STRUCTCHECK_TYPE StructCheck> void create_custom_s
     RNAData *custom_attach;
     RNAData *base;
     attach_status status = ATTACHED;
-    RNAData *WC_pair = new RNAData(WC_Lib, 0, 0, true);
+    RNAData *WC_pair = nullptr;//new RNAData(WC_Lib, 0, 0, true);
     gsl_matrix *WC_model_matrix = make_WC_submatrix(WC_pair, WC_pair);
     gsl_matrix *Sequence_matrix = make_WC_submatrix(WC_pair, WC_pair); //Preallocation of Sequence matrix only... This will be improved later
 
@@ -80,13 +80,13 @@ template <bool PerformChecks, STRUCTCHECK_TYPE StructCheck> void create_custom_s
         for (int i = 0; i < num_strs; i++)
         {
             assembled.rollback_by(assembled.iterator);
-            assembled.add_move(new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
+            assembled.add_move(nullptr);//new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
             for (int j = 1; j <= assembled.iterator_max; j++)
             {
                 //printf("j = %d\n", j);
                 //printf("Iterator = %d\n", assembled.iterator);
                 base = assembled.current();
-                custom_attach = new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
+                custom_attach = nullptr;//new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
                 rotate(base, custom_attach);
                 custom_attach->update_submatrices();
                 status = check_attachment(assembled, custom_attach);
@@ -121,11 +121,11 @@ template <bool PerformChecks, STRUCTCHECK_TYPE StructCheck> void create_custom_s
         for (int i = 0; i < num_strs; i++)
         {
             assembled.rollback_by(assembled.iterator);
-            assembled.add_move(new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
+            assembled.add_move(nullptr);//new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
             for (int j = 1; j <= assembled.iterator_max; j++)
             {                    
                 base = assembled.current();
-                custom_attach = new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
+                custom_attach = nullptr;//new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
                 rotate(base, custom_attach);
                 custom_attach->update_submatrices();
                 assembled.add_move(custom_attach);           
@@ -155,11 +155,11 @@ void create_custom_structure_list_testing(DimerLibArray &Lib, RNADataArray &asse
     for (int i = 0; i < num_strs; i++)
     {
         assembled.rollback_by(assembled.iterator);
-        assembled.add_move(new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
+        assembled.add_move(nullptr);//new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
         for (int j = 1; j <= assembled.iterator_max; j++)
         {
             base = assembled.current();
-            custom_attach = new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
+            custom_attach = nullptr;//new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
             rotate(base, custom_attach);
             custom_attach->update_submatrices();
             SCC_record_COM_distance(assembled, custom_attach);

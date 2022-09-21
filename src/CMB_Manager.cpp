@@ -4,10 +4,10 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA)
 {
     count = LA.count;
 
-    count_per_lib = (int *)malloc(sizeof(int) * LA.count);
+    count_per_lib = (uint64_t *)malloc(sizeof(uint64_t) * LA.count);
     attach_attempted = (bool **)malloc(sizeof(bool *) * LA.count);
 
-    for (int i = 0; i < LA.count; i++)
+    for (uint64_t i = 0; i < LA.count; i++)
     {
         count_per_lib[i] = LA[i]->count;
         attach_attempted[i] = (bool *)calloc(LA[i]->count, sizeof(bool));
@@ -24,7 +24,7 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA)
 
 CMB_Manager::~CMB_Manager()
 {
-    for (int i = 0; i < count; i++)
+    for (uint64_t i = 0; i < count; i++)
     {
         free(attach_attempted[i]);
     }
@@ -53,7 +53,7 @@ bool CMB_Manager::is_at_end()
 
 void CMB_Manager::check_lib_completion()
 {
-    int counter = 0;
+    uint64_t counter = 0;
 
     int first_completed = last_attempted[0];
 
@@ -95,12 +95,12 @@ void CMB_Manager::check_lib_completion()
 
 void CMB_Manager::clear_attempts()
 {
-    for (int i = 0; i < count; i++)
+    for (uint64_t i = 0; i < count; i++)
     {
         if (libs_completed[i] == true)
         {
             // printf("reseting attempts for %d\n", i);
-            for (int j = 0; j < count_per_lib[i]; j++)
+            for (uint64_t j = 0; j < count_per_lib[i]; j++)
             {
                 attach_attempted[i][j] = false;
             }
@@ -108,10 +108,10 @@ void CMB_Manager::clear_attempts()
     }
 }
 
-int CMB_Manager::get_reset_count()
+uint64_t CMB_Manager::get_reset_count()
 {
-    int n_reset = 0;
-    for (int i = 0; i < last_attempted[0] + 1; i++)
+    uint64_t n_reset = 0;
+    for (uint64_t i = 0; i < last_attempted[0] + 1; i++)
     {
         if (libs_completed[i] == true)
         {

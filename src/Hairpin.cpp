@@ -66,19 +66,19 @@ bool is_WC_pair(RNADataArray &sequence, DimerLibArray &WC_Lib, int i, int j, int
     //printf("int i = %d, int j = %d\n", i, j);
     //printf("Library index: %d\n", sequence[i]->position_in_lib[1]);
     //printf("Library index: %d\n", sequence[j]->position_in_lib[1]);
-    RNAData *WC_pair = new RNAData(WC_Lib, WC_pair_idx, 0, true);
+    //RNAData *WC_pair = new RNAData(WC_Lib, WC_pair_idx, 0, true);
     //WC_pair->print_WC_target(0);
     //WC_pair->print_WC_target(1);
     //sequence[i]->print_WC_target(0);
     //sequence[j]->print_WC_target(1);
     gsl_matrix *sequence_matrix;
-    gsl_matrix *WC_model_matrix;
+    gsl_matrix *WC_model_matrix = nullptr;
     gsl_matrix *Work_matrix;
     double _rmsd = 0;
     double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};
     bool is_WC_pair = false;
     sequence_matrix = make_WC_submatrix(sequence[i], sequence[j]);
-    WC_model_matrix = make_WC_submatrix(WC_pair, WC_pair);
+    //WC_model_matrix = make_WC_submatrix(WC_pair, WC_pair);
     Work_matrix = kabsch_allocate_work_matrix(WC_model_matrix);
     kabsch_calculate_rotation_matrix_Nx3fast(WC_model_matrix, sequence_matrix, Work_matrix, COMP, COMQ);
     _rmsd = rmsd_generic(sequence_matrix, WC_model_matrix);
@@ -92,6 +92,6 @@ bool is_WC_pair(RNADataArray &sequence, DimerLibArray &WC_Lib, int i, int j, int
     gsl_matrix_free(Work_matrix);
     gsl_matrix_free(sequence_matrix);
     gsl_matrix_free(WC_model_matrix);
-    delete WC_pair;
+    //delete WC_pair;
     return is_WC_pair;
 }

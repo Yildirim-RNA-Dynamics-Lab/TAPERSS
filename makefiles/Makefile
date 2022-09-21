@@ -4,10 +4,12 @@ CFLAGS = -Wall
 CFLAGS += -W
 CFLAGS += -Werror
 CFLAGS += -Winline
-#CFLAGS += -Wno-unused-variable
 CFLAGS += -pedantic
 CFLAGS += -std=c++17
 CFLAGS += -ffast-math
+CFLAGS += -march=native
+CFLAGS += -DHAVE_INLINE
+CFLAGS += -Wno-unused-parameter
 
 LIBS = -lgsl
 LIBS += -lgslcblas
@@ -33,19 +35,19 @@ $(DBUGOBJ):
 	$(CC) $(CFLAGS) -g -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _debug.o,.cpp,$@) $(LIBS) -I $(INCDIR)
 
 $(PRODOBJ): 
-	$(CC) $(CFLAGS) -O3 -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _production.o,.cpp,$@) $(LIBS) -I $(INCDIR)
+	$(CC) $(CFLAGS) -O3 -DGSL_RANGE_CHECK_OFF -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _production.o,.cpp,$@) $(LIBS) -I $(INCDIR)
 
 $(PRFOBJ): 
-	$(CC) $(CFLAGS) -O3 -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) $(LIBS) -I $(INCDIR) -pg
+	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) $(LIBS) -I $(INCDIR) -pg
 
 $(BINDIR)Michael_COMB_hbond_debug: $(DBUGOBJ)
 	$(CC) $(CFLAGS) -g -o $@ $(patsubst %, $(OBJDIR)%, $(DBUGOBJ)) $(LIBS) -I $(INCDIR)
 
 $(BINDIR)Michael_COMB_hbond_profile: $(PRFOBJ)
-	$(CC) $(CFLAGS) -O3 -o $@ $(patsubst %, $(OBJDIR)%, $(PRFOBJ)) $(LIBS) -I $(INCDIR) -pg
+	$(CC) $(CFLAGS) -o $@ $(patsubst %, $(OBJDIR)%, $(PRFOBJ)) $(LIBS) -I $(INCDIR) -pg
 
 $(BINDIR)Michael_COMB_hbond: $(PRODOBJ)
-	$(CC) $(CFLAGS) -O3 -o $@ $(patsubst %, $(OBJDIR)%, $(PRODOBJ)) $(LIBS) -I $(INCDIR)
+	$(CC) $(CFLAGS) -DGSL_RANGE_CHECK_OFF -O3 -o $@ $(patsubst %, $(OBJDIR)%, $(PRODOBJ)) $(LIBS) -I $(INCDIR)
 
 clean:
 	rm $(OBJDIR)*.o

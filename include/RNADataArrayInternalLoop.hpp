@@ -17,28 +17,48 @@ struct RNADataArrayInternalLoop : public RNADataArray
     RNADataArrayInternalLoop() : RNADataArray() {};
     int WC_size_left;
 
-    void initialize(int size1, int size2, int* AtomMap, int LAC)
+    void initialize(int size1, int size2, DimerLibArray& Library)
     {
+        int LAC = Library.ChargedAtomCount;
         WC_size_left = size1;
         //printf("~~~~~~~~~~~Size 1: %d\n", size1);
         iterator_max_1 = size1 - 1;
         iterator_max = size1 + size2 - 1;
+        
         sequence = (RNAData **)malloc(sizeof(RNAData *) * (size1 + size2));
+        uint64_t matrix_memsize = 0;
+        uint64_t array_memsize = 0;
+        for(int i = 0; i < size1 + size2; i++)
+        {
+            matrix_memsize   += calculate_matrix_memory_needed(Library, i);
+            array_memsize    += calculate_index_array_memory_needed(Library, i);
+        }
+        printf("Array Memsize : %lu\nMatrix Memsize: %lu\n", array_memsize / sizeof(uint16_t), matrix_memsize);
+        MatrixMemBlock = gsl_block_alloc(matrix_memsize); //Allocate Block of memory to pass to individual RNAData's. This is to maintain contiguous memory.
+        ArrayMemBlock = (uint16_t *)malloc(array_memsize); // Same as ^.
+
+        size_t MatrixOffset = 0;
+        size_t ArrayOffset = 0;
+
+        for(int i = 0; i < size1 + size2; i++)
+        {
+            //printf("BEFORE: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+            sequence[i] = new RNAData();
+            sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset, false);
+            printf("AFTER: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+        }
+
         iterator = -1;
         count = 0;
         structure_energy = 0;
         InteractionTable = gsl_matrix_alloc(LAC, LAC);
         gsl_matrix_set_zero(InteractionTable); // Set diagonals to 1.
         InteractionTableSum = (int *)calloc(LAC, sizeof(int));
-        InteractionTableMap = AtomMap;
+        InteractionTableMap = Library.AtomMap;
         TableRowCount = LAC;
-        COMS = (gsl_vector**)malloc(2 * (iterator_max + 1) * sizeof(gsl_vector*));
-        for(int i = 0; i < (iterator_max + 1) * 2; i++) 
-        { 
-            COMS[i] = gsl_vector_alloc(MATRIX_DIMENSION2);
-        }
+        COMS = gsl_matrix_alloc(2 * (iterator_max + 1), MATRIX_DIMENSION2);
         Radii = (double *)malloc(2 * (iterator_max + 1) * sizeof(double));
-        PassedCOMCheck = (bool*)malloc((iterator_max + 1) * sizeof(gsl_vector*));
+        PassedCOMCheck = (bool*)malloc((iterator_max + 1 + 2) * sizeof(gsl_vector*)); // +2 B/C 1st residue of left and 1st resiude of right need to be considered.
         memset(PassedCOMCheck, false, iterator_max + 1);
         for(int i = 0; i < iterator_max + 1; i++) 
         {
@@ -62,12 +82,8 @@ struct RNADataArrayInternalLoop : public RNADataArray
     void add_move(RNAData *A)
     {
         iterator++;
-        gsl_vector_view V0 = gsl_matrix_row(A->data_matrix, A->get_residue_COM_index(0));
-        gsl_vector_view V1 = gsl_matrix_row(A->data_matrix, A->get_residue_COM_index(1));
-        gsl_vector_memcpy(COMS[iterator * 2], &V0.vector);
-        gsl_vector_memcpy(COMS[iterator * 2 + 1], &V1.vector);
-        printf("iterator: %d\n", iterator);
-        gsl_vector_print(COMS[iterator * 2]);
+        gsl_matrix_row_copy(COMS, iterator * 2, A->data_matrix, A->get_residue_COM_index(0));
+        gsl_matrix_row_copy(COMS, iterator * 2 + 1, A->data_matrix, A->get_residue_COM_index(1));
         Radii[iterator * 2] = A->COM_Radii[0];
         Radii[iterator * 2 + 1] = A->COM_Radii[1];
         sequence[iterator] = A;
@@ -78,7 +94,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
     bool prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib) 
     {
         bool rmsd_pass = true;
-        RNAData *WC_pair = new RNAData(WC_Lib, 1, 0, false);
+        RNAData *WC_pair = nullptr;//new RNAData(WC_Lib, 1, 0, false);
         RNAData *assembled_ref = sequence[iterator_max_1];
         gsl_matrix *R1, *R2;
         double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};

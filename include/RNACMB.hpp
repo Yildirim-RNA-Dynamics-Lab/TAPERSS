@@ -6,15 +6,15 @@
 #include <cstring>
 #include <ctime>
 #include <type_traits>
+#include <cstdint>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
-#include <cstdint>
 
 /* Semi-useful preprocessor functions */
 #define square(a) (a * a)
-#define IDX_FLAT2D(row, col, n) (row * n + col)
+#define IDX_FLAT2D(row, col, n_col) (row * n_col + col)
 #define DEBUG_SWITCH false
 #define DEBUG(a) if(DEBUG_SWITCH == true) {a;}
 #define DIE exit(2)

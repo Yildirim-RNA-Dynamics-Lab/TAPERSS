@@ -10,14 +10,14 @@
 
 struct CMB_Manager
 {
-    int *count_per_lib;         //Number of structures in each library
+    uint64_t *count_per_lib;         //Number of structures in each library
     bool **attach_attempted;    //Tracks if all structures in each respective library has been tested
-    int last_attempted[2];
+    uint64_t last_attempted[2];
     bool *libs_completed;
     uint_fast64_t strs_built;
     uint_fast64_t hairpins_built;
     uint_fast64_t internal_loops_built;
-    int count;                  //For deallocation
+    uint64_t count;                  //For deallocation
 
     CMB_Manager(DimerLibArray& LA);
     ~CMB_Manager();
@@ -25,7 +25,7 @@ struct CMB_Manager
     bool is_at_end();
     void check_lib_completion();
     void clear_attempts();
-    int get_reset_count();
+    uint64_t get_reset_count();
     void successful_construction();
 };
 

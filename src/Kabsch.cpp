@@ -1,19 +1,21 @@
 #include "Kabsch.hpp"
 
 
-static gsl_matrix *H_KABSCH;   
-static gsl_matrix *V_KABSCH; 
-static gsl_matrix *VUt_KABSCH; 
-static gsl_matrix *DIA_KABSCH;
-static gsl_matrix *TEMP_KABSCH;
-static gsl_matrix *R_KABSCH; //Rotation Matrix, values are updated after kabsch_get_rotation_matrix_generic_fast(...)
-static gsl_vector *S_KABSCH;
-static gsl_vector *WORK_KABSCH;
+gsl_block  *KABSCH_MEMBLOCK;
+gsl_matrix *H_KABSCH;   
+gsl_matrix *V_KABSCH; 
+gsl_matrix *VUt_KABSCH; 
+gsl_matrix *DIA_KABSCH;
+gsl_matrix *TEMP_KABSCH;
+gsl_matrix *R_KABSCH; //Rotation Matrix, values are updated after kabsch_get_rotation_matrix_generic_fast(...)
+gsl_vector *S_KABSCH;
+gsl_vector *WORK_KABSCH;
+uint64_t offset_tracker;
 
 
 double get_determinant_3x3fast(gsl_matrix *A)
 {
-  double det1,det2,det3; //Using 3 variables to try to use automatic parallelization (vectorization) by CPU
+  double det1,det2,det3; //Using 3 variables to try to use automatic parallelization (vectorization) by CPU (using -march=native flag in GCC)
   det1 = gsl_matrix_get(A, 0, 0) * ((gsl_matrix_get(A, 1, 1) * gsl_matrix_get(A, 2, 2)) - (gsl_matrix_get(A, 1, 2) * gsl_matrix_get(A, 2, 1)));
   det2 = gsl_matrix_get(A, 0, 1) * ((gsl_matrix_get(A, 1, 0) * gsl_matrix_get(A, 2, 2)) - (gsl_matrix_get(A, 1, 2) * gsl_matrix_get(A, 2, 0)));
   det3 = gsl_matrix_get(A, 0, 2) * ((gsl_matrix_get(A, 1, 0) * gsl_matrix_get(A, 2, 1)) - (gsl_matrix_get(A, 1, 1) * gsl_matrix_get(A, 2, 0)));
@@ -46,30 +48,34 @@ double get_determinant(gsl_matrix *A, bool inPlace)
   return det;
 }
 
-void kabsch_create()
+void kabsch_create(size_t mem_size)
 {
-  H_KABSCH    = gsl_matrix_alloc(MATRIX_DIMENSION2, MATRIX_DIMENSION2);   
-  V_KABSCH    = gsl_matrix_alloc(MATRIX_DIMENSION2, MATRIX_DIMENSION2); 
-  VUt_KABSCH  = gsl_matrix_alloc(MATRIX_DIMENSION2, MATRIX_DIMENSION2); 
-  DIA_KABSCH  = gsl_matrix_alloc(MATRIX_DIMENSION2, MATRIX_DIMENSION2);
-  TEMP_KABSCH = gsl_matrix_alloc(MATRIX_DIMENSION2, MATRIX_DIMENSION2);
-  R_KABSCH    = gsl_matrix_alloc(MATRIX_DIMENSION2, MATRIX_DIMENSION2);
-  S_KABSCH    = gsl_vector_alloc(MATRIX_DIMENSION2);
-  WORK_KABSCH = gsl_vector_alloc(MATRIX_DIMENSION2);
-
+  size_t real_mem_size = (6 * MATRIX_DIMENSION2 * MATRIX_DIMENSION2) + (2 * MATRIX_DIMENSION2) + mem_size;//6 3x3 Matrices + 2 3-long vectors + additional needed
+  constexpr size_t tda = MATRIX_DIMENSION2;
+  KABSCH_MEMBLOCK = gsl_block_alloc(real_mem_size);
+  H_KABSCH    = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK,  0, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda);   
+  V_KABSCH    = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK,  9, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda); 
+  VUt_KABSCH  = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK, 18, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda); 
+  DIA_KABSCH  = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK, 27, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda);
+  TEMP_KABSCH = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK, 36, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda);
+  R_KABSCH    = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK, 45, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda);
+  S_KABSCH    = gsl_vector_alloc_from_block(KABSCH_MEMBLOCK, 54, MATRIX_DIMENSION2, 1);
+  WORK_KABSCH = gsl_vector_alloc_from_block(KABSCH_MEMBLOCK, 57, MATRIX_DIMENSION2, 1);
+  offset_tracker = 66;
   gsl_matrix_set_identity(DIA_KABSCH);
 }
 
 void kabsch_destroy()
 {
-  gsl_matrix_free(H_KABSCH);
-  gsl_matrix_free(V_KABSCH);
-  gsl_matrix_free(VUt_KABSCH);
-  gsl_matrix_free(DIA_KABSCH);
-  gsl_matrix_free(TEMP_KABSCH);
-  gsl_matrix_free(R_KABSCH);
-  gsl_vector_free(S_KABSCH);
-  gsl_vector_free(WORK_KABSCH);
+    gsl_matrix_free(H_KABSCH);
+    gsl_matrix_free(V_KABSCH);
+    gsl_matrix_free(VUt_KABSCH);
+    gsl_matrix_free(DIA_KABSCH);
+    gsl_matrix_free(TEMP_KABSCH);
+    gsl_matrix_free(R_KABSCH);
+    gsl_vector_free(S_KABSCH);
+    gsl_vector_free(WORK_KABSCH);
+    gsl_block_free(KABSCH_MEMBLOCK);
 }
 
 gsl_matrix* kabsch_allocate_work_matrix(gsl_matrix *P)
@@ -95,9 +101,6 @@ void kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_
   Determinant = get_determinant_3x3fast(VUt_KABSCH);
   gsl_matrix_set(DIA_KABSCH, MATRIX_DIMENSION2 - 1, MATRIX_DIMENSION2 - 1, Determinant);
   gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, DIA_KABSCH, H_KABSCH, 0.0, TEMP_KABSCH);
-  print_gsl_matrix(TEMP_KABSCH);
-  print_gsl_matrix(V_KABSCH);
-  print_gsl_matrix(R_KABSCH);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, V_KABSCH, TEMP_KABSCH, 0.0, R_KABSCH);
   gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, R_KABSCH, P, 0.0, P_WORK);
   gsl_matrix_transpose_memcpy(P, P_WORK);
