@@ -14,7 +14,7 @@ struct atom_info
     int*          dnt_pos;
     atom_id*      atom_ids;
     atom_charge*  charges;
-    int           count;            // Number of atoms per structure
+    uint64_t      count;            // Number of atoms per structure
     uint_fast32_t count_per_res[2]; // Number of atoms per residue 1 and 2
     uint_fast32_t iterator;
     uint_fast32_t num_charged_atoms = 0;

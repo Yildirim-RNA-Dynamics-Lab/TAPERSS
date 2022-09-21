@@ -110,7 +110,7 @@ char **get_WC_wrapper(char *sequence, int *N)
         *N = 2;
         rtn = (char **)malloc(sizeof(char *) * *N);
         get_WC_partner(sequence, rtn, 0, strlen(sequence) - 1);
-        get_WC_partner(sequence, &rtn[1], x_loc - 1, x_loc);
+        get_WC_partner(sequence, &rtn[1], x_loc - 1, x_loc + 1);
         break;
     case NONE:
         break;
@@ -167,6 +167,7 @@ void Run()
     }
     output_string output_s(GLOBAL_OUTPUT_FILE, MAX_STRINGS, GLOBAL_IO_ACTION);
     kabsch_create(0);
+    WC_create(WC_Library);
 
     End = clock();
 
@@ -257,6 +258,7 @@ void Run()
         free_libs(WCLibs2Load, N_WC);
     }
     kabsch_destroy();
+    WC_destroy();
     free(DuplicateRecord);
 }
 
