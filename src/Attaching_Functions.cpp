@@ -18,6 +18,7 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
 
     R = kabsch_get_rotation_matrix_generic(P, Q, COMP, COMQ);
     rmsd_ = rmsd_generic(P, Q);
+    printf("RMSD: %f\n", rmsd_);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
     {
         status = ATTACHED;
