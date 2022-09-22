@@ -12,6 +12,10 @@ attach_status rotate(RNA_data *reference, RNA_data *rotated)
     gsl_matrix *Q = reference->get_target_matrix_copy(1);
     gsl_matrix *R;
 
+    gsl_matrix_print(P);
+    putchar('\n');
+    gsl_matrix_print(Q);
+
     R = kabsch_get_rotation_matrix_generic(P, Q, COMP, COMQ);
     rmsd_ = rmsd_generic(P, Q);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
