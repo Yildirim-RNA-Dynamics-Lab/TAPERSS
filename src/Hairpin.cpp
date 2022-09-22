@@ -1,8 +1,10 @@
 #include "Hairpin.hpp"
 
-gsl_block *WC_memblock;
-gsl_matrix **WC_matrices;
-size_t N_matrices;
+gsl_block  *WC_memblock;
+gsl_matrix **WC_reference_matrices;
+gsl_matrix **WC_structure_matrices;
+gsl_matrix **WC_work;
+size_t     N_matrices;
 
 void overwrite_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B, gsl_matrix *WC_matrix)
 {
@@ -28,7 +30,7 @@ void overwrite_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B, gsl_matrix *WC_mat
     }
 }
 
-gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B)
+/*gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B)
 {
     gsl_matrix *A_target;
     gsl_matrix *B_target;
@@ -51,7 +53,7 @@ gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B)
     //printf("A: ID = %ld, B: ID = %ld\n", A->id, B->id);
     //printf("WC MAT SIZE = %ld\n", (A->WC_submatrices[0]->size1));
     return WC_matrix;
-}
+}*/
 
 double RMSD_WC_pair_gsl(gsl_matrix *WC_matrix, gsl_matrix *Sequence_matrix)
 {
@@ -64,39 +66,29 @@ double RMSD_WC_pair_gsl(gsl_matrix *WC_matrix, gsl_matrix *Sequence_matrix)
     return rmsd_generic(Sequence_matrix, WC_matrix);
 }
 
-bool is_WC_pair(RNADataArray &sequence, DimerLibArray &WC_Lib, int i, int j, int WC_pair_idx)
+double WC_check_pair(int WC_pair_idx)
 {
-    //printf("int i = %d, int j = %d\n", i, j);
-    //printf("Library index: %d\n", sequence[i]->position_in_lib[1]);
-    //printf("Library index: %d\n", sequence[j]->position_in_lib[1]);
-    //RNAData *WC_pair = new RNAData(WC_Lib, WC_pair_idx, 0, true);
-    //WC_pair->print_WC_target(0);
-    //WC_pair->print_WC_target(1);
-    //sequence[i]->print_WC_target(0);
-    //sequence[j]->print_WC_target(1);
-    gsl_matrix *sequence_matrix;
-    gsl_matrix *WC_model_matrix = nullptr;
-    gsl_matrix *Work_matrix;
-    double _rmsd = 0;
+    gsl_matrix *sequence_matrix = WC_structure_matrices[WC_pair_idx];
+    gsl_matrix *WC_model_matrix = WC_reference_matrices[WC_pair_idx];
+    gsl_matrix *Work_matrix = WC_work[WC_pair_idx];
     double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};
-    bool is_WC_pair = false;
-    sequence_matrix = make_WC_submatrix(sequence[i], sequence[j]);
-    //WC_model_matrix = make_WC_submatrix(WC_pair, WC_pair);
-    Work_matrix = kabsch_allocate_work_matrix(WC_model_matrix);
     kabsch_calculate_rotation_matrix_Nx3fast(WC_model_matrix, sequence_matrix, Work_matrix, COMP, COMQ);
-    _rmsd = rmsd_generic(sequence_matrix, WC_model_matrix);
-    //printf("WC RMSD: %f VS %f\n", _rmsd, GLOBAL_WC_RMSD_LIMIT);
-    if (_rmsd <= GLOBAL_WC_RMSD_LIMIT)
+    return (rmsd_generic(sequence_matrix, WC_model_matrix));
+}
+
+void WC_prepare_structure_matrix(int WC_pair_idx, gsl_matrix *A, uint16_t *A_rows, size_t A_row_count, gsl_matrix *B, uint16_t *B_rows, size_t B_row_count)
+{
+    int rel_idx = 0;
+    for(size_t i = 0; i < A_row_count; i++)
     {
-        is_WC_pair = true;
-        //printf("RMSD: %f\n", _rmsd);
+        gsl_matrix_row_copy(WC_structure_matrices[WC_pair_idx], rel_idx, A, A_rows[i]);
+        rel_idx++;
     }
-    sequence.update_WC_rmsd(_rmsd);
-    gsl_matrix_free(Work_matrix);
-    gsl_matrix_free(sequence_matrix);
-    gsl_matrix_free(WC_model_matrix);
-    //delete WC_pair;
-    return is_WC_pair;
+    for(size_t i = 0; i < B_row_count; i++)
+    {
+        gsl_matrix_row_copy(WC_structure_matrices[WC_pair_idx], rel_idx, B, B_rows[i]);
+        rel_idx++;
+    }
 }
 
 void WC_create(DimerLibArray &WC_Library) 
@@ -114,39 +106,46 @@ void WC_create(DimerLibArray &WC_Library)
         memsize += get_WC_target(WC_Library[i]->name[0], &target1) * MATRIX_DIMENSION2;
         memsize += get_WC_target(WC_Library[i]->name[1], &target2) * MATRIX_DIMENSION2;
     }
-    WC_memblock = gsl_block_alloc(memsize);
-    WC_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
+    WC_memblock = gsl_block_alloc(memsize * 3); // Times 3 because space is needed for Work matrices AND matrices from built structure
+    WC_reference_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
+    WC_structure_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
+    WC_work = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
     for(uint64_t i = 0; i < WC_Library.count; i++)
     {
         matrixsize = 0;
         matrixsize = get_WC_target(WC_Library[i]->name[0], &target1);
         matrixsize += get_WC_target(WC_Library[i]->name[1], &target2);
-        WC_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+        WC_reference_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+        offset += matrixsize * MATRIX_DIMENSION2;
+        WC_structure_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+        offset += matrixsize * MATRIX_DIMENSION2;
+        WC_work[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, MATRIX_DIMENSION2, matrixsize, matrixsize);
+        offset += matrixsize * MATRIX_DIMENSION2;
 
         target1size = get_WC_target(WC_Library[i]->name[0], &target1);
         target2size = get_WC_target(WC_Library[i]->name[1], &target2);
-        int rel_idx = 0;
+        size_t rel_idx = 0;
 
         for (uint64_t j = 0; j < WC_Library[i]->atom_data->count; j++)
         {
             for (unsigned int k = 0; k < target1size; k++)
             {
-                if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (WC_Library[i]->atom_data->dnt_pos[j] - 1) == i)
+                if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == i)
                 {
-                    gsl_matrix_set(WC_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
-                    gsl_matrix_set(WC_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
-                    gsl_matrix_set(WC_matrices[i], rel_idx, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
+                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
+                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
+                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
                     rel_idx++;
                     // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
                 }
             }
             for (unsigned int k = 0; k < target2size; k++)
             {
-                if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (WC_Library[i]->atom_data->dnt_pos[j] - 1) == i)
+                if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == i)
                 {
-                    gsl_matrix_set(WC_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
-                    gsl_matrix_set(WC_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
-                    gsl_matrix_set(WC_matrices[i], rel_idx, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
+                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
+                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
+                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
                     rel_idx++;
                     // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
                 }
@@ -157,10 +156,14 @@ void WC_create(DimerLibArray &WC_Library)
 
 void WC_destroy()
 {
-    for(int i = 0; i < N_matrices; i++)
+    for(size_t i = 0; i < N_matrices; i++)
     {
-        gsl_matrix_free(WC_matrices[i]);
+        gsl_matrix_free(WC_reference_matrices[i]);
+        gsl_matrix_free(WC_structure_matrices[i]);
+        gsl_matrix_free(WC_work[i]);
     }
-    free(WC_matrices);
+    free(WC_reference_matrices);
+    free(WC_structure_matrices);
+    free(WC_work);
     gsl_block_free(WC_memblock);
 }

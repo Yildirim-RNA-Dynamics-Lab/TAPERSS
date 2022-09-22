@@ -11,13 +11,13 @@ struct atom_info
     char**        name;
     int*          index;
     char*         residue;
-    int*          dnt_pos;
+    uint8_t*      dnt_pos;
     atom_id*      atom_ids;
     atom_charge*  charges;
-    uint64_t      count;            // Number of atoms per structure
-    uint_fast32_t count_per_res[2]; // Number of atoms per residue 1 and 2
-    uint_fast32_t iterator;
-    uint_fast32_t num_charged_atoms = 0;
+    uint16_t      count;            // Number of atoms per structure
+    uint16_t      count_per_res[2]; // Number of atoms per residue 1 and 2
+    uint16_t      iterator;
+    uint16_t      num_charged_atoms = 0;
 
     
     atom_info();

@@ -8,41 +8,41 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
     attach_status status = FAILED;
 
     gsl_matrix *MODEL = rotated->data_matrix;
-    gsl_matrix *P = rotated->get_target_matrix_copy(0);
-    gsl_matrix *Q = reference->get_target_matrix_copy(1);
-    gsl_matrix *P_WORK = kabsch_allocate_work_matrix(P);
+    gsl_matrix *P = kabsch_prepare_matrix<KABSCH_MATRIX_P>(rotated->count_per_sub[0], MATRIX_DIMENSION2, rotated->submatrix_rows[0], rotated->data_matrix);
+    gsl_matrix *Q = kabsch_prepare_matrix<KABSCH_MATRIX_Q>(reference->count_per_sub[1], MATRIX_DIMENSION2, reference->submatrix_rows[1], reference->data_matrix);
+    gsl_matrix *P_WORK = kabsch_get_work_matrix(MATRIX_DIMENSION2, rotated->count_per_sub[0]);
     gsl_matrix *R;
     
-    /*
-    printf("################Residue name: %s\n", reference->name);
-    print_gsl_matrix(reference->data_matrix);
-    print_gsl_matrix(Q);
-    printf("################Residue name: %s\n", rotated->name);
-    print_gsl_matrix(P);
-    */
+    
+    //printf("################Residue name: %s\n", reference->name);
+    //print_gsl_matrix(reference->data_matrix);
+    //print_gsl_matrix(P);
+    //print_gsl_matrix(Q);
+    //printf("################Residue name: %s\n", rotated->name);
+
     kabsch_calculate_rotation_matrix_Nx3fast(P, Q, P_WORK, COMP, COMQ);
+    //print_gsl_matrix(P);
+    //print_gsl_matrix(Q);
     R = kabsch_get_rotation_matrix();
-    print_gsl_matrix(R);
+    //print_gsl_matrix(R);
     rmsd_ = rmsd_generic(P, Q);
+    //print_gsl_matrix(P);
+    //print_gsl_matrix(Q);
+    printf("RMSD: %f\n", rmsd_);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
     {
         status = ATTACHED;
         translate_matrix(COMP, MODEL, -1.0F);
         apply_rotation_matrix(R, MODEL);
-        print_gsl_matrix(R);
+        //print_gsl_matrix(R);
         translate_matrix(COMQ, MODEL, 1.0F);
         *rotated->_flag = USED;
     }
     else
     {
         *rotated->_flag = NOT_USABLE;
-        // printf("RMSD FAIL\n");
-        *rotated->_flag = NOT_USABLE;
     }
 
-    gsl_matrix_free(P);
-    gsl_matrix_free(Q);
-    gsl_matrix_free(P_WORK);
     return status;
 }
 

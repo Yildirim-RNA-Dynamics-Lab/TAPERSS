@@ -2,6 +2,7 @@
 #define RNA_MATH_HPP
 
 #include "RNACMB.hpp"
+#include "Kabsch.hpp"
 #define print_gsl_matrix(M) gsl_matrix_print(M, #M);
 
 double rmsd_generic(gsl_matrix *A, gsl_matrix *B);

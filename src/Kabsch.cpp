@@ -8,9 +8,14 @@ gsl_matrix *VUt_KABSCH;
 gsl_matrix *DIA_KABSCH;
 gsl_matrix *TEMP_KABSCH;
 gsl_matrix *R_KABSCH; //Rotation Matrix, values are updated after kabsch_get_rotation_matrix_generic_fast(...)
+gsl_matrix *P_KABSCH;
+gsl_matrix *PWORK_KABSCH;
+gsl_matrix *Q_KABSCH;
 gsl_vector *S_KABSCH;
 gsl_vector *WORK_KABSCH;
-uint64_t offset_tracker;
+uint32_t   P_OFFSET_KABSCH;
+uint32_t   PWORK_OFFSET_KABSCH;
+uint32_t   Q_OFFSET_KABSCH;
 
 
 double get_determinant_3x3fast(gsl_matrix *A)
@@ -48,9 +53,9 @@ double get_determinant(gsl_matrix *A, bool inPlace)
   return det;
 }
 
-void kabsch_create(size_t mem_size)
+void kabsch_create(size_t M, size_t N)
 {
-  size_t real_mem_size = (6 * MATRIX_DIMENSION2 * MATRIX_DIMENSION2) + (2 * MATRIX_DIMENSION2) + mem_size;//6 3x3 Matrices + 2 3-long vectors + additional needed
+  size_t real_mem_size = (6 * MATRIX_DIMENSION2 * MATRIX_DIMENSION2) + (2 * MATRIX_DIMENSION2) + (N * M * 3);//6 3x3 Matrices + 2 3-long vectors + additional needed
   constexpr size_t tda = MATRIX_DIMENSION2;
   KABSCH_MEMBLOCK = gsl_block_alloc(real_mem_size);
   H_KABSCH    = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK,  0, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda);   
@@ -61,8 +66,48 @@ void kabsch_create(size_t mem_size)
   R_KABSCH    = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK, 45, MATRIX_DIMENSION2, MATRIX_DIMENSION2, tda);
   S_KABSCH    = gsl_vector_alloc_from_block(KABSCH_MEMBLOCK, 54, MATRIX_DIMENSION2, 1);
   WORK_KABSCH = gsl_vector_alloc_from_block(KABSCH_MEMBLOCK, 57, MATRIX_DIMENSION2, 1);
-  offset_tracker = 66;
+  P_OFFSET_KABSCH = 60;
+  PWORK_OFFSET_KABSCH = (P_OFFSET_KABSCH + (N * M));
+  Q_OFFSET_KABSCH = (PWORK_OFFSET_KABSCH + (N * M));
+  P_KABSCH = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK,  P_OFFSET_KABSCH, M, N, tda);
+  PWORK_KABSCH = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK,  PWORK_OFFSET_KABSCH, N, M, M);
+  Q_KABSCH = gsl_matrix_alloc_from_block(KABSCH_MEMBLOCK,  Q_OFFSET_KABSCH, M, N, tda);
   gsl_matrix_set_identity(DIA_KABSCH);
+}
+
+void kabsch_prepare_matrix_internal(size_t M, size_t N, uint16_t *Rows, gsl_matrix *source, gsl_matrix *dest)
+{
+    dest->size1 = M;
+    dest->size2 = N;
+    dest->tda   = N;
+    for(size_t i = 0; i < M; i++)
+    {
+      gsl_matrix_row_copy(dest, i, source, Rows[i]);
+    }
+}
+
+template <kabsch_matrix M_REQUEST> gsl_matrix* kabsch_prepare_matrix(size_t M, size_t N, uint16_t *Rows, gsl_matrix *source)
+{
+  if(M_REQUEST == kabsch_matrix::KABSCH_MATRIX_P)
+  {
+    kabsch_prepare_matrix_internal(M, N, Rows, source, P_KABSCH);
+    return P_KABSCH;
+  }
+  else if(M_REQUEST == kabsch_matrix::KABSCH_MATRIX_Q)
+  {
+    kabsch_prepare_matrix_internal(M, N, Rows, source, Q_KABSCH);
+    return Q_KABSCH;
+  }
+}
+template gsl_matrix* kabsch_prepare_matrix<KABSCH_MATRIX_P>(size_t M, size_t N, uint16_t *Rows, gsl_matrix *source);
+template gsl_matrix* kabsch_prepare_matrix<KABSCH_MATRIX_Q>(size_t M, size_t N, uint16_t *Rows, gsl_matrix *source);
+
+gsl_matrix* kabsch_get_work_matrix(size_t M, size_t N)
+{
+  PWORK_KABSCH->size1 = M;
+  PWORK_KABSCH->size2 = N;
+  PWORK_KABSCH->tda   = N;
+  return PWORK_KABSCH;
 }
 
 void kabsch_destroy()
@@ -73,6 +118,9 @@ void kabsch_destroy()
     gsl_matrix_free(DIA_KABSCH);
     gsl_matrix_free(TEMP_KABSCH);
     gsl_matrix_free(R_KABSCH);
+    gsl_matrix_free(P_KABSCH);
+    gsl_matrix_free(PWORK_KABSCH);
+    gsl_matrix_free(Q_KABSCH);
     gsl_vector_free(S_KABSCH);
     gsl_vector_free(WORK_KABSCH);
     gsl_block_free(KABSCH_MEMBLOCK);

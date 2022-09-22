@@ -10,6 +10,7 @@
 #include "InputHandler.hpp"
 #include "StructureBuilders.hpp"
 #include "RNADataArrayInternalLoop.hpp"
+#include <unistd.h>
 
 using namespace std;
 
@@ -166,7 +167,7 @@ void Run()
         exit(1);
     }
     output_string output_s(GLOBAL_OUTPUT_FILE, MAX_STRINGS, GLOBAL_IO_ACTION);
-    kabsch_create(0);
+    kabsch_create(Library.LargestAtomCount, MATRIX_DIMENSION2);
     WC_create(WC_Library);
 
     End = clock();
@@ -175,8 +176,6 @@ void Run()
 
     printf("Time to load: %fms\n", TimeUsed * 1000);
 
-    DIE;
-
     if (GLOBAL_RUN_COMBINATORIAL)
     {
         printf("Performing combinatorial run on sequence: %s\n", GLOBAL_INPUT_SEQUENCE);
@@ -184,7 +183,9 @@ void Run()
         if constexpr (is_same<T, RNADataArray>::value)
         {
             while (!combinatorial_addition(Library, RNA, manager, output_s, WC_Library))
+            {
                 ;
+            }  
         }
         if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
         {

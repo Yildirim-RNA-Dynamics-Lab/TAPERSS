@@ -16,7 +16,6 @@ struct DimerLib
     char*             name;
     int               count; //Number of structures in Library
     double*           radii[2];
-    uint32_t          steric_clash_bypass[2];
 
     DimerLib(int n, int a_n, int e_n);
     ~DimerLib();
@@ -34,14 +33,15 @@ struct DimerLibArray
     uint64_t full_structure_element_sum = 0; //Number of elements (atoms + COM)  which will be in a full structure.
     int iterator;
     bool was_initialized = false;
-    unsigned int ChargedAtomCount;
+    uint64_t ChargedAtomCount;
+    uint32_t LargestAtomCount = 0;
 
     DimerLibArray();
     DimerLibArray(int s);
     ~DimerLibArray();
     void initialize(int s);
     DimerLib* operator[](int i);
-    void alloc_lib(int n, int a_n, int e_n);
+    void alloc_lib(size_t n, size_t a_n, size_t e_n);
     void add_to_atom_info(char *N, int i, char r, int p);
     void map_duplicate(size_t org, size_t dupli);
     void add_lib(gsl_matrix** d_m, float* e, char* n, double** r);

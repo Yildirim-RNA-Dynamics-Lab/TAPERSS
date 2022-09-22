@@ -6,10 +6,10 @@ double rmsd_generic(gsl_matrix *A, gsl_matrix *B)
     double temprmsd = 0.0;
     int atom_count = 0;
 
-    if (A->size1 != B->size1)
+    /*if (A->size1 != B->size1)
     {
         exit(1);
-    }
+    }*/
 
     for (unsigned int i = 0; i < A->size1; i++)
     {
@@ -58,10 +58,9 @@ void translate_matrix(double *__restrict__ tV, gsl_matrix *M, double scalar)
 
 void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M)
 {
-    gsl_matrix *M_TEMP = gsl_matrix_alloc(M->size2, M->size1);
+    gsl_matrix *M_TEMP = kabsch_get_work_matrix(M->size2, M->size1);
     gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, R, M, 0.0, M_TEMP);
     gsl_matrix_transpose_memcpy(M, M_TEMP);
-    gsl_matrix_free(M_TEMP);
 }
 
 void gsl_matrix_print(gsl_matrix *M, const char* name)
@@ -70,7 +69,7 @@ void gsl_matrix_print(gsl_matrix *M, const char* name)
     for (unsigned int i = 0; i < M->size1; i++)
     {
         for (unsigned int j = 0; j < M->size2; j++)
-            printf("%3.2f ", gsl_matrix_get(M, i, j));
+            printf("%3.3f ", gsl_matrix_get(M, i, j));
         putchar('\n');
     }
 }

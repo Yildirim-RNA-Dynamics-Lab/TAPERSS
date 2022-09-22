@@ -7,7 +7,6 @@
 #include "Hairpin.hpp"
 
 enum {left = 0, right = 1};
-static double COMZERO[] = {0, 0, 0};
 
 struct RNADataArrayInternalLoop : public RNADataArray
 {
@@ -68,15 +67,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
     bool inLeft_or_inRight(int working_pos) //return true if in left strand
     {
-        if(working_pos == iterator_max_1 + 1)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-
+        return (working_pos == iterator_max_1 + 1);
     }
 
     void add_move(RNAData *A)
@@ -94,96 +85,47 @@ struct RNADataArrayInternalLoop : public RNADataArray
     bool prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib) 
     {
         bool rmsd_pass = true;
-        RNAData *WC_pair = nullptr;//new RNAData(WC_Lib, 1, 0, false);
         RNAData *assembled_ref = sequence[iterator_max_1];
         gsl_matrix *R1, *R2;
         double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};
         
-        gsl_matrix *MODEL = WC_pair->data_matrix;
-        gsl_matrix *P1 = WC_pair->get_target_matrix_copy(0);
-        //assembled_ref->make_submatrices();
-        gsl_matrix *Q1 = assembled_ref->get_target_matrix_copy(1);
-        /*
-        printf("################Residue name: %s\n", WC_pair->name);
-        printf("################Residue name: %s\n", assembled_ref->name);
-        print_gsl_matrix(P1);
-        print_gsl_matrix(Q1);
-        */
-
-        R1 = kabsch_get_rotation_matrix_generic(P1, Q1, COMP, COMQ);
+        gsl_matrix *MODEL = WC_Lib[1]->data_matrices[0];
+        gsl_matrix *P1 = kabsch_prepare_matrix<KABSCH_MATRIX_P>(assembled_ref->count_per_sub[1], MATRIX_DIMENSION2, assembled_ref->submatrix_rows[1], MODEL);
+        gsl_matrix *Q1 = kabsch_prepare_matrix<KABSCH_MATRIX_Q>(assembled_ref->count_per_sub[1], MATRIX_DIMENSION2, assembled_ref->submatrix_rows[1], assembled_ref->data_matrix);
+        gsl_matrix *P1WORK = kabsch_get_work_matrix(MATRIX_DIMENSION2, assembled_ref->count_per_sub[1]);
+        kabsch_calculate_rotation_matrix_Nx3fast(P1, Q1, P1WORK, COMP, COMQ);
+        R1 = kabsch_get_rotation_matrix();
         
-
         translate_matrix(COMP, MODEL, -1.0F);
         apply_rotation_matrix(R1, MODEL);
         translate_matrix(COMQ, MODEL, 1.0F);
 
-        //WC_pair->make_submatrices();
-        WC_pair->update_submatrices();
-        //gsl_matrix_free(P1);
-        //gsl_matrix_free(Q1);
-        gsl_matrix_free(R1);
-
-        memcpy(COMP, COMZERO, sizeof(COMZERO));
-        memcpy(COMQ, COMZERO, sizeof(COMZERO));
+        memset(COMP, 0, sizeof(COMP));
+        memset(COMQ, 0, sizeof(COMQ));
 
         MODEL = to_be_assembled->data_matrix;
-        //to_be_assembled->make_submatrices();
-        gsl_matrix *P2 = to_be_assembled->get_target_matrix_copy(0);
-        gsl_matrix *Q2 = WC_pair->get_target_matrix_copy(1);
+        gsl_matrix *P2 = kabsch_prepare_matrix<KABSCH_MATRIX_P>(to_be_assembled->count_per_sub[0], MATRIX_DIMENSION2, to_be_assembled->submatrix_rows[0], MODEL);
+        gsl_matrix *Q2 = kabsch_prepare_matrix<KABSCH_MATRIX_Q>(assembled_ref->count_per_sub[1], MATRIX_DIMENSION2, assembled_ref->submatrix_rows[1], assembled_ref->data_matrix);
+        gsl_matrix *P2WORK = kabsch_get_work_matrix(MATRIX_DIMENSION2, to_be_assembled->count_per_sub[0]);
+        kabsch_calculate_rotation_matrix_Nx3fast(P2, Q2, P2WORK, COMP, COMQ);
 
-        /*
-        printf("################Residue name: %s\n", to_be_assembled->name);
-        printf("################Residue name: %s\n", WC_pair->name);
-        print_gsl_matrix(P2);
-        print_gsl_matrix(Q2);
-        */ 
-        
-        R2 = kabsch_get_rotation_matrix_generic(P2, Q2, COMP, COMQ);
+        R2 = kabsch_get_rotation_matrix();
 
         translate_matrix(COMP, MODEL, -1.0F);
         apply_rotation_matrix(R2, MODEL);
         translate_matrix(COMQ, MODEL, 1.0F);
 
-        memcpy(COMP, COMZERO, sizeof(COMZERO));
-        memcpy(COMQ, COMZERO, sizeof(COMZERO));
+        memset(COMP, 0, sizeof(COMP));
+        memset(COMQ, 0, sizeof(COMQ));
 
-        gsl_matrix *sequence_matrix = gsl_matrix_alloc(Q1->size1 + P2->size1, MATRIX_DIMENSION2);
-        gsl_matrix *WC_model_matrix = gsl_matrix_alloc(P1->size1 + Q2->size1, MATRIX_DIMENSION2);
-        gsl_matrix *work_matrix;
-        gsl_matrix *R;
-        double _rmsd;
-
-        print_gsl_matrix(P2);
-        print_gsl_matrix(Q1);
-
-
-        overwrite_WC_submatrix_gsl(Q1, P2, sequence_matrix);
-        overwrite_WC_submatrix_gsl(P1, Q2, WC_model_matrix);
-        work_matrix = kabsch_allocate_work_matrix(sequence_matrix);
-        kabsch_calculate_rotation_matrix_Nx3fast(WC_model_matrix, sequence_matrix, work_matrix, COMP, COMQ);
-        R = kabsch_get_rotation_matrix();
-        apply_rotation_matrix(R, WC_model_matrix);
-        _rmsd = rmsd_generic(sequence_matrix, WC_model_matrix);
-
-        if(_rmsd > GLOBAL_WC_RMSD_LIMIT)
+        WC_prepare_structure_matrix(1, assembled_ref->data_matrix, assembled_ref->WC_submatrix_rows[0], assembled_ref->count_per_WC_sub[0], 
+                                       to_be_assembled->data_matrix, to_be_assembled->WC_submatrix_rows[0], to_be_assembled->count_per_WC_sub[0]);
+        double RMSD = WC_check_pair(1);
+        if(RMSD > GLOBAL_WC_RMSD_LIMIT)
         {
             rmsd_pass = false;
         }
-        //printf("WC RMSD Resid 3 & 4: %f\n", _rmsd);
-        WC_rmsd3_4 = (float) _rmsd;
-
-        gsl_matrix_free(P2);
-        gsl_matrix_free(Q2);
-        gsl_matrix_free(R2);
-        
-        delete WC_pair;
-        to_be_assembled->update_submatrices();
-        //add_move(to_be_assembled);
-        gsl_matrix_free(P1);
-        gsl_matrix_free(Q1);
-        gsl_matrix_free(sequence_matrix);
-        gsl_matrix_free(WC_model_matrix);
-        gsl_matrix_free(work_matrix);
+        WC_rmsd3_4 = (float) RMSD;
         return rmsd_pass;
     }
 

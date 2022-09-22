@@ -10,7 +10,7 @@ DimerLib::DimerLib(int n, int a_n, int e_n)
 {
     LibraryMemblock = gsl_block_alloc(n * a_n * MATRIX_DIMENSION2);
     data_matrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * n);
-    for(int i = 0, offset = 0; i < n; i++, offset += a_n)
+    for(int i = 0, offset = 0; i < n; i++, offset += a_n * MATRIX_DIMENSION2)
     {
         data_matrices[i] = gsl_matrix_alloc_from_block(LibraryMemblock, offset, a_n, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
     }
@@ -115,10 +115,14 @@ void DimerLibArray::map_duplicate(size_t dupli, size_t orig)
     iterator++;
 }
 
-void DimerLibArray::alloc_lib(int n, int a_n, int e_n)
+void DimerLibArray::alloc_lib(size_t n, size_t a_n, size_t e_n)
 {
     library[iterator] = new DimerLib(n, a_n, e_n);
     full_structure_element_sum += a_n;
+    if((a_n - e_n) > LargestAtomCount)
+    {
+        LargestAtomCount = (a_n - e_n);
+    }
 }
 
 void DimerLibArray::DimerLibArray::add_to_atom_info(char *N, int i, char r, int p)
@@ -458,7 +462,9 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_
                 // printf("name = %s\n", name);
 
                 if (first_itr)
+                {
                     RTN.add_to_atom_info(name, atoi(index), *residue, atoi(position));
+                }
 
                 gsl_matrix_set(data_mats[iterator], row, 0, atof(X));
                 gsl_matrix_set(data_mats[iterator], row, 1, atof(Y));

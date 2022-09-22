@@ -179,7 +179,7 @@ atom_info::atom_info(int n)
     name = (char **)malloc(sizeof(char *) * n);
     index = (int *)malloc(sizeof(int) * n);
     residue = (char *)malloc(sizeof(char) * n);
-    dnt_pos = (int *)malloc(sizeof(int) * n);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * n);
     atom_ids = (atom_id *)malloc(sizeof(atom_id) * n);
     charges = (atom_charge *)malloc(sizeof(atom_charge) * n);
     count = n;
@@ -203,7 +203,7 @@ atom_info::atom_info(char **n, int *in, char *r, int *d, int c)
 
     index = (int *)malloc(sizeof(int) * c);
     residue = (char *)malloc(sizeof(char) * c);
-    dnt_pos = (int *)malloc(sizeof(int) * c);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * c);
 
     memcpy(index, in, sizeof(int) * c);
     memcpy(residue, r, sizeof(char) * c);
@@ -217,7 +217,7 @@ void atom_info::initialize_atom_info(int n)
     name = (char **)malloc(sizeof(char *) * n);
     index = (int *)malloc(sizeof(int) * n);
     residue = (char *)malloc(sizeof(char) * n);
-    dnt_pos = (int *)malloc(sizeof(int) * n);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * n);
     count = n;
     for (int i = 0; i < n; i++)
     {
@@ -281,7 +281,7 @@ atom_info::atom_info(const atom_info &A)
 
     index = (int *)malloc(sizeof(int) * A.count);
     residue = (char *)malloc(sizeof(char) * A.count);
-    dnt_pos = (int *)malloc(sizeof(int) * A.count);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * A.count);
 
     memcpy(index, A.index, sizeof(int) * A.count);
     memcpy(residue, A.residue, sizeof(char) * A.count);

@@ -23,10 +23,11 @@ enum STRUCTCHECK_TYPE{HAIRPIN, INTERNAL_LOOP, NONE};
 enum attach_status{FAILED, ATTACHED, NOT_CHECKED, FAILED_SC};
 
 /* Compile-time evaluated constants */
-constexpr float RADIUS_C = 0.75;
-constexpr float RADIUS_N = 0.75;
-constexpr float RADIUS_P = 0.75;
-constexpr float RADIUS_O = 0.75;
+constexpr float VDW_RADIUS = 1.5;
+constexpr float RADIUS_C   = 0.75;
+constexpr float RADIUS_N   = 0.75;
+constexpr float RADIUS_P   = 0.75;
+constexpr float RADIUS_O   = 0.75;
 constexpr float INTERACTION_DISTANCE = 3.6;
 constexpr float DEFAULT_RMSD_LIMIT = 0.5;
 constexpr float DEFAULT_WC_RMSD_LIMIT = 2.5;

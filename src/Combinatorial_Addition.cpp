@@ -1,57 +1,45 @@
 #include "Combinatorial_Addition.hpp"
 
-
 bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string, DimerLibArray &WC_Lib)
 {
     int working_position = assembled.iterator + 1; // Position in sequence where new DNT will be attached.
     DimerLib *Library = Lib[working_position];
-    RNAData *base;                // Already attached base which will have new DNT attached to
-    RNAData *attach;              // DNT which will be attached
+    //RNAData *base;                 // Already attached base which will have new DNT attached to
+    //RNAData *attach;               // DNT which will be attached
     attach_status status = FAILED; // Output from checking functions
-
-    DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
-
-    attach = nullptr;//new RNAData(Lib, working_position, 0); // For initialization only
+    double RMSD;                   // Output of RMSD function.
+    printf("WORKING ON POSITION: %d\n", working_position);
     for (int i = 0; i < Library->count; i++)
     {
         if (Lib.Flags[working_position][i] != NO_FLAG)
         {
             continue;
         }
+        printf("Using Structure: %d\n", i);
         if (assembled.is_empty())
         {
-            attach->overwrite(Lib, working_position, i);
-            assembled.add_move(attach);
+            assembled.overwrite(working_position, i, Lib);
+            assembled.keep();
             manager.attach_attempt(working_position, i);
-            DEBUG(printf("attach: %ld moved @ empty\n", attach->id));
             status = NOT_CHECKED;
             break;
         }
-        base = assembled.current();
-        attach->overwrite(Lib, working_position, i);
+        assembled.overwrite(working_position, i, Lib);
         manager.attach_attempt(working_position, i);
-        if ((status = rotate(base, attach)) != ATTACHED)
+        if ((status = rotate(assembled.current(), assembled[working_position])) != ATTACHED)
         {
             continue;
         }
-        attach->update_submatrices();
-        if ((status = check_attachment(assembled, attach)) == ATTACHED)
+        if ((status = steric_clash_check_COMFast(assembled, assembled[working_position])) == ATTACHED)
         {
             break;
         }
-        /*
-        else if (status == FAILED_SC)
-        {
-            assembled.add_move(attach);
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            return true;
-        }
-        */
     }
+
     if (status == FAILED)
     {
-        delete attach;
+        printf("All failed!\n");
+        assembled.print_index();
         if (manager.is_at_end())
         {
             manager.check_lib_completion();
@@ -75,21 +63,36 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
     }
     else if (status == ATTACHED)
     {
-        assembled.add_move(attach);
-        DEBUG(printf("attach: %ld moved @ Attached @ %d\n", attach->id, working_position));
+        assembled.keep();
     }
     if (assembled.is_complete())
     {
+        assembled.print_index();
+        DIE;
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
-            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
+            WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
+                                        assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
+                                        assembled[assembled.iterator_max]->count_per_WC_sub[1]);
+            RMSD = WC_check_pair(0);
+            assembled.print_index();
+            printf("RMSD WC = %f\n",RMSD);
+            if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
             {
+                assembled.update_WC_rmsd(RMSD);
                 assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
-                if(assembled.TMP_END)
+                if (assembled.TMP_END)
                 {
                     return true;
+                }
+                if constexpr (STRUCTURE_BUILD_LIMIT == true)
+                {
+                    if (manager.hairpins_built > GLOBAL_STRUCTURE_LIMIT_COUNT)
+                    {
+                        return true;
+                    }
                 }
             }
         }
@@ -123,20 +126,12 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
 {
     int working_position = assembled.iterator + 1; // Position in sequence where new DNT will be attached.
     DimerLib *Library = Lib[working_position];
-    RNAData *base;                // Already attached base which will have new DNT attached to
-    RNAData *attach;              // DNT which will be attached
+    //RNAData *base;                 // Already attached base which will have new DNT attached to
+    //RNAData *attach;               // DNT which will be attached
     attach_status status = FAILED; // Output from checking functions
+    double RMSD;
 
     DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
-
-    if(!assembled.is_empty())
-    {
-        base = assembled.current();
-    }
-    
-    //DIE;
-    //printf("Base name: %s\n", base->name);
-    attach = nullptr;//new RNAData(Lib, working_position, 0); // For initialization only
     for (int i = 0; i < Library->count; i++)
     {
         if (Lib.Flags[working_position][i] != NO_FLAG)
@@ -145,60 +140,42 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         }
         if (assembled.is_empty())
         {
-            attach->overwrite(Lib, working_position, i);
-            assembled.add_move(attach);
+            assembled.overwrite(working_position, i, Lib);
+            assembled.keep();
             manager.attach_attempt(working_position, i);
-            DEBUG(printf("attach: %ld moved @ empty\n", attach->id));
+            DEBUG(printf("attach: %ld moved @ empty\n", assembled[working_position]->id));
             status = NOT_CHECKED;
             break;
         }
-        if(assembled.inLeft_or_inRight(working_position) == true) 
+        if (assembled.inLeft_or_inRight(working_position) == true)
         {
-            attach->overwrite(Lib, working_position, i);
+            assembled.overwrite(working_position, i, Lib);
             manager.attach_attempt(working_position, i);
-            if(assembled.prepare_right(attach, WC_Lib) == true) 
+            if (assembled.prepare_right(assembled[working_position], WC_Lib) == true)
             {
                 status = ATTACHED;
                 break;
             }
-            else 
+            else
             {
                 continue;
             }
-            /*
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            */
         }
-        base = assembled.current();
-        //printf("Base name: %s\n", base->name);
-        //print_gsl_matrix(base->data_matrix);
-        attach->overwrite(Lib, working_position, i);
-        //print_gsl_matrix(attach->data_matrix);
+        assembled.overwrite(working_position, i, Lib);
         manager.attach_attempt(working_position, i);
-        //printf("Attaching attempt: working pos = %d, i = %d\n", working_position, i);
-        if ((status = rotate(base, attach)) != ATTACHED)
+        if ((status = rotate(assembled.current(), assembled[working_position])) != ATTACHED)
         {
             continue;
         }
-        attach->update_submatrices();
-        //printf("---------Before check attachment\n");
-        if ((status = steric_clash_check_COMFast_IL(assembled, attach)) == ATTACHED)
+        // printf("---------Before check attachment\n");
+        if ((status = steric_clash_check_COMFast_IL(assembled, assembled[working_position])) == ATTACHED)
         {
             break;
         }
-        else if (status == FAILED_SC)
-        {
-            assembled.add_move(attach);
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            return true;
-        }
-        //DIE;
+        // DIE;
     }
     if (status == FAILED)
     {
-        delete attach;
         if (manager.is_at_end())
         {
             manager.check_lib_completion();
@@ -222,35 +199,39 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
     }
     else if (status == ATTACHED)
     {
-        assembled.add_move(attach);
-        DEBUG(printf("attach: %ld moved @ Attached @ %d\n", attach->id, working_position));
+        assembled.keep();
+        //DEBUG(printf("attach: %ld moved @ Attached @ %d\n", attach->id, working_position));
     }
     if (assembled.is_complete())
     {
         assembled.update_energy();
         if (GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
         {
-            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
+            WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
+                                        assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
+                                        assembled[assembled.iterator_max]->count_per_WC_sub[1]);
+            RMSD = WC_check_pair(0);
+            if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
             {
-                //printf("IS WC PAIR\n");
+                assembled.update_WC_rmsd(RMSD);
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.internal_loops_built++;
-                if(assembled.TMP_END == true)
+                if (assembled.TMP_END == true)
                 {
                     return true;
                 }
                 if constexpr (STRUCTURE_BUILD_LIMIT == true)
                 {
-                    if(manager.internal_loops_built > GLOBAL_STRUCTURE_LIMIT_COUNT) 
+                    if (manager.internal_loops_built > GLOBAL_STRUCTURE_LIMIT_COUNT)
                     {
                         return true;
                     }
                 }
             }
-            else 
+            else
             {
-                //printf("IS NOT WC PAIR\n");
-                //o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+                // printf("IS NOT WC PAIR\n");
+                // o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
             }
         }
         else
@@ -273,7 +254,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         {
             DEBUG(printf("Rolling back b/c: COMPLETED NOT AT LIB END\n"));
             assembled.rollback();
-            //return true;
+            // return true;
         }
     }
     return false;

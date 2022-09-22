@@ -18,14 +18,14 @@ const atom_id WCtargetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, /*C1p, C2p, C3p, C4
 
 struct RNAData
 {
-    gsl_matrix *data_matrix;
-    gsl_matrix **submatrices; // Submatrix for each residue corresponding to the target atoms. Ordered 5' to 3'.
-    gsl_matrix **WC_submatrices;
+    gsl_matrix   *data_matrix;
+    //gsl_matrix   **submatrices; // Submatrix for each residue corresponding to the target atoms. Ordered 5' to 3'.
+    //gsl_matrix   **WC_submatrices;
     uint16_t     *StericIndices[2];
     uint16_t     *EnergyIndices[2];
     uint16_t     *submatrix_rows[2];
     uint16_t     *WC_submatrix_rows[2];
-    atom_info  *atom_data;
+    atom_info    *atom_data;
     float energy;
     char name[3];
     flag *_flag;
@@ -33,6 +33,8 @@ struct RNAData
 
     int position_in_lib[2];
     int count_per_sub[2];
+    int count_per_Steric[2];
+    int count_per_Energy[2];
     int sub_starts_at[2];
     size_t count_per_WC_sub[2];
 
@@ -42,23 +44,23 @@ struct RNAData
     const atom_id *target;
     const atom_id *WC_target;
 
-    bool is_for_WC;
-    bool WC_secondary;
-
     long int id;
 
     RNAData();
     void initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlock, size_t *offset_matrix, uint16_t *ArrayMemBlock, size_t *offset_array, bool WC = false);
     void overwrite(DimerLibArray &L, int i, int j);
     ~RNAData();
-    void make_submatrices();
-    void update_submatrices();
-    gsl_matrix *get_target_matrix(int res);
-    gsl_matrix *get_target_matrix_copy(int res);
-    void make_WC_submatrices(bool first_run = false);
-    void update_WC_submatrices();
-    gsl_matrix *get_WC_target_matrix(int res);
-    gsl_matrix *get_WC_target_matrix_copy(int res);
+
+    /* Submatrices are now managed by the functions that used them for contiguous memory and better memory management */
+    //void make_submatrices();
+    //void update_submatrices();
+    //gsl_matrix *get_target_matrix(int res);
+    //gsl_matrix *get_target_matrix_copy(int res);
+    //void make_WC_submatrices(bool first_run = false);
+    //void update_WC_submatrices();
+    //gsl_matrix *get_WC_target_matrix(int res);
+    //gsl_matrix *get_WC_target_matrix_copy(int res);
+
     int get_residue_COM_index(int res);
     void print();
     void print_target(int res);
@@ -72,12 +74,11 @@ struct RNAData
 
 struct RNADataArray
 {
-    RNAData **sequence;
-    gsl_matrix *WC_submatrix;
+    RNAData    **sequence;
     gsl_matrix *InteractionTable;
     gsl_matrix *COMS;
-    gsl_block *MatrixMemBlock;
-    uint16_t *ArrayMemBlock;
+    gsl_block  *MatrixMemBlock;
+    uint16_t   *ArrayMemBlock;
 
     double *Radii;
     bool *PassedCOMCheck;
@@ -101,8 +102,8 @@ struct RNADataArray
     int atom_sum;
 
     RNADataArray();
-    RNADataArray(const RNADataArray &RDA);
-    void initialize(int size, DimerLibArray &Library);
+    void initialize(size_t size, DimerLibArray &Library);
+    void overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
     ~RNADataArray();
     uint_fast64_t calculate_matrix_memory_needed(DimerLibArray &L, int i);
     uint_fast64_t calculate_index_array_memory_needed(DimerLibArray &L, int i);
@@ -111,6 +112,7 @@ struct RNADataArray
     void add_move(RNAData *A);
     RNAData *current();
     bool is_complete();
+    void keep();
     void rollback();
     void safe_rollback(); // unused
     void rollback_by(int amount);
