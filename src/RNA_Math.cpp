@@ -74,6 +74,14 @@ void gsl_matrix_print(gsl_matrix *M, const char* name)
     }
 }
 
+void gsl_matrix_print_row(gsl_matrix *M, size_t i)
+{
+    for (unsigned int j = 0; j < M->size2; j++)
+        printf("%3.3f ", gsl_matrix_get(M, i, j));
+    putchar('\n');
+
+}
+
 int array_min_idx_for_energy(int *Arr, int N)
 {
     int MinVal = N;

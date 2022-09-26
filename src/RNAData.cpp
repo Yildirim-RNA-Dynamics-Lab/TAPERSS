@@ -14,8 +14,13 @@ RNAData::RNAData()
 
 }
 
-void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlock, size_t *offset_matrix, uint16_t *ArrayMemBlock, size_t *offset_array, bool WC)
+void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlock, size_t *offset_matrix, uint16_t *ArrayMemBlock, size_t *offset_array)
 {
+    int rel_idx1 = 0;
+    int rel_idx2 = 0;
+    int rel_idx3 = 0;
+    int rel_idx4 = 0;
+
     atom_data = (L[idx]->atom_data);
     memcpy(name, L[idx]->name, sizeof(char) * 3);
     energy = L[idx]->energy[idx_L];
@@ -24,8 +29,14 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
     position_in_lib[0] = idx;
     position_in_lib[1] = idx_L;
     position_max = L[idx]->count - 1;
+    ResBoundaries[0] = 0;
+    ResBoundaries[1] = atom_data->count_per_res[0];
+    ResBoundaries[2] = atom_data->count_per_res[0];
+    ResBoundaries[3] = atom_data->count;
 
     id = rna_dat_tracker++;
+
+    //printf("RNAData at %d,%d with ID: %lu Allocated\n", idx, idx_L, id);
 
     COM_Radii[0] = L[idx]->radii[0][idx_L];
     COM_Radii[1] = L[idx]->radii[1][idx_L];
@@ -35,12 +46,12 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
 
     *offset_matrix += L[idx]->data_matrices[idx_L]->size1 * L[idx]->data_matrices[idx_L]->size2;
 
-    count_per_sub[0] = get_target(name[0], &target);
+    count_per_sub[0] = get_target(name[0], &target1);
 
     submatrix_rows[0] = &ArrayMemBlock[*offset_array];
     *offset_array += count_per_sub[0];
 
-    count_per_sub[1] = get_target(name[1], &target);
+    count_per_sub[1] = get_target(name[1], &target2);
 
     submatrix_rows[1] = &ArrayMemBlock[*offset_array];
     *offset_array += count_per_sub[1];
@@ -48,25 +59,23 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
 
     //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
 
-    
-    int rel_idx1 = 0;
-    int rel_idx2 = 0;
     for (unsigned int j = 0; j < count; j++)
     {
         for (int k = 0; k < count_per_sub[0]; k++)
         {
-            if ((target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
+            if ((target1[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
             {
                 //gsl_matrix_set(submatrices[0], rel_idx1, 0, gsl_matrix_get(data_matrix, j, 0));
                 //gsl_matrix_set(submatrices[0], rel_idx1, 1, gsl_matrix_get(data_matrix, j, 1));
                 //gsl_matrix_set(submatrices[0], rel_idx1, 2, gsl_matrix_get(data_matrix, j, 2));
+                //printf("lib: %d, j = %d, k = %d\n", idx, j, target1[k]);
                 submatrix_rows[0][rel_idx1] = j;
                 rel_idx1++;
             }
         }
         for(int k = 0; k < count_per_sub[1]; k++)
         {
-            if ((target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
+            if ((target2[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
             {
                 //gsl_matrix_set(submatrices[1], rel_idx2, 0, gsl_matrix_get(data_matrix, j, 0));
                 //gsl_matrix_set(submatrices[1], rel_idx2, 1, gsl_matrix_get(data_matrix, j, 1));
@@ -77,11 +86,11 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
         }
     }
 
-    count_per_WC_sub[0] = get_WC_target(name[0], &WC_target);
+    count_per_WC_sub[0] = get_WC_target(name[0], &WC_target1);
     WC_submatrix_rows[0] = &ArrayMemBlock[*offset_array];
     *offset_array += count_per_WC_sub[0];
 
-    count_per_WC_sub[1] = get_WC_target(name[1], &WC_target);
+    count_per_WC_sub[1] = get_WC_target(name[1], &WC_target2);
     WC_submatrix_rows[1] = &ArrayMemBlock[*offset_array];
     *offset_array += count_per_WC_sub[1];
 
@@ -94,7 +103,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
     {
         for (unsigned int k = 0; k < count_per_WC_sub[0]; k++)
         {
-            if ((WC_target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
+            if ((WC_target1[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
             {
                 WC_submatrix_rows[0][rel_idx1] = j;
                 rel_idx1++;
@@ -102,7 +111,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
         }
         for (unsigned int k = 0; k < count_per_WC_sub[1]; k++)
         {
-            if ((WC_target[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
+            if ((WC_target2[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
             {
                 WC_submatrix_rows[1][rel_idx2] = j;
                 rel_idx2++;
@@ -120,16 +129,15 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
 
     for(int i = 0; i < L[idx]->atom_data->count; i++)
     {
+        if(L[idx]->atom_data->dnt_pos[i] == 2)
+        {
+            continue;
+        }
         if( L[idx]->atom_data->atom_ids[i] == P   || L[idx]->atom_data->atom_ids[i] == OP1 || 
             L[idx]->atom_data->atom_ids[i] == OP2 || L[idx]->atom_data->atom_ids[i] == C5p || 
             L[idx]->atom_data->atom_ids[i] == O5p)
         {
-            continue;
-        }
-        else if(L[idx]->atom_data->dnt_pos[i] == 1)
-        {
-            //printf("RNA STERIC 1: %d\n", rel_idx1);
-            StericIndices[0][rel_idx1++] = i;
+                StericIndices[0][rel_idx1++] = i;
         }
     }
 
@@ -140,16 +148,15 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
 
     for(int i = 0; i < L[idx]->atom_data->count; i++)
     {
+        if(L[idx]->atom_data->dnt_pos[i] == 1)
+        {
+            continue;
+        }
         if( L[idx]->atom_data->atom_ids[i] == P   || L[idx]->atom_data->atom_ids[i] == OP1 || 
             L[idx]->atom_data->atom_ids[i] == OP2 || L[idx]->atom_data->atom_ids[i] == C5p || 
             L[idx]->atom_data->atom_ids[i] == O5p)
         {
-            continue;
-        }
-        else if(L[idx]->atom_data->dnt_pos[i] == 2)
-        {
-            //printf("RNA STERIC 2: %d\n", rel_idx2);
-            StericIndices[1][rel_idx2++] = i;
+                StericIndices[1][rel_idx2++] = i;
         }
     }
 
@@ -164,7 +171,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
 
     for(int i = 0; i < L[idx]->atom_data->count; i++)
     {
-        if( L[idx]->atom_data->charges[i] == atom_charge::NEUTRAL)
+        if( L[idx]->atom_data->charges[i] != atom_charge::POSITIVE)
         {
             continue;
         }
@@ -182,17 +189,50 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
 
     for(int i = 0; i < L[idx]->atom_data->count; i++)
     {
-        if( L[idx]->atom_data->charges[i] == atom_charge::NEUTRAL)
+        if( L[idx]->atom_data->charges[i] != atom_charge::NEGATIVE)
         {
             continue;
         }
-        else if(L[idx]->atom_data->dnt_pos[i] == 2)
+        else if(L[idx]->atom_data->dnt_pos[i] == 1)
         {
             EnergyIndices[1][rel_idx2++] = i;
         }
     }
     count_per_Energy[1] = rel_idx2;
     *offset_array += rel_idx2;
+    EnergyIndices[2] = &ArrayMemBlock[*offset_array];
+
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->charges[i] != atom_charge::POSITIVE)
+        {
+            continue;
+        }
+        else if(L[idx]->atom_data->dnt_pos[i] == 2)
+        {
+            EnergyIndices[2][rel_idx3++] = i;
+        }
+    }
+
+    count_per_Energy[2] = rel_idx3;
+    *offset_array += rel_idx3;
+    EnergyIndices[3] = &ArrayMemBlock[*offset_array];
+
+    //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
+
+    for(int i = 0; i < L[idx]->atom_data->count; i++)
+    {
+        if( L[idx]->atom_data->charges[i] != atom_charge::NEGATIVE)
+        {
+            continue;
+        }
+        else if(L[idx]->atom_data->dnt_pos[i] == 2)
+        {
+            EnergyIndices[3][rel_idx4++] = i;
+        }
+    }
+    count_per_Energy[3] = rel_idx4;
+    *offset_array += rel_idx4;
     //printf("IN RNAData: Array Offset: %lu\n", *offset_array);
 }
 
@@ -398,23 +438,23 @@ size_t get_WC_target(char res, const atom_id** dest)
 {
     if (res == 'A')
     {
-        *dest = targetA;        
-        return (sizeof(targetA) / sizeof(atom_id));
+        *dest = WCtargetA;        
+        return (sizeof(WCtargetA) / sizeof(atom_id));
     }
     else if (res == 'C')
     {
-        *dest = targetC;
-        return (sizeof(targetC) / sizeof(atom_id));
+        *dest = WCtargetC;
+        return (sizeof(WCtargetC) / sizeof(atom_id));
     }
     else if (res == 'G')
     {
-        *dest = targetG;
-        return (sizeof(targetG) / sizeof(atom_id));
+        *dest = WCtargetG;
+        return (sizeof(WCtargetG) / sizeof(atom_id));
     }
     else if (res == 'U')
     {
-        *dest = targetU;
-        return (sizeof(targetU) / sizeof(atom_id));
+        *dest = WCtargetU;
+        return (sizeof(WCtargetU) / sizeof(atom_id));
     }
     else
     {
@@ -531,7 +571,9 @@ int RNAData::to_string_offset(int res, int position, char *s, int buffer_size, i
 
 void RNADataArray::initialize(size_t size, DimerLibArray& Library)
 {
-    int LAC = Library.ChargedAtomCount;
+    int PLAC = Library.PositiveAtomCount;
+    int NLAC = Library.NegativeAtomCount;
+    //printf("PLAC = %d, NLAC = %d\n", PLAC, NLAC);
     iterator_max = size - 1;
     sequence = (RNAData **)malloc(sizeof(RNAData *) * size);
     uint64_t matrix_memsize = 0;
@@ -541,6 +583,8 @@ void RNADataArray::initialize(size_t size, DimerLibArray& Library)
         matrix_memsize   += calculate_matrix_memory_needed(Library, i);
         array_memsize    += calculate_index_array_memory_needed(Library, i);
     }
+    //printf("Array Memsize : %lu\nMatrix Memsize: %lu\n", array_memsize / sizeof(uint16_t), matrix_memsize);
+    matrix_memsize += (PLAC * NLAC); // Interaction Table Matrix
     //printf("Array Memsize : %lu\nMatrix Memsize: %lu\n", array_memsize / sizeof(uint16_t), matrix_memsize);
     MatrixMemBlock = gsl_block_alloc(matrix_memsize); //Allocate Block of memory to pass to individual RNAData's. This is to maintain contiguous memory.
     ArrayMemBlock = (uint16_t *)malloc(array_memsize); // Same as ^.
@@ -552,31 +596,37 @@ void RNADataArray::initialize(size_t size, DimerLibArray& Library)
     {
         //printf("BEFORE: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
         sequence[i] = new RNAData();
-        sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset, false);
-        //printf("AFTER: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+        sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset);
+        
     }
 
+    //printf("AFTER: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+    *sequence[0]->_flag = USED;
     iterator = 0;  //Start with first already DNT included
     count = 1;
     structure_energy = 0;
-    InteractionTable = gsl_matrix_alloc(LAC, LAC);
+    COMS = gsl_matrix_alloc_from_block(MatrixMemBlock, MatrixOffset, 2 * size, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+    MatrixOffset += (2 * size * MATRIX_DIMENSION2);
+    //printf("AFTER2: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+    InteractionTable = gsl_matrix_alloc_from_block(MatrixMemBlock, MatrixOffset, PLAC, NLAC, NLAC);
     gsl_matrix_set_zero(InteractionTable); // Set all to 0
-    InteractionTableSum = (int *)calloc(LAC, sizeof(int));
-    InteractionTableMap = Library.AtomMap;
-    TableRowCount = LAC;
-    COMS = gsl_matrix_alloc(2 * size, MATRIX_DIMENSION2);
+    PositiveAtomMap = Library.PositiveAtomMap;
+    NegativeAtomMap = Library.NegativeAtomMap;
+    TableRowCount = PLAC;
+    TableColCount = NLAC;
+    LAC = Library.LargestAtomCount;
     Radii = (double *)malloc(2 * size * sizeof(double));
-    PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(gsl_vector*)); // in normal building of structure only first DNT will have valid 1st residue.
+    PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
                                                                       // in all other DNTs, only second residue is needed.
 }
 
 void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
 {
     sequence[LibIdx]->overwrite(Library, LibIdx, IdxInLib);
-    gsl_matrix_row_copy(COMS, iterator * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
-    gsl_matrix_row_copy(COMS, (iterator * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
-    Radii[iterator * 2] = Library[LibIdx]->radii[0][IdxInLib];
-    Radii[iterator * 2 + 1] = Library[LibIdx]->radii[1][IdxInLib];
+    gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
+    gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
+    Radii[LibIdx * 2] = Library[LibIdx]->radii[0][IdxInLib];
+    Radii[LibIdx * 2 + 1] = Library[LibIdx]->radii[1][IdxInLib];
 }
 
 RNADataArray::RNADataArray(){}
@@ -595,8 +645,8 @@ RNADataArray::~RNADataArray()
     if (string_initialized)
         free(string_out);
     gsl_matrix_free(InteractionTable);
-    free(InteractionTableMap);
-    free(InteractionTableSum);
+    free(PositiveAtomMap);
+    free(NegativeAtomMap);
     gsl_block_free(MatrixMemBlock);
     free(ArrayMemBlock);
 }
@@ -607,6 +657,7 @@ uint_fast64_t RNADataArray::calculate_matrix_memory_needed(DimerLibArray& L, int
     size_t data_mat_nrows = L[idx]->data_matrices[0]->size1;
 
     memsize += data_mat_nrows * MATRIX_DIMENSION2;
+    memsize += 2 * MATRIX_DIMENSION2; //For COM Matrix
 
     /* Size for Submatrices */
     //memsize += get_target(L[idx]->name[0], &dummy) * MATRIX_DIMENSION2; //Submatrix for Resid 1
@@ -632,8 +683,8 @@ uint_fast64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L
     //printf("IN CALC: Array Offset: %lu\n", memsize);
 
     /* Size for WCSubmatrices Rows */
-    memsize += get_target(L[idx]->name[0], &dummy);
-    memsize += get_target(L[idx]->name[1], &dummy);
+    memsize += get_WC_target(L[idx]->name[0], &dummy);
+    memsize += get_WC_target(L[idx]->name[1], &dummy);
 
     //printf("IN CALC: Array Offset: %lu\n", memsize);
 
@@ -641,9 +692,9 @@ uint_fast64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L
     //int counter = 0;
     for(int i = 0; i < L[idx]->atom_data->count; i++)
     {
-        if( L[idx]->atom_data->atom_ids[i] != P   && L[idx]->atom_data->atom_ids[i] != OP1 && 
-            L[idx]->atom_data->atom_ids[i] != OP2 && L[idx]->atom_data->atom_ids[i] != C5p && 
-            L[idx]->atom_data->atom_ids[i] != O5p)
+        if( L[idx]->atom_data->atom_ids[i] == P   || L[idx]->atom_data->atom_ids[i] == OP1 || 
+            L[idx]->atom_data->atom_ids[i] == OP2 || L[idx]->atom_data->atom_ids[i] == C5p ||
+            L[idx]->atom_data->atom_ids[i] == O5p)
         {
             memsize++;
             //printf("CALC STERIC: %d\n", counter++);
@@ -698,13 +749,14 @@ RNAData *RNADataArray::current()
 
 bool RNADataArray::is_complete()
 {
-    return iterator == iterator_max ? true : false;
+    return (iterator == iterator_max);
 }
 
 void RNADataArray::keep()
 {
     iterator++;
     count++;
+    *sequence[iterator]->_flag = USED;
 }
 
 void RNADataArray::rollback()
@@ -727,6 +779,7 @@ void RNADataArray::safe_rollback() // unused
 
 void RNADataArray::rollback_by(int amount)
 {
+    //print_index(0);
     /*for (int i = iterator; i > (iterator - (amount + 1)); i--)
     {
         DEBUG(printf("attach: %ld deleted @ rollback_by @ %d\n", sequence[i]->id, i));
@@ -734,7 +787,9 @@ void RNADataArray::rollback_by(int amount)
     }*/
     iterator -= (amount + 1);
     count -= (amount + 1);
-    // printf("moving to pos: %d\n", iterator);
+    //printf("Count: %d, iterator: %d\n", count, iterator);
+    //printf("moving to pos: %d\n", iterator);
+    //print_index(0);
 }
 
 bool RNADataArray::is_empty()
@@ -752,164 +807,84 @@ void RNADataArray::update_WC_rmsd(float rmsd_val)
 void RNADataArray::update_energy()
 {
     float energy_ = 0.0;
-    gsl_vector_view A, B;
+    int Interactions = 0;
 
-    bool tmp_bool = false;
-    int IDX1, IDX2;
-    int PotentialInteractions = 0;
-    int StopCondition = 10;
 
     for (int i = 0; i < count; i++)
     {
         energy_ += sequence[i]->energy;
     }
-    for (int i = 0; i < count - 1; i++)
+
+    for(int i = count - 1; i > 1; i--)
+    {
+        Interactions += FindInteraction(0, 0, sequence[0], 1, i, sequence[i],
+                        InteractionTable, PositiveAtomMap, NegativeAtomMap, LAC);
+        Interactions += FindInteraction(1, 0, sequence[0], 1, i, sequence[i],
+                        InteractionTable, PositiveAtomMap, NegativeAtomMap, LAC);
+    }
+
+    for (int i = 1; i <= count - 3; i++)
     {
         for (int j = count - 1; j > i + 1; j--)
         {
-            if (i != j)
-            {
-                for (unsigned int k = 0; k < sequence[i]->count; k++)
-                {
-                    if (i != 0)
-                    {
-                        if (sequence[i]->atom_data->dnt_pos[k] != 2)
-                        {
-                            continue;
-                        }
-                    }
-                    if (sequence[i]->atom_data->charges[k] == NEUTRAL)
-                    {
-                        continue;
-                    }
-                    for (unsigned int l = 0; l < sequence[j]->count; l++)
-                    {
-                        if (sequence[j]->atom_data->dnt_pos[l] != 2)
-                        {
-                            continue;
-                        }
-                        if (sequence[j]->atom_data->charges[l] == NEUTRAL)
-                        {
-                            continue;
-                        }
-                        A = gsl_matrix_row(sequence[i]->data_matrix, k);
-                        B = gsl_matrix_row(sequence[j]->data_matrix, l);
-                        //gsl_vector_print(&A.vector);
-                        //gsl_vector_print(&B.vector);
-                        if (distance_vec2vec(&A.vector, &B.vector) < INTERACTION_DISTANCE)
-                        {
-                            if (sequence[i]->atom_data->charges[k] == sequence[j]->atom_data->charges[l])
-                            {
-                                // energy += 1;
-                            }
-                            else
-                            {                                
-                                IDX1 = IDX_FLAT2D(i,k,TableRowCount);
-                                IDX2 = IDX_FLAT2D(j,l,TableRowCount);
-                                gsl_matrix_set(InteractionTable, InteractionTableMap[IDX1], InteractionTableMap[IDX2], 1);
-                                gsl_matrix_set(InteractionTable, InteractionTableMap[IDX2], InteractionTableMap[IDX1], 1);
-                                tmp_bool = true;
-                                //printf("Atom A: %d,%d -> %d; Atom B: %d,%d -> %d\n", i, k, InteractionTableMap[IDX1], j, l, InteractionTableMap[IDX2]);
-                                PotentialInteractions++;
-                                if(PotentialInteractions >= StopCondition)
-                                {
-                                    TMP_END = true;
-                                }
-                                printf("%c%d%s(%d) : %c%d%s(%d)\n", sequence[i]->atom_data->residue[k], i + sequence[i]->atom_data->dnt_pos[k], sequence[i]->atom_data->name[k], InteractionTableMap[IDX1], sequence[j]->atom_data->residue[l], j + sequence[j]->atom_data->dnt_pos[l], sequence[j]->atom_data->name[l], InteractionTableMap[IDX2]);
-                                //energy_ -= 1;
-                                //sequence[j]->has_interaction[l] = true;
-                                //sequence[i]->has_interaction[k] = true;
-                            }
-                        }
-                        else
-                        {
-                            //printf("%d, %s, %d, %s: %f\n", i + sequence[i]->atom_data->dnt_pos[k], sequence[i]->atom_data->name[k], j + sequence[j]->atom_data->dnt_pos[l], sequence[j]->atom_data->name[l], distance(&A.vector, &B.vector));
-                        }
-                    }
-                }
-            }
+            Interactions += FindInteraction(1, i, sequence[i], 1, j, sequence[j],
+                        InteractionTable, PositiveAtomMap, NegativeAtomMap, LAC);
         }
     }
-    //exit(0);
-    if(tmp_bool)
+    
+    if(Interactions > 1)
     {
-        for(int i = 0; i < TableRowCount; i++)
-        {
-            for(int j = 0; j < TableRowCount; j++)
-            {
-                InteractionTableSum[i] += gsl_matrix_get(InteractionTable, j, i);
-                if(InteractionTableSum[i] >=  4)
-                {
-                    TMP_END = true;
-                }
-            }
-        }
-
-        printf("IDs:%17s", " ");
-        for(int is = 0; is < TableRowCount; is++)
-        {
-            printf("%4d", is);
-        }    
-        printf("\n");
-        printf("Start:%15s", " ");
-        for(int is = 0; is < TableRowCount; is++)
-        {
-            printf("%4d", InteractionTableSum[is]);
-        }            
-        printf("\n");
-        printf("\n");
-        
-        int MinSum, MinVal, MinIdx, NumInteractions = 0;
-        while((MinSum = array_min_idx_for_energy(InteractionTableSum, TableRowCount)) != -1)
-        {
-            MinVal = TableRowCount;
-            MinIdx = -1;
-            for(int i = 0; i < TableRowCount; i++)
-            {
-                if(InteractionTableSum[MinSum] != 0 && MinSum != i && gsl_matrix_get(InteractionTable, MinSum, i) != 0)
-                {
-                    if(InteractionTableSum[i] > 0)
-                    {
-                        if(InteractionTableSum[i] < MinVal)
-                        {
-                            MinVal = InteractionTableSum[i];
-                            MinIdx = i;
-                        }
-                    }
-                }
-            }
-            if(MinIdx != -1)
-            {
-                
-                InteractionTableSum[MinSum] = 0;
-                InteractionTableSum[MinIdx] = 0;
-                NumInteractions++;
-                printf("i:%4d, MinIdx:%4d::", MinSum, MinIdx);
-                for(int is = 0; is < TableRowCount; is++)
-                {
-                   printf("%4d", InteractionTableSum[is]);
-                }            
-                printf("\n");
-            }
-            else
-            {
-                InteractionTableSum[MinSum] = 0;
-            }
-        }
-        printf("Interactions Found = %d\n", NumInteractions);
-        gsl_matrix_set_zero(InteractionTable);
-        memset(InteractionTableSum, 0, TableRowCount * sizeof(int));
-        energy_ -= NumInteractions;
-        printf("------------------\n");
-        /*if(NumInteractions >=  6)
-        {
-            TMP_END = true;
-        }*/
+        Interactions = HK_GetMaxMatching(InteractionTable);
     }
-
-    //reset_interactions();
-    //printf("Energy = %f\n", energy_);
+    energy_ -= Interactions;
     structure_energy = energy_;
+
+    gsl_matrix_set_zero(InteractionTable);
+}
+
+int FindInteraction(int A_ResId, int A_Idx, RNAData *AData, int B_ResId, int B_Idx, RNAData *BData, gsl_matrix *AdjMatrix, int *PAdjMap, int*NAdjMap, size_t DIM2)
+{
+    gsl_matrix *A = AData->data_matrix;
+    gsl_matrix *B = BData->data_matrix;
+    uint16_t *A_P_Rows = AData->EnergyIndices[A_ResId * 2];
+    uint16_t *A_N_Rows = AData->EnergyIndices[A_ResId * 2 + 1];
+    uint16_t *B_P_Rows = BData->EnergyIndices[B_ResId * 2];
+    uint16_t *B_N_Rows = BData->EnergyIndices[B_ResId * 2 + 1];
+    size_t A_P_NRow = AData->count_per_Energy[A_ResId * 2];
+    size_t A_N_NRow = AData->count_per_Energy[A_ResId * 2 + 1];
+    size_t B_P_NRow = BData->count_per_Energy[B_ResId * 2];
+    size_t B_N_NRow = BData->count_per_Energy[B_ResId * 2 + 1];
+    size_t IDX1, IDX2;
+    int Interactions = 0;
+    for(size_t i = 0; i < A_P_NRow; i++)
+    {
+        for(size_t j = 0; j < B_N_NRow; j++)
+        {
+            if(distance_mat2mat(A, A_P_Rows[i], B, B_N_Rows[j]) < INTERACTION_DISTANCE)
+            {
+                IDX1 = IDX_FLAT2D(A_Idx, A_P_Rows[i], DIM2);
+                IDX2 = IDX_FLAT2D(B_Idx, B_N_Rows[j], DIM2);
+                //printf("(%d,%d):(%d,%d) == %d:%d\n", A_Idx, A_P_Rows[i], B_Idx, B_N_Rows[j],PAdjMap[IDX1], NAdjMap[IDX2]);
+                gsl_matrix_set(AdjMatrix, PAdjMap[IDX1], NAdjMap[IDX2], 1);
+                Interactions++;
+            }
+        }
+    }
+    for(size_t i = 0; i < A_N_NRow; i++)
+    {
+        for(size_t j = 0; j < B_P_NRow; j++)
+        {
+            if(distance_mat2mat(A, A_N_Rows[i], B, B_P_Rows[j]) < INTERACTION_DISTANCE)
+            {
+                IDX1 = IDX_FLAT2D(A_Idx, A_N_Rows[i], DIM2);
+                IDX2 = IDX_FLAT2D(B_Idx, B_P_Rows[j], DIM2);
+                gsl_matrix_set(AdjMatrix, PAdjMap[IDX2], NAdjMap[IDX1], 1);
+                //printf("(%d,%d):(%d,%d) == %d:%d\n", A_Idx, A_N_Rows[i], B_Idx, B_P_Rows[j],PAdjMap[IDX2], NAdjMap[IDX1]);
+                Interactions++;
+            }
+        }
+    }
+    return Interactions;
 }
 
 void RNADataArray::printall()
@@ -1038,11 +1013,11 @@ int* RNADataArray::get_index()
     return ar;
 }
 
-void RNADataArray::print_index()
+void RNADataArray::print_index(int offset)
 {
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < count + offset; i++)
     {
-        if(i == count-1)
+        if(i == (count - 1 + offset))
         {
             printf("%d\n", sequence[i]->position_in_lib[1]);
             break;   

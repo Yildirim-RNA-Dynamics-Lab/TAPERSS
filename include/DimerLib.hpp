@@ -27,13 +27,15 @@ struct DimerLibArray
 {    
     DimerLib** library;
     flag** Flags;
-    int* AtomMap;           //Deallocation is handled by RNAData.
+    int* PositiveAtomMap;           //Deallocation is handled by RNAData.
+    int* NegativeAtomMap;           //Deallocation is handled by RNAData.
     bool* is_duplicate;
-    uint64_t count = 0;          //Number of "Libraries" in array
-    uint64_t full_structure_element_sum = 0; //Number of elements (atoms + COM)  which will be in a full structure.
+    uint32_t count = 0;          //Number of "Libraries" in array
+    uint32_t full_structure_element_sum = 0; //Number of elements (atoms + COM)  which will be in a full structure.
     int iterator;
     bool was_initialized = false;
-    uint64_t ChargedAtomCount;
+    uint32_t PositiveAtomCount;
+    uint32_t NegativeAtomCount;
     uint32_t LargestAtomCount = 0;
 
     DimerLibArray();

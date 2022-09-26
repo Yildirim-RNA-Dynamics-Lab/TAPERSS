@@ -130,7 +130,7 @@ void WC_create(DimerLibArray &WC_Library)
         {
             for (unsigned int k = 0; k < target1size; k++)
             {
-                if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == i)
+                if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 0)
                 {
                     gsl_matrix_set(WC_reference_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
                     gsl_matrix_set(WC_reference_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
@@ -141,7 +141,7 @@ void WC_create(DimerLibArray &WC_Library)
             }
             for (unsigned int k = 0; k < target2size; k++)
             {
-                if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == i)
+                if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 1)
                 {
                     gsl_matrix_set(WC_reference_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
                     gsl_matrix_set(WC_reference_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));

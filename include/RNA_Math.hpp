@@ -4,6 +4,7 @@
 #include "RNACMB.hpp"
 #include "Kabsch.hpp"
 #define print_gsl_matrix(M) gsl_matrix_print(M, #M);
+#define print_gsl_matrix_row(M, i) gsl_matrix_print_row(M, i);
 
 double rmsd_generic(gsl_matrix *A, gsl_matrix *B);
 void get_matrix_COM(gsl_matrix *M, double *COM);
@@ -11,6 +12,7 @@ void center_matrix(gsl_matrix *M, double *COM);
 void translate_matrix(double *__restrict__ tV, gsl_matrix *M, double scalar);
 void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M);
 void gsl_matrix_print(gsl_matrix *M, const char* name);
+void gsl_matrix_print_row(gsl_matrix *M, size_t i);
 void gsl_vector_print(gsl_vector *V); 
 int array_min_idx_for_energy(int *Arr, int N);
 /* Inline Functions */

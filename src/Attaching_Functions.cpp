@@ -16,8 +16,8 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
     
     //printf("################Residue name: %s\n", reference->name);
     //print_gsl_matrix(reference->data_matrix);
-    print_gsl_matrix(P);
-    print_gsl_matrix(Q);
+    //print_gsl_matrix(P);
+    //print_gsl_matrix(Q);
     //printf("################Residue name: %s\n", rotated->name);
 
     kabsch_calculate_rotation_matrix_Nx3fast(P, Q, P_WORK, COMP, COMQ);
@@ -28,7 +28,11 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
     rmsd_ = rmsd_generic(P, Q);
     //print_gsl_matrix(P);
     //print_gsl_matrix(Q);
-    printf("RMSD: %f\n", rmsd_);
+    //printf("RMSD: %f\n", rmsd_);
+    //translate_matrix(COMP, MODEL, -1.0F);
+    //apply_rotation_matrix(R, MODEL);
+        //print_gsl_matrix(R);
+    //translate_matrix(COMQ, MODEL, 1.0F);
     if (rmsd_ <= GLOBAL_RMSD_LIMIT)
     {
         status = ATTACHED;

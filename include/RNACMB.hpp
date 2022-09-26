@@ -32,8 +32,8 @@ constexpr float INTERACTION_DISTANCE = 3.6;
 constexpr float DEFAULT_RMSD_LIMIT = 0.5;
 constexpr float DEFAULT_WC_RMSD_LIMIT = 2.5;
 constexpr float DEFAULT_STERIC_CLASH_COM_DISTANCE_LIMIT = 11.2;
-constexpr bool STRUCTURE_BUILD_LIMIT = true;
-constexpr bool PERFORM_CHECKS_ON_CUSTOM_BUILD = false;
+constexpr bool STRUCTURE_BUILD_LIMIT = false;
+constexpr bool PERFORM_CHECKS_ON_CUSTOM_BUILD = true;
 constexpr uint_fast8_t MATRIX_DIMENSION2 = 3; //DIM2 = 3, for X,Y,Z
 
 constexpr int MAX_STRINGS = 1000;

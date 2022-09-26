@@ -18,7 +18,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
     void initialize(int size1, int size2, DimerLibArray& Library)
     {
-        int LAC = Library.ChargedAtomCount;
+        int LAC = Library.LargestAtomCount;
         WC_size_left = size1;
         //printf("~~~~~~~~~~~Size 1: %d\n", size1);
         iterator_max_1 = size1 - 1;
@@ -43,7 +43,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         {
             //printf("BEFORE: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
             sequence[i] = new RNAData();
-            sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset, false);
+            sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset);
             printf("AFTER: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
         }
 
@@ -52,8 +52,8 @@ struct RNADataArrayInternalLoop : public RNADataArray
         structure_energy = 0;
         InteractionTable = gsl_matrix_alloc(LAC, LAC);
         gsl_matrix_set_zero(InteractionTable); // Set diagonals to 1.
-        InteractionTableSum = (int *)calloc(LAC, sizeof(int));
-        InteractionTableMap = Library.AtomMap;
+        //InteractionTableSum = (int *)calloc(LAC, sizeof(int));
+        //PositiveAtomMap = Library.AtomMap;
         TableRowCount = LAC;
         COMS = gsl_matrix_alloc(2 * (iterator_max + 1), MATRIX_DIMENSION2);
         Radii = (double *)malloc(2 * (iterator_max + 1) * sizeof(double));

@@ -9,7 +9,7 @@ CFLAGS += -std=c++17
 CFLAGS += -ffast-math
 CFLAGS += -march=native
 CFLAGS += -DHAVE_INLINE
-CFLAGS += -Wno-unused-parameter
+#CFLAGS += -Wno-unused-parameter
 
 LIBS = -lgsl
 LIBS += -lgslcblas
@@ -19,7 +19,7 @@ BINDIR = ./bin/
 SRCDIR = ./src/
 INCDIR = ./include/
 
-_OBJ = Atom_info Attaching_Functions steric_clash_check CMB_Manager Combinatorial_Addition DimerLib Hairpin InputHandler Kabsch output_string RNAData RNADataArrayInternalLoop RNA_Math StructureBuilders Main Globals
+_OBJ = Atom_info Attaching_Functions steric_clash_check CMB_Manager Combinatorial_Addition DimerLib Hairpin InputHandler Kabsch output_string RNAData RNADataArrayInternalLoop RNA_Math StructureBuilders HopcroftKarp Main Globals
 DBUGOBJ = $(patsubst %, %_debug.o,$(_OBJ))
 PRFOBJ = $(patsubst %, %_profiled.o,$(_OBJ))
 PRODOBJ = $(patsubst %, %_production.o,$(_OBJ))

@@ -145,7 +145,7 @@ int read_input_index_file(char *file_name, int n_DiNts)
             get_index_int(indices, GLOBAL_INPUT_INDICES_LIST[i]);
         }
     }
-
+    fclose(input);
     return str_count;
 }
 

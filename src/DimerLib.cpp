@@ -86,6 +86,8 @@ DimerLibArray::~DimerLibArray()
             }            
         }
         free(library);
+        free(Flags[0]);
+        free(Flags);
         free(is_duplicate);
     }
 }
@@ -138,31 +140,64 @@ void DimerLibArray::add_lib(gsl_matrix **d_m, float *e, char *n, double** r)
 
 void DimerLibArray::get_charged_atom_map()
 {
-    int LargestAtomCount = 0;
-    int MapTracker = 0;
-    for(uint64_t i = 0; i < count; i++)
+    int LargestPositiveCount = 0, TmpPos = 0;
+    int LargestNegativeCount = 0, TmpNeg = 0;
+    int PosMapTracker = 0;
+    int NegMapTracker = 0;
+    for(uint32_t i = 0; i < count; i++)
     {
-        if(library[i]->atom_data->count > LargestAtomCount)
+        TmpPos = 0;
+        TmpNeg = 0;
+        for(uint32_t j = 0; j < library[i]->atom_data->count; j++)
         {
-            LargestAtomCount = library[i]->atom_data->count;
-        }        
+            if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
+            {
+                TmpPos++;
+            }
+            if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
+            {
+                TmpNeg++;
+            }
+        }
+        if(TmpPos > LargestPositiveCount)
+        {
+            LargestPositiveCount = TmpPos;
+        }       
+        if(TmpNeg > LargestNegativeCount)
+        {
+            LargestNegativeCount = TmpNeg;
+        }   
         
     }
-    AtomMap = (int*)calloc(LargestAtomCount * count, sizeof(int));
-    for(uint64_t i = 0; i < count; i++)
+
+    PositiveAtomMap = (int*)malloc(LargestAtomCount * count * sizeof(int));
+    NegativeAtomMap = (int*)malloc(LargestAtomCount * count * sizeof(int));
+    for(uint32_t i = 0; i < count; i++)
     {
-        for(int j = 0; j < LargestAtomCount; j++)
+        for(uint32_t j = 0; j < LargestAtomCount; j++)
         {
             if(j < library[i]->atom_data->count)
             {
-                if(library[i]->atom_data->charges[j] != atom_charge::NEUTRAL)
+                if(i != 0 && library[i]->atom_data->dnt_pos[j] != 2)
                 {
-                    AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = MapTracker;
-                    MapTracker++;
+                    continue;
+                }
+                if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
+                {
+                    PositiveAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = PosMapTracker;
+                    //printf("POSITIVE: %d:%d Mapped to %d\n", i, j, PosMapTracker);
+                    PosMapTracker++;
+                }
+                else if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
+                {
+                    NegativeAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = NegMapTracker;
+                    //printf("NEGATIVE: %d:%d Mapped to %d\n", i, j, NegMapTracker);
+                    NegMapTracker++;
                 }
                 else
                 {
-                    AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
+                    PositiveAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
+                    NegativeAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
                 }
                 //printf("Lib: %d, Row: %d, Index: %d, Atom: %s -> %d\n", i, j, IDX_FLAT2D(i, j, LargestAtomCount), library[i]->atom_data->name[j], AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)]);
             }
@@ -172,7 +207,8 @@ void DimerLibArray::get_charged_atom_map()
             }           
         }
     }
-    ChargedAtomCount = LargestAtomCount;
+    PositiveAtomCount = PosMapTracker;
+    NegativeAtomCount = NegMapTracker;
 }
 
 void DimerLibArray::initialize_flags()
@@ -202,7 +238,7 @@ void DimerLibArray::reset_flags(bool *reset)
             {
                 Flags[i][j] = flag::NO_FLAG;
             }
-            // printf("flags for %d reset\n", i);
+            //printf("flags for %lu reset\n", i);
         }
     }
 }

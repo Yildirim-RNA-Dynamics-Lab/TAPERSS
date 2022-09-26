@@ -42,7 +42,7 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
     int* pointer = duplicate_record[0];
     unsigned int x_loc = get_x_location(sequence);
     int left = 0, right = 0;
-    printf("%s\n", sequence);
+    //printf("%s\n", sequence);
     switch (GLOBAL_PERFORM_STRUCTCHECK)
     {
     case HAIRPIN:
@@ -169,6 +169,7 @@ void Run()
     output_string output_s(GLOBAL_OUTPUT_FILE, MAX_STRINGS, GLOBAL_IO_ACTION);
     kabsch_create(Library.LargestAtomCount, MATRIX_DIMENSION2);
     WC_create(WC_Library);
+    HK_create(Library.PositiveAtomCount, Library.NegativeAtomCount);
 
     End = clock();
 
@@ -182,7 +183,7 @@ void Run()
         Start = clock();
         if constexpr (is_same<T, RNADataArray>::value)
         {
-            while (!combinatorial_addition(Library, RNA, manager, output_s, WC_Library))
+            while (!combinatorial_addition(Library, RNA, manager, output_s))
             {
                 ;
             }  
@@ -203,9 +204,9 @@ void Run()
         {
             printf("# of Internal loops Built: %ld\n", manager.internal_loops_built);
         }
-        printf("# of Steric Clash Checks Attempted: %ld\n", steric_clash_checks_attempted);
-        printf("# of Steric Clash Checks Skipped: %ld\n", steric_clash_checks_skipped);
-        printf("%% of Steric Clash Checks Skipped: %f\n", (float)steric_clash_checks_skipped / (float)steric_clash_checks_attempted * 100);
+        //printf("# of Steric Clash Checks Attempted: %ld\n", steric_clash_checks_attempted);
+        //printf("# of Steric Clash Checks Skipped: %ld\n", steric_clash_checks_skipped);
+        //printf("%% of Steric Clash Checks Skipped: %f\n", (float)steric_clash_checks_skipped / (float)steric_clash_checks_attempted * 100);
         printf("Calculation Time: %fs\n", TimeUsed);
     }
 
@@ -216,7 +217,7 @@ void Run()
         get_index_int(GLOBAL_INPUT_INDICES, indices);
         if constexpr (is_same<T, RNADataArray>::value)
         {
-            create_custom_structure(Library, WC_Library, RNA, output_s, indices);
+            create_custom_structure(Library, RNA, output_s, indices);
         }
         if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
         {
@@ -230,7 +231,7 @@ void Run()
         printf("Done reading input...\n");
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
-            create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(Library, WC_Library, RNA, output_s, num_strs); // Need to define for IL at somepoint
+            create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(Library, RNA, output_s, num_strs); // Need to define for IL at somepoint
         }
         for (int i = 0; i < num_strs; i++)
         {
@@ -245,7 +246,7 @@ void Run()
         printf("Done!\n");
 
         printf("Creating structures from index list for testing...\n");
-        create_custom_structure_list_testing(Library, RNA, output_s, num_strs);
+        //create_custom_structure_list_testing(Library, RNA, output_s, num_strs);
         for (int i = 0; i < num_strs; i++)
         {
             free(GLOBAL_INPUT_INDICES_LIST[i]);
@@ -260,6 +261,7 @@ void Run()
     }
     kabsch_destroy();
     WC_destroy();
+    HK_destroy();
     free(DuplicateRecord);
 }
 

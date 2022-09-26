@@ -1,6 +1,6 @@
 #include "Combinatorial_Addition.hpp"
 
-bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string, DimerLibArray &WC_Lib)
+bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string)
 {
     int working_position = assembled.iterator + 1; // Position in sequence where new DNT will be attached.
     DimerLib *Library = Lib[working_position];
@@ -8,14 +8,14 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
     //RNAData *attach;               // DNT which will be attached
     attach_status status = FAILED; // Output from checking functions
     double RMSD;                   // Output of RMSD function.
-    printf("WORKING ON POSITION: %d\n", working_position);
+    //printf("WORKING ON POSITION: %d\n", working_position);
     for (int i = 0; i < Library->count; i++)
     {
         if (Lib.Flags[working_position][i] != NO_FLAG)
         {
             continue;
         }
-        printf("Using Structure: %d\n", i);
+        //printf("Using Structure: %d\n", i);
         if (assembled.is_empty())
         {
             assembled.overwrite(working_position, i, Lib);
@@ -26,6 +26,7 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
         }
         assembled.overwrite(working_position, i, Lib);
         manager.attach_attempt(working_position, i);
+        //assembled.print_index(1);
         if ((status = rotate(assembled.current(), assembled[working_position])) != ATTACHED)
         {
             continue;
@@ -34,12 +35,16 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
         {
             break;
         }
+        else
+        {
+            *assembled[working_position]->_flag = NOT_USABLE;
+        }
     }
 
     if (status == FAILED)
     {
-        printf("All failed!\n");
-        assembled.print_index();
+        //printf("All failed!\n");
+        //assembled.print_index();
         if (manager.is_at_end())
         {
             manager.check_lib_completion();
@@ -67,29 +72,27 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
     }
     if (assembled.is_complete())
     {
-        assembled.print_index();
-        DIE;
+        //assembled.print_index(0);
+        //DIE;
         if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
         {
             WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
                                         assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
                                         assembled[assembled.iterator_max]->count_per_WC_sub[1]);
             RMSD = WC_check_pair(0);
-            assembled.print_index();
-            printf("RMSD WC = %f\n",RMSD);
+            //assembled.print_index();
+            
+            //assembled.print_index();
             if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
             {
+                //printf("RMSD WC = %f\n",RMSD);
                 assembled.update_WC_rmsd(RMSD);
                 assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
                 manager.hairpins_built++;
-                if (assembled.TMP_END)
-                {
-                    return true;
-                }
                 if constexpr (STRUCTURE_BUILD_LIMIT == true)
                 {
-                    if (manager.hairpins_built > GLOBAL_STRUCTURE_LIMIT_COUNT)
+                    if (manager.hairpins_built == GLOBAL_STRUCTURE_LIMIT_COUNT)
                     {
                         return true;
                     }
@@ -222,7 +225,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
                 }
                 if constexpr (STRUCTURE_BUILD_LIMIT == true)
                 {
-                    if (manager.internal_loops_built > GLOBAL_STRUCTURE_LIMIT_COUNT)
+                    if (manager.internal_loops_built == GLOBAL_STRUCTURE_LIMIT_COUNT)
                     {
                         return true;
                     }
