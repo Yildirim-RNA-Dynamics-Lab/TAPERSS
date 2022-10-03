@@ -457,9 +457,15 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_
         get_model_count(LibFile, model_info);
         printf("Models: %d, Atoms per model: %d\n", model_info[model_count], model_info[atom_count]);
 
-        model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
-        
-        RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
+        if(for_WC) 
+        {
+            RTN.alloc_lib(model_info[model_count], model_info[atom_count], 0); 
+        } 
+        else 
+        {
+            model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
+            RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
+        }
         
         data_mats = RTN[i]->data_matrices;
         energies  = RTN[i]->energy;
@@ -519,7 +525,8 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_
                     calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
                     check_if_all_in_sphere(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[0][iterator], 0);
                     check_if_all_in_sphere(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
-                }                
+                }     
+
                 iterator++;
                 row = 0;
             }

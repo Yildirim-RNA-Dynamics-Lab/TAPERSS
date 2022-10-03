@@ -166,6 +166,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         }
         assembled.overwrite(working_position, i, Lib);
         manager.attach_attempt(working_position, i);
+        assembled.print_index(1);
         if ((status = rotate(assembled.current(), assembled[working_position])) != ATTACHED)
         {
             continue;
@@ -175,7 +176,6 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         {
             break;
         }
-        // DIE;
     }
     if (status == FAILED)
     {

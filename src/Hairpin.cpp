@@ -114,7 +114,9 @@ void WC_create(DimerLibArray &WC_Library)
     {
         matrixsize = 0;
         matrixsize = get_WC_target(WC_Library[i]->name[0], &target1);
+        printf("Matrix size: %lu\n", matrixsize);
         matrixsize += get_WC_target(WC_Library[i]->name[1], &target2);
+        printf("Matrix size: %lu\n", matrixsize);
         WC_reference_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
         offset += matrixsize * MATRIX_DIMENSION2;
         WC_structure_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
