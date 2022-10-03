@@ -83,9 +83,11 @@ bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Man
             //assembled.print_index();
             
             //assembled.print_index();
+            //printf("RMSD WC = %f\n",RMSD);
             if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
             {
-                //printf("RMSD WC = %f\n",RMSD);
+                //
+                //assembled.print_index(0);
                 assembled.update_WC_rmsd(RMSD);
                 assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());

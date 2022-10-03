@@ -13,9 +13,9 @@ double rmsd_generic(gsl_matrix *A, gsl_matrix *B)
 
     for (unsigned int i = 0; i < A->size1; i++)
     {
-        tempx = pow((gsl_matrix_get(A, i, 0) - gsl_matrix_get(B, i, 0)), 2);
-        tempy = pow((gsl_matrix_get(A, i, 1) - gsl_matrix_get(B, i, 1)), 2);
-        tempz = pow((gsl_matrix_get(A, i, 2) - gsl_matrix_get(B, i, 2)), 2);
+        tempx = square((gsl_matrix_get(A, i, 0) - gsl_matrix_get(B, i, 0)));
+        tempy = square((gsl_matrix_get(A, i, 1) - gsl_matrix_get(B, i, 1)));
+        tempz = square((gsl_matrix_get(A, i, 2) - gsl_matrix_get(B, i, 2)));
         temprmsd += tempx + tempy + tempz;
         atom_count++;
     }

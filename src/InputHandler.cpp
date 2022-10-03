@@ -157,6 +157,7 @@ void read_input_file(char *file_name)
         printf("Could not open file: %s\n", file_name);
         exit(3);
     }
+    GLOBAL_OUTPUT_FILE[0] = '\0';
     char line[LINESIZE];
     while (fgets(line, sizeof(line), input))
     {

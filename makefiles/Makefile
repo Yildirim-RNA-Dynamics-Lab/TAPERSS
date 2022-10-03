@@ -1,4 +1,4 @@
-CC = /usr/bin/g++
+CC = /usr/bin/clang-8
 
 CFLAGS = -Wall
 CFLAGS += -W
@@ -13,6 +13,7 @@ CFLAGS += -DHAVE_INLINE
 
 LIBS = -lgsl
 LIBS += -lgslcblas
+LIBS += -lstdc++
 
 OBJDIR = ./bin/obj/
 BINDIR = ./bin/
@@ -32,13 +33,13 @@ profile: 	$(BINDIR)Michael_COMB_hbond_profile
 production: $(BINDIR)Michael_COMB_hbond
 
 $(DBUGOBJ): 
-	$(CC) $(CFLAGS) -g -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _debug.o,.cpp,$@) $(LIBS) -I $(INCDIR)
+	$(CC) $(CFLAGS) -g -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _debug.o,.cpp,$@) -I $(INCDIR)
 
 $(PRODOBJ): 
-	$(CC) $(CFLAGS) -O3 -DGSL_RANGE_CHECK_OFF -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _production.o,.cpp,$@) $(LIBS) -I $(INCDIR)
+	$(CC) $(CFLAGS) -O3 -DGSL_RANGE_CHECK_OFF -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _production.o,.cpp,$@) -I $(INCDIR)
 
 $(PRFOBJ): 
-	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) $(LIBS) -I $(INCDIR) -pg
+	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) -I $(INCDIR) -pg
 
 $(BINDIR)Michael_COMB_hbond_debug: $(DBUGOBJ)
 	$(CC) $(CFLAGS) -g -o $@ $(patsubst %, $(OBJDIR)%, $(DBUGOBJ)) $(LIBS) -I $(INCDIR)
