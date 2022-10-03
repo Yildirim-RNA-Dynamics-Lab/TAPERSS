@@ -405,6 +405,7 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 }
 
+/* Method of using Functional group and Phospate group to define sphere radius seems to work, but to be safe, we ensure that all atoms are within the sphere*/
 void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, int res_id)
 {
     gsl_vector_view V, COM;
