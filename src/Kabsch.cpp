@@ -88,12 +88,12 @@ void kabsch_prepare_matrix_internal(size_t M, size_t N, uint16_t *Rows, gsl_matr
 
 template <kabsch_matrix M_REQUEST> gsl_matrix* kabsch_prepare_matrix(size_t M, size_t N, uint16_t *Rows, gsl_matrix *source)
 {
-  if(M_REQUEST == kabsch_matrix::KABSCH_MATRIX_P)
+  if constexpr (M_REQUEST == kabsch_matrix::KABSCH_MATRIX_P)
   {
     kabsch_prepare_matrix_internal(M, N, Rows, source, P_KABSCH);
     return P_KABSCH;
   }
-  else if(M_REQUEST == kabsch_matrix::KABSCH_MATRIX_Q)
+  else if constexpr (M_REQUEST == kabsch_matrix::KABSCH_MATRIX_Q)
   {
     kabsch_prepare_matrix_internal(M, N, Rows, source, Q_KABSCH);
     return Q_KABSCH;
