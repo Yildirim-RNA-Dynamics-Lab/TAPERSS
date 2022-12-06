@@ -154,7 +154,7 @@ void Run()
     {
         WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
         load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
-        RNA.initialize(leftStrand, rightStrand, Library);
+        RNA.initialize(leftStrand, rightStrand, Library, WC_Library);
     }
 
     //RNA.add_move(new RNAData(Library, 0, 0));

@@ -287,37 +287,92 @@ attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach
     return attach_status::ATTACHED;
 }
 
-void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_vector_view A_COM, double A_Radius, bool* PassArray, int size1)
+template <bool countGreater>void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1)
 {    
-    PassArray[0] = (distance_mat2vec(M_COMS,  0, &A_COM.vector) > (M_Radii[0] + A_Radius));
-    PassArray[1] = (distance_mat2vec(M_COMS, 0, &A_COM.vector) > (M_Radii[1] + A_Radius));
+    PassArray[0] = (distance_mat2mat(M_COMS,  0, A, A_index) > (M_Radii[0] + A_Radius));
+    PassArray[1] = (distance_mat2mat(M_COMS, 1, A, A_index) > (M_Radii[1] + A_Radius));
+    //print_gsl_matrix(M_COMS);
+    if(countGreater == true) 
+    {
+        for(int i = 1; i < size1; i++)
+        {
+            PassArray[i + 1] = (distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > (M_Radii[i * 2 + 1] + A_Radius));
+        }
+    
+        PassArray[size1] = (distance_mat2mat(M_COMS, size1, A, A_index) > (M_Radii[size1] + A_Radius));
+        PassArray[size1 + 1] = (distance_mat2mat(M_COMS, size1 + 1, A, A_index) > (M_Radii[size1 + 1] + A_Radius));
 
-    for(int i = 1; i < size1; i++)
+        for(int i = size1 + 2; i < Count; i++)
+        {
+            PassArray[i + 1] = (distance_mat2mat(M_COMS, i * 2 + 1, A, A_index) > (M_Radii[i * 2 + 1] + A_Radius));
+        }
+    }   
+    else 
     {
-        PassArray[i + 1] = (distance_mat2vec(M_COMS, i * 2 + 1 , &A_COM.vector) > (M_Radii[i * 2 + 1] + A_Radius));
+        for(int i = 1; i < Count; i++)
+        {
+            PassArray[i + 1] = (distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > (M_Radii[i * 2 + 1] + A_Radius));
+        }
     }
-    PassArray[size1] = (distance_mat2vec(M_COMS, size1, &A_COM.vector) > (M_Radii[size1] + A_Radius));
-    PassArray[size1 + 1] = (distance_mat2vec(M_COMS, size1 + 1, &A_COM.vector) > (M_Radii[size1 + 1] + A_Radius));
-    for(int i = size1 + 2; i < Count; i++)
-    {
-        PassArray[i] = (distance_mat2vec(M_COMS, i * 2 + 1, &A_COM.vector) > (M_Radii[i * 2 + 1] + A_Radius));
-    }
+    /*
     for(int i = 0; i < Count; i++) 
     {
         printf("PassArray Boolean: %s\n", PassArray[i] == true ? "true" : "false");
     }
+    */
 }
+template void steric_clash_checkCOM_IL<true>(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1);
+template void steric_clash_checkCOM_IL<false>(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1);
 
 attach_status steric_clash_check_COMFast_IL(RNADataArrayInternalLoop& Sequence, RNAData* Attach)
 {
-    if(Sequence.WC_size_left >= Sequence.count)
+    //printf("Count: %d\n", Sequence.count);
+    if(Sequence.count >= Sequence.WC_size_left)
     {
-            steric_clash_checkCOM(Sequence.COMS, Sequence.Radii, Sequence.count + 1, Attach->data_matrix, Attach->get_residue_COM_index(1), Attach->COM_Radii[1], 
-                          Sequence.PassedCOMCheck);
+        steric_clash_checkCOM_IL<true>(Sequence.COMS, Sequence.Radii, Sequence.count, Attach->data_matrix, Attach->get_residue_COM_index(1), Attach->COM_Radii[1], 
+        Sequence.PassedCOMCheck, Sequence.WC_size_left);
     }
-    else 
+    else
     {
-        //steric_clash_checkCOM_IL(Sequence.COMS, Sequence.Radii, Sequence.count + 2, A_COM, Attach->COM_Radii[1], Sequence.PassedCOMCheck, Sequence.WC_size_left);
+        steric_clash_checkCOM_IL<false>(Sequence.COMS, Sequence.Radii, Sequence.count, Attach->data_matrix, Attach->get_residue_COM_index(1), Attach->COM_Radii[1], 
+        Sequence.PassedCOMCheck, Sequence.WC_size_left);
+    }
+    if(Sequence.PassedCOMCheck[0] == false)
+    {
+        if(steric_clash_check_fast_all(Sequence[0]->data_matrix, Sequence[0]->ResBoundaries[0], Sequence[0]->ResBoundaries[1],
+        Attach->data_matrix, Attach->ResBoundaries[2], Attach->ResBoundaries[3]) == false)
+        {
+            //printf("Failed VS 1\n");
+            return attach_status::FAILED;
+        }
+    }
+    if(Sequence.PassedCOMCheck[Sequence.count] == false)
+    {
+        if(steric_clash_check_fast_last(Sequence[Sequence.count - 1]->data_matrix, Sequence[Sequence.count - 1]->StericIndices[1], 
+                                        Sequence[Sequence.count - 1]->count_per_Steric[1], Attach->data_matrix, 
+                                        Attach->ResBoundaries[2], Attach->ResBoundaries[3]) == false)
+        {
+            /*for(int i = 0; i < Sequence[Sequence.count - 1]->count_per_Steric[1]; i++)
+            {
+                Sequence[Sequence.count -1]->atom_data->print_at(Sequence[Sequence.count - 1]->StericIndices[1][i]);
+                print_gsl_matrix_row(Sequence[Sequence.count - 1]->data_matrix, Sequence[Sequence.count - 1]->StericIndices[1][i]);
+            }
+            printf("Failed VS Last Built\n");
+            */
+            return attach_status::FAILED;
+        }
+                    
+    }
+    for(int i = 0; i < Sequence.count - 1; i++)
+    {
+        if(Sequence.PassedCOMCheck[i + 1] == false)
+        {
+            if(steric_clash_check_fast_all(Sequence[i]->data_matrix, Sequence[i]->ResBoundaries[2], Sequence[i]->ResBoundaries[3],
+              Attach->data_matrix, Attach->ResBoundaries[2], Attach->ResBoundaries[3]) == false)
+            {
+                return attach_status::FAILED;
+            }
+        }
     }
     return attach_status::ATTACHED;
 }
