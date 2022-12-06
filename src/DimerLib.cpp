@@ -432,7 +432,7 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_
     gsl_matrix **data_mats;
     int model_info[2];
     double* _radii[2];
-    char line[100];
+    char line[GLOBAL_STANDARD_STRING_LENGTH];
 
     RTN.initialize(N_diNts);
 
@@ -477,10 +477,10 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_
         int row = 0;
         while (fgets(line, sizeof(line), LibFile))
         {
-            char line_origin[100];
+            char line_origin[GLOBAL_STANDARD_STRING_LENGTH];
             char *header;
 
-            strncpy(line_origin, line, 99);
+            strncpy(line_origin, line, GLOBAL_STANDARD_STRING_LENGTH);
             header = strtok(line, " ");
 
             if (!strcmp(header, "ENERGY"))

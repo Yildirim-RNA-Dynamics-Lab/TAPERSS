@@ -166,7 +166,7 @@ void Run()
         printf("No output file specified...\n");
         exit(1);
     }
-    output_string output_s(GLOBAL_OUTPUT_FILE, MAX_STRINGS, GLOBAL_IO_ACTION);
+    output_string output_s(GLOBAL_OUTPUT_FILE, GLOBAL_MAX_STRINGS, GLOBAL_IO_ACTION);
     kabsch_create(Library.LargestAtomCount, MATRIX_DIMENSION2);
     WC_create(WC_Library);
     HK_create(Library.PositiveAtomCount, Library.NegativeAtomCount);
