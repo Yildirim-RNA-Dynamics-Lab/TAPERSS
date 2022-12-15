@@ -296,15 +296,15 @@ template <bool countGreater>void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, do
     PassArray[0] = (distance_mat2mat(M_COMS,  0, A, A_index) > (M_Radii[0] + A_Radius));
     PassArray[1] = (distance_mat2mat(M_COMS, 1, A, A_index) > (M_Radii[1] + A_Radius));
     //print_gsl_matrix(M_COMS);
-    if(countGreater == true) 
+    if constexpr (countGreater == true) 
     {
         for(int i = 1; i < size1; i++)
         {
             PassArray[i + 1] = (distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > (M_Radii[i * 2 + 1] + A_Radius));
         }
     
-        PassArray[size1] = (distance_mat2mat(M_COMS, size1, A, A_index) > (M_Radii[size1] + A_Radius));
-        PassArray[size1 + 1] = (distance_mat2mat(M_COMS, size1 + 1, A, A_index) > (M_Radii[size1 + 1] + A_Radius));
+        PassArray[size1] = (distance_mat2mat(M_COMS, size1 * 2, A, A_index) > (M_Radii[size1] + A_Radius));
+        PassArray[size1 + 1] = (distance_mat2mat(M_COMS, size1 * 2 + 1, A, A_index) > (M_Radii[size1 + 1] + A_Radius));
 
         for(int i = size1 + 2; i < Count; i++)
         {
@@ -318,12 +318,11 @@ template <bool countGreater>void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, do
             PassArray[i + 1] = (distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > (M_Radii[i * 2 + 1] + A_Radius));
         }
     }
-    /*
-    for(int i = 0; i < Count; i++) 
+    
+    /*for(int i = 0; i < Count; i++) 
     {
         printf("PassArray Boolean: %s\n", PassArray[i] == true ? "true" : "false");
-    }
-    */
+    }*/
 }
 template void steric_clash_checkCOM_IL<true>(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1);
 template void steric_clash_checkCOM_IL<false>(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1);

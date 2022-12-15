@@ -104,7 +104,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         Radii = (double *)malloc(2 * size * sizeof(double));
         PassedCOMCheck = (bool*)malloc((size + 2) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
                                                                         // in all other DNTs, only second residue is needed.
-        overwrite(0, 0, Library);
+        overwrite_initialize(0, 0, Library);
     }
 
     bool inLeft_or_inRight(int working_pos) //return true if in left strand

@@ -618,9 +618,7 @@ void RNADataArray::initialize(size_t size, DimerLibArray& Library)
     Radii = (double *)malloc(2 * size * sizeof(double));
     PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
                                                                // in all other DNTs, only second residue is needed.
-    overwrite(0,0, Library);
-    gsl_matrix_row_copy(COMS, 0, sequence[0]->data_matrix, sequence[0]->get_residue_COM_index(0));
-    gsl_matrix_row_copy(COMS, 1, sequence[0]->data_matrix, sequence[0]->get_residue_COM_index(1));
+    overwrite_initialize(0,0, Library);
 }
 
 void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
@@ -628,6 +626,17 @@ void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Libr
     sequence[LibIdx]->overwrite(Library, LibIdx, IdxInLib);
     //gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
     //gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
+    //gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
+    //gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
+    Radii[LibIdx * 2] = Library[LibIdx]->radii[0][IdxInLib];
+    Radii[LibIdx * 2 + 1] = Library[LibIdx]->radii[1][IdxInLib];
+}
+
+void RNADataArray::overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
+{
+    sequence[LibIdx]->overwrite(Library, LibIdx, IdxInLib);
+    gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
+    gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
     //gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
     //gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
     Radii[LibIdx * 2] = Library[LibIdx]->radii[0][IdxInLib];

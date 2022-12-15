@@ -32,20 +32,31 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
 {
     attach_status status;
     double RMSD;
-    assembled.overwrite(0, indices[0], Lib);
+    assembled.overwrite_initialize(0, indices[0], Lib);
     for (int i = 1; i <= assembled.iterator_max; i++)
     {
+        //printf("i = %d, indicies: %d\n", i, indices[i]);
         assembled.overwrite(i, indices[i], Lib);
         if (assembled.inLeft_or_inRight(i) == true)
         {
-            printf("i = %d\n", i);
+            //printf("i = %d\n", i);
             assembled.prepare_right(assembled[i], WC_Lib);
+            status = steric_clash_check_COMFast_IL_1stright(assembled, assembled[i]);
             assembled.keep();
-            continue;
         }
-        rotate(assembled.current(), assembled[i]);
-        status = steric_clash_check_COMFast(assembled, assembled[i]);
-        assembled.keep();
+        else
+        {
+            rotate(assembled.current(), assembled[i]);
+            if(assembled.count > assembled.WC_size_left)
+            {
+                status = steric_clash_check_COMFast_IL<true>(assembled, assembled[i]);
+            }
+            else 
+            {
+                status = steric_clash_check_COMFast_IL<false>(assembled, assembled[i]);
+            }
+            assembled.keep();
+        }
         if (status == ATTACHED)
             printf("Successful attachment on: %d\n", i);
         else

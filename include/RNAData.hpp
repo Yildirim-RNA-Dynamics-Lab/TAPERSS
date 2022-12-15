@@ -110,6 +110,7 @@ struct RNADataArray
     RNADataArray();
     void initialize(size_t size, DimerLibArray &Library);
     void overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
+    void overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
     ~RNADataArray();
     uint_fast64_t calculate_matrix_memory_needed(DimerLibArray &L, int i);
     uint_fast64_t calculate_index_array_memory_needed(DimerLibArray &L, int i);
