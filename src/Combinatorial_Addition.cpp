@@ -143,6 +143,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         {
             continue;
         }
+        //assembled.print_index(0);
         if (assembled.is_empty())
         {
             assembled.overwrite(working_position, i, Lib);
@@ -156,10 +157,24 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         {
             assembled.overwrite(working_position, i, Lib);
             manager.attach_attempt(working_position, i);
+            
+            /*
+            assembled.prepare_right(assembled[working_position], WC_Lib);
+            assembled.keep();
+            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            return true;
+            */
+            
             if (assembled.prepare_right(assembled[working_position], WC_Lib) == true)
             {
-                status = ATTACHED;
-                break;
+                if((status = steric_clash_check_COMFast_IL_1stright(assembled, assembled[working_position])) == ATTACHED)
+                {
+                    break;
+                }
+                else 
+                {
+                    continue;
+                }
             }
             else
             {
@@ -168,13 +183,22 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
         }
         assembled.overwrite(working_position, i, Lib);
         manager.attach_attempt(working_position, i);
-        assembled.print_index(1);
+        //assembled.print_index(1);
         if ((status = rotate(assembled.current(), assembled[working_position])) != ATTACHED)
         {
+            //printf("Rotate != Attached\n");
             continue;
         }
         // printf("---------Before check attachment\n");
-        if ((status = steric_clash_check_COMFast_IL(assembled, assembled[working_position])) == ATTACHED)
+        if(assembled.count > assembled.WC_size_left)
+        {
+            status = steric_clash_check_COMFast_IL<true>(assembled, assembled[working_position]);
+        }
+        else 
+        {
+            status = steric_clash_check_COMFast_IL<false>(assembled, assembled[working_position]);
+        }
+        if(status == ATTACHED) 
         {
             break;
         }

@@ -134,9 +134,9 @@ void WC_create(DimerLibArray &WC_Library)
             {
                 if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 0)
                 {
-                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
-                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
-                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
+                    gsl_matrix_set(WC_reference_matrices[i], k, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
+                    gsl_matrix_set(WC_reference_matrices[i], k, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
+                    gsl_matrix_set(WC_reference_matrices[i], k, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
                     rel_idx++;
                     // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
                 }
@@ -145,9 +145,9 @@ void WC_create(DimerLibArray &WC_Library)
             {
                 if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 1)
                 {
-                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
-                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
-                    gsl_matrix_set(WC_reference_matrices[i], rel_idx, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
+                    gsl_matrix_set(WC_reference_matrices[i], k + target1size, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
+                    gsl_matrix_set(WC_reference_matrices[i], k + target1size, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
+                    gsl_matrix_set(WC_reference_matrices[i], k + target1size, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
                     rel_idx++;
                     // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
                 }

@@ -69,7 +69,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
                 //gsl_matrix_set(submatrices[0], rel_idx1, 1, gsl_matrix_get(data_matrix, j, 1));
                 //gsl_matrix_set(submatrices[0], rel_idx1, 2, gsl_matrix_get(data_matrix, j, 2));
                 //printf("lib: %d, j = %d, k = %d\n", idx, j, target1[k]);
-                submatrix_rows[0][rel_idx1] = j;
+                submatrix_rows[0][k] = j;
                 rel_idx1++;
             }
         }
@@ -80,7 +80,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
                 //gsl_matrix_set(submatrices[1], rel_idx2, 0, gsl_matrix_get(data_matrix, j, 0));
                 //gsl_matrix_set(submatrices[1], rel_idx2, 1, gsl_matrix_get(data_matrix, j, 1));
                 //gsl_matrix_set(submatrices[1], rel_idx2, 2, gsl_matrix_get(data_matrix, j, 2));
-                submatrix_rows[1][rel_idx2] = j;
+                submatrix_rows[1][k] = j;
                 rel_idx2++;
             }
         }
@@ -105,7 +105,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
         {
             if ((WC_target1[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 0)
             {
-                WC_submatrix_rows[0][rel_idx1] = j;
+                WC_submatrix_rows[0][k] = j;
                 rel_idx1++;
             }
         }
@@ -113,7 +113,7 @@ void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlo
         {
             if ((WC_target2[k] == atom_data->atom_ids[j]) && (atom_data->dnt_pos[j] - 1) == 1)
             {
-                WC_submatrix_rows[1][rel_idx2] = j;
+                WC_submatrix_rows[1][k] = j;
                 rel_idx2++;
             }
         }

@@ -36,6 +36,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         iterator_max_1 = size1 - 1;
         iterator_max = size1 + size2 - 1;
         size_t size = size1 + size2;
+        printf("size1 = %d, size2 = %d\n", size1, size2);
         sequence = (RNAData **)malloc(sizeof(RNAData *) * (size));
         uint64_t matrix_memsize = 0;
         uint64_t array_memsize = 0;
@@ -86,7 +87,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
             }
             for(size_t j = 0; j < target2Size; j++) 
             {
-                if(WC_Library[1]->atom_data->atom_ids[i] == WC_target2[j] && WC_Library[1]->atom_data->dnt_pos[i] == 1)
+                if(WC_Library[1]->atom_data->atom_ids[i] == WC_target2[j] && WC_Library[1]->atom_data->dnt_pos[i] == 2)
                 {
                     WC_rows[1][j] = (uint16_t)i;
                 }
@@ -125,8 +126,20 @@ struct RNADataArrayInternalLoop : public RNADataArray
     }
     */
 
+    void print_target(gsl_matrix* A, size_t size, uint16_t* rows, atom_info* a_data)
+    {
+        for (unsigned int i = 0; i < size; i++)
+        {
+            a_data->print_at(rows[i]);
+            for (unsigned int j = 0; j < A->size2; j++)
+                printf("%8.3f", gsl_matrix_get(A, rows[i], j));
+            putchar('\n');
+        }
+    }
+
     bool prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib) 
     {
+        //printf("In right strand\n");
         bool rmsd_pass = true;
         RNAData *assembled_ref = sequence[iterator_max_1];
         gsl_matrix *R1, *R2;
@@ -134,18 +147,35 @@ struct RNADataArrayInternalLoop : public RNADataArray
         
         gsl_matrix *WC_MODEL = WC_Lib[1]->data_matrices[0];
         gsl_matrix *MODEL = to_be_assembled->data_matrix;
+        /*
+        printf("MODEL 1\n");
+        print_target(WC_MODEL, WC_rowsize[0], WC_rows[0], WC_Lib[1]->atom_data);
+        printf("\n");
+        printf("MODEL 1\n");
+        print_target( assembled_ref->data_matrix, assembled_ref->count_per_sub[1],  assembled_ref->submatrix_rows[1], assembled_ref->atom_data);
+        printf("\n");
+        */
         gsl_matrix *P1 = kabsch_prepare_matrix<KABSCH_MATRIX_P>(WC_rowsize[0], MATRIX_DIMENSION2, WC_rows[0], WC_MODEL);
         gsl_matrix *Q1 = kabsch_prepare_matrix<KABSCH_MATRIX_Q>(assembled_ref->count_per_sub[1], MATRIX_DIMENSION2, assembled_ref->submatrix_rows[1], assembled_ref->data_matrix);
         gsl_matrix *P1WORK = kabsch_get_work_matrix(MATRIX_DIMENSION2, WC_rowsize[0]);
+        //print_gsl_matrix(P1);
         kabsch_calculate_rotation_matrix_Nx3fast(P1, Q1, P1WORK, COMP, COMQ);
+        /*
+        printf("RMSD1 = %f\n", rmsd_generic(P1, Q1));
+        print_gsl_matrix(P1);
+        print_gsl_matrix(Q1);
+        */
         R1 = kabsch_get_rotation_matrix();
 
         gsl_matrix *P2 = kabsch_prepare_matrix<KABSCH_MATRIX_P>(to_be_assembled->count_per_sub[0], MATRIX_DIMENSION2, to_be_assembled->submatrix_rows[0], MODEL);
         gsl_matrix *Q2 = kabsch_prepare_matrix<KABSCH_MATRIX_Q>(WC_rowsize[1], MATRIX_DIMENSION2, WC_rows[1], WC_MODEL);
+        //print_gsl_matrix(Q2);
         
         translate_matrix(COMP, Q2, -1.0F);
         apply_rotation_matrix(R1, Q2);
-        translate_matrix(COMQ, Q2, 1.0F);
+        translate_matrix(COMQ, Q2, 1.0F); 
+        //print_gsl_matrix(Q2);
+        
         gsl_matrix *P2WORK = kabsch_get_work_matrix(MATRIX_DIMENSION2, to_be_assembled->count_per_sub[0]);
 
         memset(COMP, 0, sizeof(COMP));
@@ -155,16 +185,19 @@ struct RNADataArrayInternalLoop : public RNADataArray
 
         R2 = kabsch_get_rotation_matrix();
 
+        //print_gsl_matrix(P2);
         translate_matrix(COMP, MODEL, -1.0F);
         apply_rotation_matrix(R2, MODEL);
+        //print_gsl_matrix(MODEL);
         translate_matrix(COMQ, MODEL, 1.0F);
 
         memset(COMP, 0, sizeof(COMP));
         memset(COMQ, 0, sizeof(COMQ));
 
-        WC_prepare_structure_matrix(1, assembled_ref->data_matrix, assembled_ref->WC_submatrix_rows[0], assembled_ref->count_per_WC_sub[0], 
+        WC_prepare_structure_matrix(1, assembled_ref->data_matrix, assembled_ref->WC_submatrix_rows[1], assembled_ref->count_per_WC_sub[1], 
                                        to_be_assembled->data_matrix, to_be_assembled->WC_submatrix_rows[0], to_be_assembled->count_per_WC_sub[0]);
         double RMSD = WC_check_pair(1);
+        //printf("RMSD = %f\n", RMSD);
         if(RMSD > GLOBAL_WC_RMSD_LIMIT)
         {
             rmsd_pass = false;
@@ -199,6 +232,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
             if(j == iterator_max_1 + 1)
             {
                 i++;
+                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "TER\n");
                 string_index = sequence[j]->to_string_offset(0, i, string_out, string_buffer, string_index, &idx_offset);
                 string_index = sequence[j]->to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
             }
@@ -207,7 +241,8 @@ struct RNADataArrayInternalLoop : public RNADataArray
                 string_index = sequence[j]->to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
             }
         }
-
+        
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "TER\n");
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "ENDMDL\n");
 
         return string_out;
