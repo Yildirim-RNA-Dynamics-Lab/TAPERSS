@@ -619,6 +619,8 @@ void RNADataArray::initialize(size_t size, DimerLibArray& Library)
     PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
                                                                // in all other DNTs, only second residue is needed.
     overwrite(0,0, Library);
+    gsl_matrix_row_copy(COMS, 0, sequence[0]->data_matrix, sequence[0]->get_residue_COM_index(0));
+    gsl_matrix_row_copy(COMS, 1, sequence[0]->data_matrix, sequence[0]->get_residue_COM_index(1));
 }
 
 void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
