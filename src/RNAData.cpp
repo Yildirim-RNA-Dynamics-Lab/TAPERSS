@@ -624,8 +624,10 @@ void RNADataArray::initialize(size_t size, DimerLibArray& Library)
 void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
 {
     sequence[LibIdx]->overwrite(Library, LibIdx, IdxInLib);
-    gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
-    gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
+    //gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
+    //gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
+    //gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
+    //gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
     Radii[LibIdx * 2] = Library[LibIdx]->radii[0][IdxInLib];
     Radii[LibIdx * 2 + 1] = Library[LibIdx]->radii[1][IdxInLib];
 }
@@ -756,6 +758,8 @@ bool RNADataArray::is_complete()
 void RNADataArray::keep()
 {
     iterator++;
+    gsl_matrix_row_copy(COMS, iterator * 2, sequence[iterator]->data_matrix, sequence[iterator]->get_residue_COM_index(0));
+    gsl_matrix_row_copy(COMS, (iterator * 2) + 1, sequence[iterator]->data_matrix, sequence[iterator]->get_residue_COM_index(1));
     count++;
     *sequence[iterator]->_flag = USED;
 }

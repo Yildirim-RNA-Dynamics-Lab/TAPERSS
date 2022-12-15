@@ -236,11 +236,15 @@ void steric_clash_checkCOM(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_m
     for(int i = 1; i < Count; i++)
     {
         PassArray[i + 1] = (distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > (M_Radii[i * 2 + 1] + A_Radius));
+
+        //printf("MRadius = %f, A Radius = %f, Dist = %f\n", M_Radii[i * 2 + 1], A_Radius, distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index));
+        //gsl_matrix_print_row(M_COMS, i * 2  + 1);
+       // gsl_matrix_print_row(A, A_index);  
     }
-    /*for(int i = 0; i < Count + 1; i++) 
-    {
-        printf("PassArray[%d] Boolean: %s\n", i,PassArray[i] == true ? "true" : "false");
-    }*/
+    //for(int i = 0; i < Count + 1; i++) 
+    //{
+    //    printf("PassArray[%d] Boolean: %s\n", i,PassArray[i] == true ? "true" : "false");
+    //}
 }
 
 attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach)
