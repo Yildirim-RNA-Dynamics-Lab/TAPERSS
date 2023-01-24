@@ -8,8 +8,8 @@ struct HKQueue
     int32_t* Queue;
     int32_t  Iterator;
     int32_t  FIFO_Tracker;
-    int32_t IteratorMax;
-    int32_t NumEnqueued;
+    int32_t  IteratorMax;
+    int32_t  NumEnqueued;
 
     void Initialize(uint32_t MaxSize, int32_t* MemBlock, size_t offset)
     {

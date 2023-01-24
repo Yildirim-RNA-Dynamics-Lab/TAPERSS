@@ -37,7 +37,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         iterator_max = size1 + size2 - 1;
         size_t size = size1 + size2;
         printf("size1 = %d, size2 = %d\n", size1, size2);
-        sequence = (RNAData **)malloc(sizeof(RNAData *) * (size));
+        sequence = (RNAData *)malloc(sizeof(RNAData) * (size));
         uint64_t matrix_memsize = 0;
         uint64_t array_memsize = 0;
         for(size_t i = 0; i < size; i++)
@@ -58,13 +58,12 @@ struct RNADataArrayInternalLoop : public RNADataArray
         for(size_t i = 0; i < size; i++)
         {
             //printf("BEFORE: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
-            sequence[i] = new RNAData();
-            sequence[i]->initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset);
+            sequence[i].initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset);
             
         }
 
         //printf("AFTER: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
-        *sequence[0]->_flag = USED;
+        *sequence[0]._flag = USED;
         iterator = 0;  //Start with first already DNT included
         count = 1;
         structure_energy = 0;
@@ -141,7 +140,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
     {
         //printf("In right strand\n");
         bool rmsd_pass = true;
-        RNAData *assembled_ref = sequence[iterator_max_1];
+        RNAData *assembled_ref = &sequence[iterator_max_1];
         gsl_matrix *R1, *R2;
         double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};
         
@@ -224,8 +223,8 @@ struct RNADataArrayInternalLoop : public RNADataArray
         if (string_print_coordinates == false)
             return string_out;
 
-        string_index = sequence[0]->to_string(string_out, string_buffer, string_index);
-        idx_offset = sequence[0]->count;
+        string_index = sequence[0].to_string(string_out, string_buffer, string_index);
+        idx_offset = sequence[0].count;
 
         for (int i = 1, j = 1; j < count; i++, j++)
         {
@@ -233,12 +232,12 @@ struct RNADataArrayInternalLoop : public RNADataArray
             {
                 i++;
                 string_index += snprintf(&string_out[string_index], string_buffer - string_index, "TER\n");
-                string_index = sequence[j]->to_string_offset(0, i, string_out, string_buffer, string_index, &idx_offset);
-                string_index = sequence[j]->to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
+                string_index = sequence[j].to_string_offset(0, i, string_out, string_buffer, string_index, &idx_offset);
+                string_index = sequence[j].to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
             }
             else
             {
-                string_index = sequence[j]->to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
+                string_index = sequence[j].to_string_offset(1, i, string_out, string_buffer, string_index, &idx_offset);
             }
         }
         
@@ -254,7 +253,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
         for (int i = 0; i < count; i++)
         {
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]);
             if (i != count - 1)
             {
                 string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
@@ -278,7 +277,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#INDEX ");
             for (int i = 0; i < count; i++)
             {
-                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i]->position_in_lib[1]);
+                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]);
                 if (i != count - 1)
                 {
                     string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");

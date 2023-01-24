@@ -53,6 +53,7 @@ struct RNAData
     RNAData();
     void initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlock, size_t *offset_matrix, uint16_t *ArrayMemBlock, size_t *offset_array);
     void overwrite(DimerLibArray &L, int i, int j);
+    void destroy();
     ~RNAData();
 
     /* Submatrices are now managed by the functions that used them for contiguous memory and better memory management */
@@ -78,7 +79,7 @@ struct RNAData
 
 struct RNADataArray
 {
-    RNAData    **sequence;
+    RNAData    *sequence;
     gsl_matrix *InteractionTable;
     gsl_matrix *COMS;
     gsl_block  *MatrixMemBlock;

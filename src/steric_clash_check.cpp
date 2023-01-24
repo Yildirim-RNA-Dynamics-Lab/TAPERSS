@@ -327,7 +327,14 @@ template <bool countGreater>void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, do
 template void steric_clash_checkCOM_IL<true>(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1);
 template void steric_clash_checkCOM_IL<false>(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1);
 
-attach_status steric_clash_check_COMFast_IL_1stright(RNADataArrayInternalLoop& Sequence, RNAData* Attach)
+/**
+ * @brief Performs a steric clash check on the newly started right side strand after proper alignment. Checks both 5' and 3' residues of the new nucleotide
+ * using COM check first, then a further check on any failed COM checks.
+ * @param Sequence - RNADataArrayInternalLoop reference.
+ * @param Attach  - RNAData (new nucleotides) to be attached
+ * @return attach_status - FAILED if steric clash is detected, ATTACHED otherwise
+ */
+attach_status steric_clash_check_COMFast_IL_1st_right(RNADataArrayInternalLoop& Sequence, RNAData* Attach)
 {
     //printf("Count: %d\n", Sequence.count);
     steric_clash_checkCOM_IL<false>(Sequence.COMS, Sequence.Radii, Sequence.count, Attach->data_matrix, Attach->get_residue_COM_index(0), Attach->COM_Radii[0], 
@@ -341,7 +348,7 @@ attach_status steric_clash_check_COMFast_IL_1stright(RNADataArrayInternalLoop& S
             return attach_status::FAILED;
         }
     }
-    for(int i = 0; i < Sequence.count - 1; i++)
+    for(int i = 0; i < Sequence.count; i++)
     {
         if(Sequence.PassedCOMCheck[i + 1] == false)
         {
@@ -363,10 +370,14 @@ attach_status steric_clash_check_COMFast_IL_1stright(RNADataArrayInternalLoop& S
             return attach_status::FAILED;
         }
     }
-    for(int i = 0; i < Sequence.count - 1; i++)
+    for(int i = 0; i < Sequence.count; i++)
     {
         if(Sequence.PassedCOMCheck[i + 1] == false)
         {
+            //printf("Checking: ResId: %d, from %s to %s\n", Attach->atom_data->dnt_pos[Attach->ResBoundaries[2]], Attach->atom_data->name[Attach->ResBoundaries[2]],
+            //Attach->atom_data->name[Attach->ResBoundaries[3] - 1]);
+            //printf("Versus:%d ResId: %d, from %s to %s\n", i, Sequence[i]->atom_data->dnt_pos[Sequence[i]->ResBoundaries[2]], Sequence[i]->atom_data->name[Sequence[i]->ResBoundaries[2]],
+            //Sequence[i]->atom_data->name[Sequence[i]->ResBoundaries[3] - 1]);
             if(steric_clash_check_fast_all(Sequence[i]->data_matrix, Sequence[i]->ResBoundaries[2], Sequence[i]->ResBoundaries[3],
               Attach->data_matrix, Attach->ResBoundaries[2], Attach->ResBoundaries[3]) == false)
             {
@@ -377,10 +388,19 @@ attach_status steric_clash_check_COMFast_IL_1stright(RNADataArrayInternalLoop& S
     return attach_status::ATTACHED;
 }
 
-template <bool lastLeft>attach_status steric_clash_check_COMFast_IL(RNADataArrayInternalLoop& Sequence, RNAData* Attach)
+/**
+ * @brief Performs steric clash check for addition of a new (non 5') nucleotide to internal loop. First the COM distances are calculated, 
+ * then any which fail COM check have a full atom-to-atom check. When performing a steric clash check on the previous nucleotide (i.e. 4th being added
+ * residue is checked with 3rd) only the phosphate groups are checked with steric_clash_check_fast_last(...).
+ * @tparam CountGreater - template bool indicating whether or not the nucleotide being added is on the left side or right side. If true, nt is on the right
+ * @param Sequence - RNADataArrayInternalLoop reference.
+ * @param Attach  - RNAData (new nucleotide) to be attached
+ * @return attach_status - FAILED if steric clash is detected, ATTACHED otherwise
+ */
+template <bool CountGreater>attach_status steric_clash_check_COMFast_IL(RNADataArrayInternalLoop& Sequence, RNAData* Attach)
 {
     //printf("Count: %d\n", Sequence.count);
-    steric_clash_checkCOM_IL<lastLeft>(Sequence.COMS, Sequence.Radii, Sequence.count, Attach->data_matrix, Attach->get_residue_COM_index(1), Attach->COM_Radii[1], 
+    steric_clash_checkCOM_IL<CountGreater>(Sequence.COMS, Sequence.Radii, Sequence.count, Attach->data_matrix, Attach->get_residue_COM_index(1), Attach->COM_Radii[1], 
     Sequence.PassedCOMCheck, Sequence.WC_size_left);
     if(Sequence.PassedCOMCheck[0] == false)
     {
@@ -408,7 +428,7 @@ template <bool lastLeft>attach_status steric_clash_check_COMFast_IL(RNADataArray
         }
                     
     }
-    if constexpr(lastLeft == true) 
+    if constexpr(CountGreater == true) 
     {
         //printf("lastLeft = true\n");
         if(Sequence.PassedCOMCheck[Sequence.WC_size_left] == false)
@@ -420,7 +440,7 @@ template <bool lastLeft>attach_status steric_clash_check_COMFast_IL(RNADataArray
                 return attach_status::FAILED;
             }
         }
-        for(int i = 0; i < Sequence.count; i++)
+        for(int i = 0; i < Sequence.count - 1; i++)
         {
             //printf("i = %d, i + 1 = %d, count = %d\n", i, i + 1, Sequence.count);
             if(Sequence.PassedCOMCheck[i + 1] == false)
@@ -428,12 +448,13 @@ template <bool lastLeft>attach_status steric_clash_check_COMFast_IL(RNADataArray
                 if(steric_clash_check_fast_all(Sequence[i]->data_matrix, Sequence[i]->ResBoundaries[2], Sequence[i]->ResBoundaries[3],
                 Attach->data_matrix, Attach->ResBoundaries[2], Attach->ResBoundaries[3]) == false)
                 {
+                    //printf("Atoms: %s:%d\n", Attach->atom_data->name[40], Attach->atom_data->dnt_pos[40]);
                     return attach_status::FAILED;
                 }
             }
         }
     }
-    else if constexpr(lastLeft == false)
+    else if constexpr(CountGreater == false)
     {
         //printf("lastLeft = false\n");
         for(int i = 0; i < Sequence.count - 1; i++)

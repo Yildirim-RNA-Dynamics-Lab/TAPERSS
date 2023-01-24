@@ -41,7 +41,7 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
         {
             //printf("i = %d\n", i);
             assembled.prepare_right(assembled[i], WC_Lib);
-            status = steric_clash_check_COMFast_IL_1stright(assembled, assembled[i]);
+            status = steric_clash_check_COMFast_IL_1st_right(assembled, assembled[i]);
             assembled.keep();
         }
         else

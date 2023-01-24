@@ -10,8 +10,8 @@
 bool steric_clash_check(RNADataArray &sequence, RNAData *attach);
 void SCC_record_COM_distance(RNADataArray &sequence, RNAData *attach);
 attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach);
-template <bool lastLeft>attach_status steric_clash_check_COMFast_IL(RNADataArrayInternalLoop& Sequence, RNAData* Attach);
-attach_status steric_clash_check_COMFast_IL_1stright(RNADataArrayInternalLoop& Sequence, RNAData* Attach);
+template <bool CountGreater>attach_status steric_clash_check_COMFast_IL(RNADataArrayInternalLoop& Sequence, RNAData* Attach);
+attach_status steric_clash_check_COMFast_IL_1st_right(RNADataArrayInternalLoop& Sequence, RNAData* Attach);
 void steric_clash_checkCOM(gsl_vector** M_COMS, double* M_Radii, int Count, gsl_vector_view A_COM, double A_Radius, bool* PassArray);
 attach_status steric_clash_check_COM_tester(RNADataArray &sequence, RNAData *attach);
 attach_status steric_clash_check_COM(RNADataArray &sequence, RNAData *attach);

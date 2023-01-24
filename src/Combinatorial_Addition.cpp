@@ -167,7 +167,7 @@ bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &ass
             
             if (assembled.prepare_right(assembled[working_position], WC_Lib) == true)
             {
-                if((status = steric_clash_check_COMFast_IL_1stright(assembled, assembled[working_position])) == ATTACHED)
+                if((status = steric_clash_check_COMFast_IL_1st_right(assembled, assembled[working_position])) == ATTACHED)
                 {
                     break;
                 }
