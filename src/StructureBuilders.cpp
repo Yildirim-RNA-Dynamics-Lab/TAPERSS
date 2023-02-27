@@ -18,9 +18,7 @@ void create_custom_structure(DimerLibArray &Lib, RNADataArray &assembled, output
     }
     if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
     {
-        WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
-                                    assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
-                                    assembled[assembled.iterator_max]->count_per_WC_sub[1]);
+        WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
         RMSD = WC_check_pair(0);
         assembled.update_WC_rmsd(RMSD);
     }
@@ -37,10 +35,10 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
     {
         //printf("i = %d, indicies: %d\n", i, indices[i]);
         assembled.overwrite(i, indices[i], Lib);
-        if (assembled.inLeft_or_inRight(i) == true)
+        if (assembled.should_prepare_right(i) == true)
         {
             //printf("i = %d\n", i);
-            assembled.prepare_right(assembled[i], WC_Lib);
+            prepare_right(assembled[i], WC_Lib, assembled);
             status = steric_clash_check_COMFast_IL_1st_right(assembled, assembled[i]);
             assembled.keep();
         }
@@ -62,16 +60,14 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
         else
             printf("Unsuccessful attachment on: %d\n", i);
     }
-    WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
-                                assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
-                                assembled[assembled.iterator_max]->count_per_WC_sub[1]);
+    WC_prepare_structure_matrix(0, assembled[0], 1, assembled[assembled.iterator_max], 1);
     RMSD = WC_check_pair(0);
     assembled.update_WC_rmsd(RMSD);
     assembled.update_energy();
     o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
 }
 
-template <bool PerformChecks, STRUCTCHECK_TYPE StructCheck>
+template <bool PerformChecks, STRUCTFILTER_TYPE StructCheck>
 void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, int num_strs)
 {
     attach_status status = ATTACHED;
@@ -102,16 +98,14 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
             {
                 if constexpr (StructCheck == HAIRPIN)
                 {
-                    WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
-                                                assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
-                                                assembled[assembled.iterator_max]->count_per_WC_sub[1]);
+                    WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
                     double RMSD = WC_check_pair(0);
                     assembled.update_WC_rmsd(RMSD);
                 }
                 assembled.update_energy();
                 o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
             }
-            assembled.rollback_by(assembled.iterator - 1);
+            assembled.rollback_by(assembled.iterator);
         }
         assembled.count = assembled.iterator_max + 1;
         assembled.iterator = assembled.iterator_max;
@@ -123,23 +117,19 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
             assembled.overwrite(0, GLOBAL_INPUT_INDICES_LIST[i][0], Lib);
             for (int j = 1; j <= assembled.iterator_max; j++)
             {
-                //printf("iterator = %d\n", assembled.iterator);
                 assembled.overwrite(j, GLOBAL_INPUT_INDICES_LIST[i][j], Lib);
                 rotate(assembled.current(), assembled[j]);
-                //status = steric_clash_check_COMFast(assembled, assembled[j]);
                 assembled.keep();
             }
             if constexpr (StructCheck == HAIRPIN)
             {
-                WC_prepare_structure_matrix(0, assembled[0]->data_matrix, assembled[0]->WC_submatrix_rows[0], assembled[0]->count_per_WC_sub[0],
-                                            assembled[assembled.iterator_max]->data_matrix, assembled[assembled.iterator_max]->WC_submatrix_rows[1],
-                                            assembled[assembled.iterator_max]->count_per_WC_sub[1]);
+                WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
                 double RMSD = WC_check_pair(0);
                 assembled.update_WC_rmsd(RMSD);
             }
             assembled.update_energy();
             o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            assembled.rollback_by(assembled.iterator - 1);
+            assembled.rollback_by(assembled.iterator);
         }
         assembled.count = assembled.iterator_max + 1;
         assembled.iterator = assembled.iterator_max;

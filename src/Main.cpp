@@ -5,7 +5,7 @@
 #include "RNAData.hpp"
 #include "Combinatorial_Addition.hpp"
 #include "output_string.hpp"
-#include "Hairpin.hpp"
+#include "WatsonCrickPair.hpp"
 #include "HBondDetector.hpp"
 #include "InputHandler.hpp"
 #include "StructureBuilders.hpp"
@@ -91,7 +91,6 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
     duplicate_record[0] = pointer;
     return rtn;
 }
-
 
 /* I should add a duplicate checker for this function as well */
 char **get_WC_wrapper(char *sequence, int *N)
@@ -183,10 +182,20 @@ void Run()
         Start = clock();
         if constexpr (is_same<T, RNADataArray>::value)
         {
-            while (!combinatorial_addition(Library, RNA, manager, output_s))
+            if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
             {
-                ;
-            }  
+                while (combinatorial_addition<HAIRPIN>(Library, RNA, manager, output_s) != true)
+                {
+                    ;
+                }  
+            }
+            else
+            {
+                while (combinatorial_addition<NONE>(Library, RNA, manager, output_s) != true)
+                {
+                    ;
+                }  
+            }
         }
         if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
         {

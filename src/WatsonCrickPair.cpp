@@ -1,4 +1,4 @@
-#include "Hairpin.hpp"
+#include "WatsonCrickPair.hpp"
 
 gsl_block  *WC_memblock;
 gsl_matrix **WC_reference_matrices;
@@ -76,8 +76,14 @@ double WC_check_pair(int WC_pair_idx)
     return (rmsd_generic(sequence_matrix, WC_model_matrix));
 }
 
-void WC_prepare_structure_matrix(int WC_pair_idx, gsl_matrix *A, uint16_t *A_rows, size_t A_row_count, gsl_matrix *B, uint16_t *B_rows, size_t B_row_count)
+void WC_prepare_structure_matrix(int WC_pair_idx, RNAData* A_data, uint16_t idxA, RNAData* B_data, uint16_t idxB)
 {
+    gsl_matrix *A = A_data->data_matrix; 
+    uint16_t *A_rows = A_data->WC_submatrix_rows[idxA];
+    size_t A_row_count = A_data->count_per_WC_sub[idxA];
+    gsl_matrix *B = B_data->data_matrix;
+    uint16_t *B_rows = B_data->WC_submatrix_rows[idxB];
+    size_t B_row_count = B_data->count_per_WC_sub[idxB];
     int rel_idx = 0;
     for(size_t i = 0; i < A_row_count; i++)
     {

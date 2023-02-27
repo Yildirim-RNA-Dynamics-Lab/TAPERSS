@@ -1,10 +1,9 @@
 #ifndef STERIC_CLASH_CHECK_HPP
 #define STERIC_CLASH_CHECK_HPP
 
-#include "Attaching_Functions.hpp"
 #include "RNACMB.hpp"
-#include "RNAData.hpp"
 #include "RNA_Math.hpp"
+#include "RNAData.hpp"
 #include "RNADataArrayInternalLoop.hpp"
 
 bool steric_clash_check(RNADataArray &sequence, RNAData *attach);

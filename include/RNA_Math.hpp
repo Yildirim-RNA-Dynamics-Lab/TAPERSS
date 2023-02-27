@@ -15,8 +15,8 @@ void gsl_matrix_print(gsl_matrix *M, const char* name);
 void gsl_matrix_print_row(gsl_matrix *M, size_t i);
 void gsl_vector_print(gsl_vector *V); 
 int array_min_idx_for_energy(int *Arr, int N);
-/* Inline Functions */
 
+/* Inline Functions */
 inline double distance_vec2vec(gsl_vector *A, gsl_vector *B)
 {
     double x, y, z;

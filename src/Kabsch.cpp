@@ -155,7 +155,7 @@ void kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_
 }
 
 
-/* To be deprecrated. Use kabsch_calculate_rotation_matrix_Nx3fast instead*/
+/* Deprecated. Use kabsch_calculate_rotation_matrix_Nx3fast instead*/
 gsl_matrix *kabsch_get_rotation_matrix_generic(gsl_matrix *P, gsl_matrix *Q, double *__restrict__ COMP, double *__restrict__ COMQ)
 {
   gsl_matrix *P_TEMP = gsl_matrix_alloc(P->size2, P->size1);

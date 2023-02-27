@@ -14,7 +14,7 @@ int get_diNt_names(char *sequence, char** rtn, int *duplicates, int N_diNts)
 
     for (int i = 0; i < N_diNts; i++)
     {
-        rtn[i] = (char *)malloc(sizeof(char) * sizeof(LIBRARY_FILENAME_PROTOTYPE));
+        rtn[i] = (char *)malloc(sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(rtn[i], LIBRARY_FILENAME_PROTOTYPE, sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(&rtn[i][name_position], sequence++, sizeof(char) * 2);
     }
@@ -285,7 +285,7 @@ void read_input_file(char *file_name)
             str1[strcspn(str1, "\n")] = '\0';
             if (!strcasecmp(str1, "TRUE"))
             {
-                GLOBAL_WRITE_COORDINATES = true;;
+                GLOBAL_WRITE_COORDINATES = true;
             }
             else if (!strcasecmp(str1, "FALSE"))
             {
