@@ -132,7 +132,7 @@ void WC_create(DimerLibArray &WC_Library)
 
         target1size = get_WC_target(WC_Library[i]->name[0], &target1);
         target2size = get_WC_target(WC_Library[i]->name[1], &target2);
-        size_t rel_idx = 0;
+        //size_t rel_idx = 0;
 
         for (uint64_t j = 0; j < WC_Library[i]->atom_data->count; j++)
         {
@@ -143,7 +143,7 @@ void WC_create(DimerLibArray &WC_Library)
                     gsl_matrix_set(WC_reference_matrices[i], k, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
                     gsl_matrix_set(WC_reference_matrices[i], k, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
                     gsl_matrix_set(WC_reference_matrices[i], k, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
-                    rel_idx++;
+                    //rel_idx++;
                     // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
                 }
             }
@@ -154,7 +154,7 @@ void WC_create(DimerLibArray &WC_Library)
                     gsl_matrix_set(WC_reference_matrices[i], k + target1size, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
                     gsl_matrix_set(WC_reference_matrices[i], k + target1size, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
                     gsl_matrix_set(WC_reference_matrices[i], k + target1size, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
-                    rel_idx++;
+                    //rel_idx++;
                     // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
                 }
             }

@@ -1,2 +1,4 @@
 .vscode/
 !.gitignore
+.cache
+compile_commands.json

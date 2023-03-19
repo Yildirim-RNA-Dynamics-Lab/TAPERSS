@@ -1,4 +1,4 @@
-CC = /usr/bin/clang-8
+CC = clang
 
 CFLAGS = -Wall
 CFLAGS += -W
