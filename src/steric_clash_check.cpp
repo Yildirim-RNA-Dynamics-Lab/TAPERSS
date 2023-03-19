@@ -32,12 +32,12 @@ bool steric_clash_check_fast_last(gsl_matrix *A, uint16_t *A_Rows, size_t A_Coun
 
 void steric_clash_checkCOM(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray)
 {    
-    PassArray[0] = (sqr_distance_mat2mat(M_COMS,  0, A, A_index) > square(M_Radii[0] + A_Radius));
-    PassArray[1] = (sqr_distance_mat2mat(M_COMS, 1, A, A_index) > square(M_Radii[1] + A_Radius));
+    PassArray[0] = (sqr_distance_mat2mat(M_COMS,  0, A, A_index) > square((M_Radii[0] + A_Radius)));
+    PassArray[1] = (sqr_distance_mat2mat(M_COMS, 1, A, A_index) > square((M_Radii[1] + A_Radius)));
 
     for(int i = 1; i < Count; i++)
     {
-        PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > square(M_Radii[i * 2 + 1] + A_Radius));
+        PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > square((M_Radii[i * 2 + 1] + A_Radius)));
     }
 }
 
@@ -79,21 +79,21 @@ attach_status steric_clash_check_COMFast(RNADataArray& Sequence, RNAData* Attach
 
 template <bool countGreater>void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, double* M_Radii, int Count, gsl_matrix* A, size_t A_index, double A_Radius, bool* PassArray, int size1)
 {    
-    PassArray[0] = (sqr_distance_mat2mat(M_COMS,  0, A, A_index) > square(M_Radii[0] + A_Radius));
-    PassArray[1] = (sqr_distance_mat2mat(M_COMS, 1, A, A_index) > square(M_Radii[1] + A_Radius));
+    PassArray[0] = (sqr_distance_mat2mat(M_COMS,  0, A, A_index) > square((M_Radii[0] + A_Radius)));
+    PassArray[1] = (sqr_distance_mat2mat(M_COMS, 1, A, A_index) > square((M_Radii[1] + A_Radius)));
     if constexpr (countGreater == true) 
     {
         for(int i = 1; i < size1; i++)
         {
-            PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > square(M_Radii[i * 2 + 1] + A_Radius));
+            PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > square((M_Radii[i * 2 + 1] + A_Radius)));
         }
     
-        PassArray[size1] = (sqr_distance_mat2mat(M_COMS, size1 * 2, A, A_index) > square(M_Radii[size1] + A_Radius));
-        PassArray[size1 + 1] = (sqr_distance_mat2mat(M_COMS, size1 * 2 + 1, A, A_index) > square(M_Radii[size1 + 1] + A_Radius));
+        PassArray[size1] = (sqr_distance_mat2mat(M_COMS, size1 * 2, A, A_index) > square((M_Radii[size1] + A_Radius)));
+        PassArray[size1 + 1] = (sqr_distance_mat2mat(M_COMS, size1 * 2 + 1, A, A_index) > square((M_Radii[size1 + 1] + A_Radius)));
 
         for(int i = size1 + 2; i < Count; i++)
         {
-            PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1, A, A_index) > square(M_Radii[i * 2 + 1] + A_Radius));
+            PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1, A, A_index) > square((M_Radii[i * 2 + 1] + A_Radius)));
         }
         return;
     }   
@@ -101,7 +101,7 @@ template <bool countGreater>void steric_clash_checkCOM_IL(gsl_matrix* M_COMS, do
     {
         for(int i = 1; i < Count; i++)
         {
-            PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > square(M_Radii[i * 2 + 1] + A_Radius));
+            PassArray[i + 1] = (sqr_distance_mat2mat(M_COMS, i * 2 + 1 , A, A_index) > square((M_Radii[i * 2 + 1] + A_Radius)));
         }
         return;
     }
