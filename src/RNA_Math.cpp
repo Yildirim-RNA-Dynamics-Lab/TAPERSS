@@ -56,13 +56,6 @@ void translate_matrix(double *__restrict__ tV, gsl_matrix *M, double scalar)
     }
 }
 
-void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M)
-{
-    gsl_matrix *M_TEMP = kabsch_get_work_matrix(M->size2, M->size1);
-    gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, R, M, 0.0, M_TEMP);
-    gsl_matrix_transpose_memcpy(M, M_TEMP);
-}
-
 void gsl_matrix_print(gsl_matrix *M, const char* name)
 {
     printf("---------------Matrix name: %s\n", name);

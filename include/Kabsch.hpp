@@ -20,5 +20,6 @@ void kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_
  * Updated after running: kabsch_calculate_rotation_matrix_Nx3fast(...)
  **/
 gsl_matrix* kabsch_get_rotation_matrix();
+void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M);
 
 #endif 

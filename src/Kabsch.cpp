@@ -131,6 +131,13 @@ gsl_matrix* kabsch_allocate_work_matrix(gsl_matrix *P)
   return gsl_matrix_alloc(P->size2, P->size1);
 }
 
+void apply_rotation_matrix(gsl_matrix *R, gsl_matrix *M)
+{
+    gsl_matrix *M_TEMP = kabsch_get_work_matrix(M->size2, M->size1);
+    gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, R, M, 0.0, M_TEMP);
+    gsl_matrix_transpose_memcpy(M, M_TEMP);
+}
+
 gsl_matrix* kabsch_get_rotation_matrix()
 {
   return R_KABSCH;
