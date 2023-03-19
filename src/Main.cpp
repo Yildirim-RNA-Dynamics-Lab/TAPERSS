@@ -288,7 +288,5 @@ int main(int argc, char *ARGV[])
         break;
     }
 		RNADataArray A;
-		A.overwrite_initialize();
-
     /* PDB FORMAT: printf("%-6s%5d %4s %3s  %4d    %8.3f%8.3f%8.3f\n", "ATOM", index , name, residue, residue ID, X, Y, Z)*/
 }
