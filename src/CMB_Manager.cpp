@@ -32,9 +32,9 @@ CMB_Manager::~CMB_Manager()
 
 void CMB_Manager::attach_attempt(int i, int j)
 {
-    attach_attempted[i] = j;
-    last_attempted[0] = i;
-    last_attempted[1] = j;
+  attach_attempted[i] = j;
+  last_attempted[0] = i;
+  last_attempted[1] = j;
 }
 
 bool CMB_Manager::check_lib_completion()
