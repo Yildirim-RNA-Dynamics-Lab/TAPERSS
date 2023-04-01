@@ -145,11 +145,16 @@ void Run()
     Library.get_charged_atom_map();
     if constexpr (is_same<T, RNADataArray>::value)
     {
+<<<<<<< HEAD
         if(GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::HAIRPIN)
         {
             WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
             load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
         }
+=======
+        WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
+        load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
+>>>>>>> cmb_optimization
         RNA.initialize(N_diNts, Library);
     }
     if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
@@ -170,7 +175,11 @@ void Run()
     }
     output_string output_s(GLOBAL_OUTPUT_FILE, GLOBAL_MAX_STRINGS, GLOBAL_IO_ACTION);
     kabsch_create(Library.LargestAtomCount, MATRIX_DIMENSION2);
+<<<<<<< HEAD
     if(GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::INTERNAL_LOOP) WC_create(WC_Library);
+=======
+    WC_create(WC_Library);
+>>>>>>> cmb_optimization
     HK_create(Library.PositiveAtomCount, Library.NegativeAtomCount);
 
     End = clock();

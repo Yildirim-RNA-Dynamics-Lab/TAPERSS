@@ -143,6 +143,7 @@ void DimerLibArray::get_charged_atom_map()
         TmpPos = 0;
         TmpNeg = 0;
         for(uint32_t j = 0; j < library[i]->atom_data->count; j++)
+<<<<<<< HEAD
         {
             if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
             {
@@ -159,6 +160,24 @@ void DimerLibArray::get_charged_atom_map()
         }       
         if(TmpNeg > LargestNegativeCount)
         {
+=======
+        {
+            if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
+            {
+                TmpPos++;
+            }
+            if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
+            {
+                TmpNeg++;
+            }
+        }
+        if(TmpPos > LargestPositiveCount)
+        {
+            LargestPositiveCount = TmpPos;
+        }       
+        if(TmpNeg > LargestNegativeCount)
+        {
+>>>>>>> cmb_optimization
             LargestNegativeCount = TmpNeg;
         }   
         
@@ -412,6 +431,7 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 }
 
+<<<<<<< HEAD
 /**
  * @brief This function ensures that all of the atoms lie within the sphere created by calculate_SCC_radii, if they are not 
  * it prints a warning and readjusts the size of the sphere to then include everything. calculate_SCC_radii method does
@@ -423,6 +443,9 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
  * @param radius radius of sphere created by calculate_SCC_radii (modified as needed)
  * @param res_id residue index for radius
  */
+=======
+/* Method of using Functional group and Phospate group to define sphere radius seems to work, but to be safe, we ensure that all atoms are within the sphere*/
+>>>>>>> cmb_optimization
 void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, int res_id)
 {
     gsl_vector_view V, COM;
@@ -436,7 +459,11 @@ void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, in
         dist = distance_vec2vec(&COM.vector, &V.vector);
         if(dist > *radius)
         {
+<<<<<<< HEAD
             fprintf(stderr, "Warning: atom: %s in residue: %c is outside COM sphere!\n", A_info->name[i], A_info->residue[i]);
+=======
+            printf("%s is outside COM sphere!\n", A_info->name[i]);
+>>>>>>> cmb_optimization
             *radius = dist + 1;
         }
     }

@@ -270,6 +270,7 @@ size_t get_WC_target(char res, const atom_id** dest)
 		exit(1);
 	}
 }
+<<<<<<< HEAD
 
 int RNAData::get_residue_COM_index(int res)
 {
@@ -531,6 +532,253 @@ uint64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L, int
 
     return memsize;
 =======
+	uint_fast64_t memsize = 0;
+	const atom_id *dummy = NULL;
+
+	/* Size for Submatrices Rows*/
+	memsize += get_target(L[idx]->name[0], &dummy);
+	memsize += get_target(L[idx]->name[1], &dummy);
+
+	/* Size for WCSubmatrices Rows */
+	memsize += get_WC_target(L[idx]->name[0], &dummy);
+	memsize += get_WC_target(L[idx]->name[1], &dummy);
+
+
+	/* Size for Steric Rows */
+	for(int i = 0; i < L[idx]->atom_data->count; i++)
+	{
+		if( L[idx]->atom_data->atom_ids[i] == P   || L[idx]->atom_data->atom_ids[i] == OP1 || 
+				L[idx]->atom_data->atom_ids[i] == OP2 || L[idx]->atom_data->atom_ids[i] == C5p ||
+				L[idx]->atom_data->atom_ids[i] == O5p)
+		{
+			memsize++;
+		}
+	}
+
+=======
+
+int RNAData::get_residue_COM_index(int res)
+{
+	return (count + res);
+}
+
+void RNAData::print()
+{
+	for (unsigned int i = 0; i < data_matrix->size1; i++)
+	{
+		atom_data->print_at(i);
+		for (unsigned int j = 0; j < data_matrix->size2; j++)
+		{
+			printf("%8.3f", gsl_matrix_get(data_matrix, i, j));
+		}
+		putchar('\n');
+	}
+}
+
+void RNAData::print_target(int res)
+{
+	for (int i = 0; i < count_per_sub[res]; i++)
+	{
+		atom_data->print_at(submatrix_rows[res][i]);
+		for (unsigned int j = 0; j < data_matrix->size2; j++)
+		{
+			printf("%8.3f", gsl_matrix_get(data_matrix, submatrix_rows[res][i], j));
+		}
+		putchar('\n');
+	}
+}
+
+void RNAData::print_WC_target(int res)
+{
+	for (unsigned int i = 0; i < count_per_WC_sub[res]; i++)
+	{
+			atom_data->print_at(WC_submatrix_rows[res][i]);
+			for (unsigned int j = 0; j < data_matrix->size2; j++)
+			{
+				printf("%8.3f", gsl_matrix_get(data_matrix, WC_submatrix_rows[res][i], j));
+			}
+			putchar('\n');
+	}
+}
+
+void RNAData::print(int res)
+{
+	for (unsigned int i = 0; i < data_matrix->size1; i++)
+	{
+		if (atom_data->dnt_pos[i] != (res + 1))
+		{
+			continue;
+		}
+		atom_data->print_at(i);
+		for (unsigned int j = 0; j < data_matrix->size2; j++)
+		{
+			printf("%8.3f", gsl_matrix_get(data_matrix, i, j));
+		}
+		putchar('\n');
+	}
+}
+
+int RNAData::to_string(char *s, int buffer_size, int string_index)
+{
+	for (unsigned int i = 0; i < count; i++)
+	{
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "%-6s%5d %4s %3c  %4d    ", "ATOM", atom_data->index[i], atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i]);
+		for (unsigned int j = 0; j < data_matrix->size2; j++)
+		{
+			string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f", gsl_matrix_get(data_matrix, i, j));
+		}
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "\n");
+	}
+	return string_index;
+}
+
+void RNAData::print_offset(int res, int position)
+{
+	for (unsigned int i = 0; i < count; i++)
+	{
+		if (atom_data->dnt_pos[i] != (res + 1))
+		{
+			continue;
+		}
+		printf("%-4s %-4d %-4c %-4d ", atom_data->name[i], atom_data->index[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
+		for (unsigned int j = 0; j < data_matrix->size2; j++)
+		{
+			printf("%-3.2f ", gsl_matrix_get(data_matrix, i, j));
+		}
+		putchar('\n');
+	}
+}
+
+int RNAData::to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset)
+{
+	for (unsigned int i = 0; i < count; i++)
+	{
+		if (atom_data->dnt_pos[i] != (res + 1))
+		{
+			continue;
+		}
+		*idx_offset += 1;
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "%-6s%5d %4s %3c  %4d    ", "ATOM", *idx_offset, atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
+		for (unsigned int j = 0; j < data_matrix->size2; j++)
+		{
+			string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f", gsl_matrix_get(data_matrix, i, j));
+		}
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "\n");
+	}
+	return string_index;
+}
+
+void RNADataArray::initialize(size_t size, DimerLibArray& Library)
+{
+	int PLAC = Library.PositiveAtomCount;
+	int NLAC = Library.NegativeAtomCount;
+	iterator_max = size - 1;
+	sequence = (RNAData *)malloc(sizeof(RNAData) * size);
+	uint64_t matrix_memsize = 0;
+	uint64_t array_memsize = 0;
+	for(size_t i = 0; i < size; i++)
+	{
+		matrix_memsize   += calculate_matrix_memory_needed(Library, i);
+		array_memsize    += calculate_index_array_memory_needed(Library, i);
+	}
+	matrix_memsize += (PLAC * NLAC); // Interaction Table Matrix
+	MatrixMemBlock = gsl_block_alloc(matrix_memsize); //Allocate Block of memory to pass to individual RNAData's. This is to maintain contiguous memory.
+	ArrayMemBlock = (uint16_t *)malloc(array_memsize); // Same as ^.
+
+	size_t MatrixOffset = 0;
+	size_t ArrayOffset = 0;
+
+	for(size_t i = 0; i < size; i++)
+	{
+		sequence[i].initialize(Library, i, 0, MatrixMemBlock, &MatrixOffset, ArrayMemBlock, &ArrayOffset);
+	}
+
+	*sequence[0]._flag = USED;
+	iterator = 0;  //Start with first already DNT included
+	count = 1;
+	structure_energy = 0;
+	COMS = gsl_matrix_alloc_from_block(MatrixMemBlock, MatrixOffset, 2 * size, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+	MatrixOffset += (2 * size * MATRIX_DIMENSION2);
+	InteractionTable = gsl_matrix_alloc_from_block(MatrixMemBlock, MatrixOffset, PLAC, NLAC, NLAC);
+	gsl_matrix_set_zero(InteractionTable); // Set all to 0
+	PositiveAtomMap = Library.PositiveAtomMap;
+	NegativeAtomMap = Library.NegativeAtomMap;
+	TableRowCount = PLAC;
+	TableColCount = NLAC;
+	LAC = Library.LargestAtomCount;
+	Radii = (double *)malloc(2 * size * sizeof(double));
+	PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
+																														 // in all other DNTs, only second residue is needed.
+	overwrite_initialize(0,0, Library);
+}
+
+void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
+{
+	sequence[LibIdx].overwrite(Library, LibIdx, IdxInLib);
+	Radii[LibIdx * 2] = Library[LibIdx]->radii[0][IdxInLib];
+	Radii[LibIdx * 2 + 1] = Library[LibIdx]->radii[1][IdxInLib];
+}
+
+void RNADataArray::overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
+{
+	sequence[LibIdx].overwrite(Library, LibIdx, IdxInLib);
+  gsl_matrix_row_copy(COMS, LibIdx * 2, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 0);
+  gsl_matrix_row_copy(COMS, (LibIdx * 2) + 1, Library[LibIdx]->data_matrices[IdxInLib], Library[LibIdx]->atom_data->count + 1);
+	Radii[LibIdx * 2] = Library[LibIdx]->radii[0][IdxInLib];
+	Radii[LibIdx * 2 + 1] = Library[LibIdx]->radii[1][IdxInLib];
+}
+>>>>>>> cmb_optimization
+
+	/* Size for Charged Rows */
+	for(int i = 0; i < L[idx]->atom_data->count; i++)
+	{
+		if( L[idx]->atom_data->charges[i] != atom_charge::NEUTRAL)
+		{
+			memsize++;
+		}
+	}
+
+<<<<<<< HEAD
+	//printf("IN CALC: Array Offset: %lu\n", memsize);
+	memsize *= sizeof(uint16_t);
+
+	return memsize;
+>>>>>>> cmb_optimization
+=======
+RNADataArray::~RNADataArray()
+{
+	for(int i = 0; i < count; i++)
+	{
+		sequence[i].destroy();
+	}
+	free(sequence);
+	gsl_matrix_free(COMS);
+	free(Radii);
+	free(PassedCOMCheck);
+	if (string_initialized)
+	{	
+		free(string_out);
+	}
+	gsl_matrix_free(InteractionTable);
+	free(PositiveAtomMap);
+	free(NegativeAtomMap);
+	gsl_block_free(MatrixMemBlock);
+	free(ArrayMemBlock);
+}
+
+uint_fast64_t RNADataArray::calculate_matrix_memory_needed(DimerLibArray& L, int idx)
+{
+	uint_fast64_t memsize = 0;
+	size_t data_mat_nrows = L[idx]->data_matrices[0]->size1;
+
+	memsize += data_mat_nrows * MATRIX_DIMENSION2;
+	memsize += 2 * MATRIX_DIMENSION2; //For COM Matrix
+ 
+	return memsize;
+}
+
+uint_fast64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L, int idx)
+{
 	uint_fast64_t memsize = 0;
 	const atom_id *dummy = NULL;
 

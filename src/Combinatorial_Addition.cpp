@@ -3,6 +3,7 @@ template <STRUCTFILTER_TYPE FILTER> bool early_exit_handler(CMB_Manager &manager
 {
     if constexpr (FILTER == HAIRPIN)
     {
+<<<<<<< HEAD
         return manager.hairpins_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
     }
     if constexpr (FILTER == INTERNAL_LOOP)
@@ -13,6 +14,30 @@ template <STRUCTFILTER_TYPE FILTER> bool early_exit_handler(CMB_Manager &manager
     {
         return manager.strs_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
     }
+=======
+        if (manager.hairpins_built == GLOBAL_STRUCTURE_LIMIT_COUNT)
+        {
+            return true;
+        }
+        return false;
+    }
+    if constexpr (FILTER == INTERNAL_LOOP)
+    {
+        if (manager.internal_loops_built == GLOBAL_STRUCTURE_LIMIT_COUNT)
+        {
+            return true;
+        }
+        return false;
+    }
+    if constexpr (FILTER == NONE)
+    {
+        if (manager.strs_built == GLOBAL_STRUCTURE_LIMIT_COUNT)
+        {
+            return true;
+        }
+        return false;
+    }
+>>>>>>> cmb_optimization
 }
 template bool early_exit_handler<STRUCTFILTER_TYPE::HAIRPIN>(CMB_Manager &manager);
 template bool early_exit_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(CMB_Manager &manager);

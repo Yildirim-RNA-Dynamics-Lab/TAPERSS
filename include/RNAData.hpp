@@ -99,8 +99,13 @@ struct RNADataArray
     void overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
     void overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
     ~RNADataArray();
+<<<<<<< HEAD
     uint64_t calculate_matrix_memory_needed(DimerLibArray &L, int i);
     uint64_t calculate_index_array_memory_needed(DimerLibArray &L, int i);
+=======
+    uint_fast64_t calculate_matrix_memory_needed(DimerLibArray &L, int i);
+    uint_fast64_t calculate_index_array_memory_needed(DimerLibArray &L, int i);
+>>>>>>> cmb_optimization
     RNAData *operator[](int i);
     void add_copy(RNAData *A);
     void add_move(RNAData *A);

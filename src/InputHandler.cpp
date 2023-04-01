@@ -158,7 +158,11 @@ void read_input_file(char *file_name)
         exit(3);
     }
     GLOBAL_OUTPUT_FILE[0] = '\0';
+<<<<<<< HEAD
     char line[GLOBAL_STANDARD_STRING_LENGTH];
+=======
+    char line[LINESIZE];
+>>>>>>> cmb_optimization
     while (fgets(line, sizeof(line), input))
     {
         char *str1;
