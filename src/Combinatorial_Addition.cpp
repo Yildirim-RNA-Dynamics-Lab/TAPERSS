@@ -1,276 +1,151 @@
 #include "Combinatorial_Addition.hpp"
-
-
-bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string, DimerLibArray &WC_Lib)
+template <STRUCTFILTER_TYPE FILTER> bool early_exit_handler(CMB_Manager &manager)
 {
-    int working_position = assembled.iterator + 1; // Position in sequence where new DNT will be attached.
-    DimerLib *Library = Lib[working_position];
-    RNAData *base;                // Already attached base which will have new DNT attached to
-    RNAData *attach;              // DNT which will be attached
-    attach_status status = FAILED; // Output from checking functions
+    if constexpr (FILTER == HAIRPIN)
+    {
+        return manager.hairpins_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
+    }
+    if constexpr (FILTER == INTERNAL_LOOP)
+    {
+        return manager.internal_loops_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
+    }
+    if constexpr (FILTER == NONE)
+    {
+        return manager.strs_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
+    }
+}
+template bool early_exit_handler<STRUCTFILTER_TYPE::HAIRPIN>(CMB_Manager &manager);
+template bool early_exit_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(CMB_Manager &manager);
+template bool early_exit_handler<STRUCTFILTER_TYPE::NONE>(CMB_Manager &manager);
 
-    DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
-
-    attach = new RNAData(Lib, working_position, 0); // For initialization only
-    for (int i = 0; i < Library->count; i++)
+template <STRUCTFILTER_TYPE FILTER> void output_handler(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string)
+{
+    if constexpr (FILTER == HAIRPIN)
     {
-        if (Library->flags[i] != NO_FLAG)
+        double RMSD;
+        WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
+        RMSD = WC_check_pair(0);
+        if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
         {
-            continue;
-        }
-        if (assembled.is_empty())
-        {
-            attach->overwrite(Lib, working_position, i);
-            assembled.add_move(attach);
-            manager.attach_attempt(working_position, i);
-            DEBUG(printf("attach: %ld moved @ empty\n", attach->id));
-            status = NOT_CHECKED;
-            break;
-        }
-        base = assembled.current();
-        attach->overwrite(Lib, working_position, i);
-        manager.attach_attempt(working_position, i);
-        if ((status = rotate(base, attach)) != ATTACHED)
-        {
-            continue;
-        }
-        attach->update_submatrices();
-        if ((status = check_attachment(assembled, attach)) == ATTACHED)
-        {
-            break;
-        }
-        /*
-        else if (status == FAILED_SC)
-        {
-            assembled.add_move(attach);
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            return true;
-        }
-        */
-    }
-    if (status == FAILED)
-    {
-        delete attach;
-        if (manager.is_at_end())
-        {
-            manager.check_lib_completion();
-            if ((manager.get_reset_count()) == manager.last_attempted[0] + 1)
-            {
-                return true;
-            }
-            assembled.rollback_by(manager.get_reset_count() - 1);
-            Lib.reset_flags(manager.libs_completed);
-            manager.clear_attempts();
-        }
-        else
-        {
-            assembled.rollback();
-        }
-        return false;
-    }
-    else if (status == NOT_CHECKED)
-    {
-        return false;
-    }
-    else if (status == ATTACHED)
-    {
-        assembled.add_move(attach);
-        DEBUG(printf("attach: %ld moved @ Attached @ %d\n", attach->id, working_position));
-    }
-    if (assembled.is_complete())
-    {
-        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
-        {
-            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
-            {
-                assembled.update_energy();
-                o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-                manager.hairpins_built++;
-            }
-        }
-        else
-        {
+            assembled.update_WC_rmsd(RMSD);
             assembled.update_energy();
             o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            manager.hairpins_built++;
         }
         manager.strs_built++;
-        if (manager.is_at_end())
+        return;
+    }
+    if constexpr (FILTER == INTERNAL_LOOP)
+    {
+        double RMSD;
+        WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
+        RMSD = WC_check_pair(0);
+        if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
         {
-            manager.check_lib_completion();
-            if ((manager.get_reset_count()) == Lib.count)
-            {
-                return true;
-            }
-            assembled.rollback_by(manager.get_reset_count());
-            Lib.reset_flags(manager.libs_completed);
-            manager.clear_attempts();
+            assembled.update_WC_rmsd(RMSD);
+            assembled.update_energy();
+            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            manager.internal_loops_built++;
         }
-        else
+        manager.strs_built++;
+        return;
+    }
+    if constexpr (FILTER == NONE)
+    {
+        assembled.update_energy();
+        o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+        manager.strs_built++;
+    }
+}
+template void output_handler<STRUCTFILTER_TYPE::HAIRPIN>(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string);
+template void output_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string);
+template void output_handler<STRUCTFILTER_TYPE::NONE>(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string);
+
+void fill_if_empty(CMB_Manager &manager, RNADataArray &assembled, DimerLibArray &Lib)
+{
+    if (assembled.is_empty())
+    {
+        uint32_t dnmp_pos = assembled.iterator + 1;
+        uint32_t lib_pos = manager.attach_attempted[dnmp_pos] + 1;
+        assembled.overwrite(dnmp_pos, lib_pos, Lib);
+        assembled.keep();
+        manager.attach_attempt(dnmp_pos, lib_pos);
+    }
+}
+
+template <attach_status status> bool rollback_handler(CMB_Manager &manager, RNADataArray &assembled, DimerLibArray &Lib)
+{
+    if (manager.is_at_end())
+    {
+        if (manager.check_lib_completion())
         {
-            DEBUG(printf("Rolling back b/c: COMPLETED NOT AT LIB END\n"));
-            assembled.rollback();
+            return true;
         }
+        if constexpr (status == attach_status::ATTACHED) 
+        { 
+            assembled.rollback_by(manager.rollback_count + 1); //+1 b/c we called keep(), so we need to rollback an extra dnmp to move on.
+            fill_if_empty(manager, assembled, Lib);
+            return false; 
+        } 
+        if constexpr (status == attach_status::FAILED)   
+        { 
+            assembled.rollback_by(manager.rollback_count); 
+            fill_if_empty(manager, assembled, Lib);
+            return false; 
+        }
+    }
+    else
+    {
+        assembled.rollback();
+        return false;
+    }  
+}
+template bool rollback_handler<attach_status::ATTACHED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
+template bool rollback_handler<attach_status::FAILED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
+
+template <STRUCTFILTER_TYPE FILTER> bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string)
+{
+    switch(fragment_assembly(Lib, assembled, manager))
+    {
+    case attach_status::ATTACHED:
+        assembled.keep();
+        break;
+    case attach_status::FAILED:
+        return rollback_handler<attach_status::FAILED>(manager, assembled, Lib);
+    default:      //This condition will never be reached..only here to stop compiler warnings
+        break;
+    }
+
+    if (assembled.is_complete())
+    {
+        output_handler<FILTER>(manager, assembled, o_string);
+        if constexpr (STRUCTURE_BUILD_LIMIT){ if(early_exit_handler<FILTER>(manager)){return true;} }
+        return rollback_handler<attach_status::ATTACHED>(manager, assembled, Lib);
     }
     return false;
 }
+template bool combinatorial_addition<STRUCTFILTER_TYPE::HAIRPIN>(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string);
+template bool combinatorial_addition<STRUCTFILTER_TYPE::NONE>(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string);
 
 bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &assembled, CMB_Manager &manager, output_string &o_string, DimerLibArray &WC_Lib)
 {
-    int working_position = assembled.iterator + 1; // Position in sequence where new DNT will be attached.
-    DimerLib *Library = Lib[working_position];
-    RNAData *base;                // Already attached base which will have new DNT attached to
-    RNAData *attach;              // DNT which will be attached
-    attach_status status = FAILED; // Output from checking functions
-
-    DEBUG(printf("Early: checking assembled 0: %ld, working position: %d\n", assembled[0]->id, working_position));
-
-    if(!assembled.is_empty())
-    {
-        base = assembled.current();
-    }
     
-    //DIE;
-    //printf("Base name: %s\n", base->name);
-    attach = new RNAData(Lib, working_position, 0); // For initialization only
-    for (int i = 0; i < Library->count; i++)
+    switch(fragment_assembly_IL(Lib, WC_Lib, assembled, manager))
     {
-        if (Library->flags[i] != NO_FLAG)
-        {
-            continue;
-        }
-        if (assembled.is_empty())
-        {
-            attach->overwrite(Lib, working_position, i);
-            assembled.add_move(attach);
-            manager.attach_attempt(working_position, i);
-            DEBUG(printf("attach: %ld moved @ empty\n", attach->id));
-            status = NOT_CHECKED;
-            break;
-        }
-        if(assembled.inLeft_or_inRight(working_position) == true) 
-        {
-            attach->overwrite(Lib, working_position, i);
-            manager.attach_attempt(working_position, i);
-            if(assembled.prepare_right(attach, WC_Lib) == true) 
-            {
-                status = ATTACHED;
-                break;
-            }
-            else 
-            {
-                continue;
-            }
-            /*
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            */
-        }
-        base = assembled.current();
-        //printf("Base name: %s\n", base->name);
-        //print_gsl_matrix(base->data_matrix);
-        attach->overwrite(Lib, working_position, i);
-        //print_gsl_matrix(attach->data_matrix);
-        manager.attach_attempt(working_position, i);
-        //printf("Attaching attempt: working pos = %d, i = %d\n", working_position, i);
-        if ((status = rotate(base, attach)) != ATTACHED)
-        {
-            continue;
-        }
-        attach->update_submatrices();
-        //printf("---------Before check attachment\n");
-        if ((status = check_attachment(assembled, attach)) == ATTACHED)
-        {
-            break;
-        }
-        else if (status == FAILED_SC)
-        {
-            assembled.add_move(attach);
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            return true;
-        }
-        //DIE;
+    case attach_status::ATTACHED:
+        assembled.keep();
+        break;
+    case attach_status::FAILED:
+        return rollback_handler<attach_status::FAILED>(manager, assembled, Lib);
+    default:      //This condition will never be reached..only here to stop compiler warnings
+        break;
     }
-    if (status == FAILED)
-    {
-        delete attach;
-        if (manager.is_at_end())
-        {
-            manager.check_lib_completion();
-            if ((manager.get_reset_count()) == manager.last_attempted[0] + 1)
-            {
-                return true;
-            }
-            assembled.rollback_by(manager.get_reset_count() - 1);
-            Lib.reset_flags(manager.libs_completed);
-            manager.clear_attempts();
-        }
-        else
-        {
-            assembled.rollback();
-        }
-        return false;
-    }
-    else if (status == NOT_CHECKED)
-    {
-        return false;
-    }
-    else if (status == ATTACHED)
-    {
-        assembled.add_move(attach);
-        DEBUG(printf("attach: %ld moved @ Attached @ %d\n", attach->id, working_position));
-    }
+
     if (assembled.is_complete())
     {
-        assembled.update_energy();
-        if (GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
-        {
-            if (is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0))
-            {
-                //printf("IS WC PAIR\n");
-                o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-                manager.internal_loops_built++;
-                if(assembled.TMP_END == true)
-                {
-                    return true;
-                }
-                if constexpr (STRUCTURE_BUILD_LIMIT == true)
-                {
-                    if(manager.internal_loops_built > GLOBAL_STRUCTURE_LIMIT_COUNT) 
-                    {
-                        return true;
-                    }
-                }
-            }
-            else 
-            {
-                //printf("IS NOT WC PAIR\n");
-                //o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            }
-        }
-        else
-        {
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-        }
-        manager.strs_built++;
-        if (manager.is_at_end())
-        {
-            manager.check_lib_completion();
-            if ((manager.get_reset_count()) == Lib.count)
-            {
-                return true;
-            }
-            assembled.rollback_by(manager.get_reset_count());
-            Lib.reset_flags(manager.libs_completed);
-            manager.clear_attempts();
-        }
-        else
-        {
-            DEBUG(printf("Rolling back b/c: COMPLETED NOT AT LIB END\n"));
-            assembled.rollback();
-            //return true;
-        }
+        output_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(manager, assembled, o_string);
+        if constexpr (STRUCTURE_BUILD_LIMIT){ if(early_exit_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(manager)){return true;} }
+        return rollback_handler<attach_status::ATTACHED>(manager, assembled, Lib);
     }
     return false;
 }

@@ -8,15 +8,21 @@
  */
 DimerLib::DimerLib(int n, int a_n, int e_n)
 {
+    LibraryMemblock = gsl_block_alloc(n * a_n * MATRIX_DIMENSION2);
     data_matrices = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * n);
+    for(int i = 0, offset = 0; i < n; i++, offset += a_n * MATRIX_DIMENSION2)
+    {
+        data_matrices[i] = gsl_matrix_alloc_from_block(LibraryMemblock, offset, a_n, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+    }
+
     name = (char *)malloc(sizeof(char) * 3);
-    flags = (flag *)calloc(n, sizeof(flag));
     energy = (float *)malloc(sizeof(float) * n);
     radii[0] = (double *)malloc(sizeof(double) *n);
     radii[1] = (double *)malloc(sizeof(double) *n);
     count = n;
     atom_data = new atom_info(a_n - e_n);
 }
+
 DimerLib::~DimerLib()
 {
     // printf("DimerLib %s Destructor Called\n", name);
@@ -24,9 +30,9 @@ DimerLib::~DimerLib()
     {
         gsl_matrix_free(data_matrices[i]);
     }
+    gsl_block_free(LibraryMemblock);
     free(energy);
     free(data_matrices);
-    free(flags);
     free(name);
     free(radii[0]);
     free(radii[1]);
@@ -43,20 +49,10 @@ void DimerLib::save_lib(gsl_matrix **d_m, float *e, char *n, double** r)
     memcpy(name, n, sizeof(char) * 3);
     memcpy(radii[0], r[0], sizeof(double) * count);
     memcpy(radii[1], r[1], sizeof(double) * count);
-
-    //for(int i = 0; i < count; i++)
-    //{
-     //   printf("%d  %s: 1:%f 2:%f\n", i, name, radii[0][i], radii[1][i]);
-    //}
-    //putchar('\n');
 }
 
 void DimerLib::clear_flags()
 {
-    for (int i = 0; i < count; i++)
-    {
-        flags[i] = NO_FLAG;
-    }
 }
 
 DimerLibArray::DimerLibArray()
@@ -67,6 +63,7 @@ DimerLibArray::DimerLibArray()
 DimerLibArray::DimerLibArray(int s)
 {
     library = (DimerLib **)malloc(sizeof(DimerLib *) * s);
+    Flags = (flag**)malloc(sizeof(flag) * s);
     count = s;
     iterator = 0;
     was_initialized = true;
@@ -76,11 +73,17 @@ DimerLibArray::~DimerLibArray()
 {
     if (was_initialized)
     {
-        for (int i = 0; i < count; i++)
+        for (uint64_t i = 0; i < count; i++)
         {
-            delete library[i];
+            if(is_duplicate[i] != true)
+            {
+                delete library[i];
+            }            
         }
         free(library);
+        free(Flags[0]);
+        free(Flags);
+        free(is_duplicate);
     }
 }
 
@@ -88,6 +91,9 @@ void DimerLibArray::initialize(int s)
 {
     //printf("DIMERLIBARRAY:INIT s = %d\n", s);
     library = (DimerLib **)malloc(sizeof(DimerLib *) * s);
+    is_duplicate = (bool*)malloc(sizeof(bool) * s);
+    memset(is_duplicate, false, sizeof(bool) * s);
+    Flags = (flag **)malloc(sizeof(flag *) * s);
     count = s;
     iterator = 0;
     was_initialized = true;
@@ -95,13 +101,24 @@ void DimerLibArray::initialize(int s)
 
 DimerLib *DimerLibArray::operator[](int i)
 {
-    //printf("DIMERLIBARRAY:ACCESS i = %d\n", i);
     return library[i];
 }
 
-void DimerLibArray::alloc_lib(int n, int a_n, int e_n)
+void DimerLibArray::map_duplicate(size_t dupli, size_t orig)
+{
+    library[dupli] = library[orig];
+    is_duplicate[dupli] = true;
+    iterator++;
+}
+
+void DimerLibArray::alloc_lib(size_t n, size_t a_n, size_t e_n)
 {
     library[iterator] = new DimerLib(n, a_n, e_n);
+    full_structure_element_sum += a_n;
+    if((a_n - e_n) > LargestAtomCount)
+    {
+        LargestAtomCount = (a_n - e_n);
+    }
 }
 
 void DimerLibArray::DimerLibArray::add_to_atom_info(char *N, int i, char r, int p)
@@ -117,31 +134,64 @@ void DimerLibArray::add_lib(gsl_matrix **d_m, float *e, char *n, double** r)
 
 void DimerLibArray::get_charged_atom_map()
 {
-    int LargestAtomCount = 0;
-    int MapTracker = 0;
-    for(int i = 0; i < count; i++)
+    int LargestPositiveCount = 0, TmpPos = 0;
+    int LargestNegativeCount = 0, TmpNeg = 0;
+    int PosMapTracker = 0;
+    int NegMapTracker = 0;
+    for(uint32_t i = 0; i < count; i++)
     {
-        if(library[i]->atom_data->count > LargestAtomCount)
+        TmpPos = 0;
+        TmpNeg = 0;
+        for(uint32_t j = 0; j < library[i]->atom_data->count; j++)
         {
-            LargestAtomCount = library[i]->atom_data->count;
-        }        
+            if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
+            {
+                TmpPos++;
+            }
+            if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
+            {
+                TmpNeg++;
+            }
+        }
+        if(TmpPos > LargestPositiveCount)
+        {
+            LargestPositiveCount = TmpPos;
+        }       
+        if(TmpNeg > LargestNegativeCount)
+        {
+            LargestNegativeCount = TmpNeg;
+        }   
         
     }
-    AtomMap = (int*)calloc(LargestAtomCount * count, sizeof(int));
-    for(int i = 0; i < count; i++)
+
+    PositiveAtomMap = (int*)malloc(LargestAtomCount * count * sizeof(int));
+    NegativeAtomMap = (int*)malloc(LargestAtomCount * count * sizeof(int));
+    for(uint32_t i = 0; i < count; i++)
     {
-        for(int j = 0; j < LargestAtomCount; j++)
+        for(uint32_t j = 0; j < LargestAtomCount; j++)
         {
             if(j < library[i]->atom_data->count)
             {
-                if(library[i]->atom_data->charges[j] != atom_charge::NEUTRAL)
+                if(i != 0 && library[i]->atom_data->dnt_pos[j] != 2)
                 {
-                    AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = MapTracker;
-                    MapTracker++;
+                    continue;
+                }
+                if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
+                {
+                    PositiveAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = PosMapTracker;
+                    //printf("POSITIVE: %d:%d Mapped to %d\n", i, j, PosMapTracker);
+                    PosMapTracker++;
+                }
+                else if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
+                {
+                    NegativeAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = NegMapTracker;
+                    //printf("NEGATIVE: %d:%d Mapped to %d\n", i, j, NegMapTracker);
+                    NegMapTracker++;
                 }
                 else
                 {
-                    AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
+                    PositiveAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
+                    NegativeAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = -1;
                 }
                 //printf("Lib: %d, Row: %d, Index: %d, Atom: %s -> %d\n", i, j, IDX_FLAT2D(i, j, LargestAtomCount), library[i]->atom_data->name[j], AtomMap[IDX_FLAT2D(i,j,LargestAtomCount)]);
             }
@@ -151,17 +201,38 @@ void DimerLibArray::get_charged_atom_map()
             }           
         }
     }
-    ChargedAtomCount = LargestAtomCount;
+    PositiveAtomCount = PosMapTracker;
+    NegativeAtomCount = NegMapTracker;
+}
+
+void DimerLibArray::initialize_flags()
+{
+    int TotalSum = 0;
+    int offset = 0;
+    for (uint64_t i = 0; i < count; i++)
+    {        
+        TotalSum += library[i]->count;
+    }
+    Flags[0] = (flag*)malloc(sizeof(flag) * TotalSum);
+    memset(&Flags[0][0], flag::NO_FLAG, sizeof(flag) * TotalSum);
+    for (uint64_t i = 1; i < count; i++)
+    {
+        offset += library[i - 1]->count;
+        Flags[i] = &Flags[0][offset];
+    }
 }
 
 void DimerLibArray::reset_flags(bool *reset)
 {
-    for (int i = 0; i < count; i++)
+    for (uint64_t i = 0; i < count; i++)
     {
         if (reset[i] == true)
         {
-            library[i]->clear_flags();
-            // printf("flags for %d reset\n", i);
+            for(int j = 0; j < library[i]->count; j++)
+            {
+                Flags[i][j] = flag::NO_FLAG;
+            }
+            //printf("flags for %lu reset\n", i);
         }
     }
 }
@@ -190,7 +261,7 @@ gsl_matrix *DimerLibArray::get_matrix(int s, int index)
 
 void get_model_count(FILE *fp, int *i)
 {
-    char line[100];
+    char line[GLOBAL_STANDARD_STRING_LENGTH];
     while (fgets(line, sizeof(line), fp))
     {
         char *header;
@@ -203,14 +274,24 @@ void get_model_count(FILE *fp, int *i)
     i[1] /= i[0];
     rewind(fp);
 }
-
+/**
+ * @brief Calculates the centroid of each residue for the given gsl_matrix (coordinates) with its associated atom_info. This for use with our course
+ * grain steric clash check method. It assumes the given matrix has enough room for 2 additional XYZ coordinates which correspond to the 
+ * 2 residue centroids. Centroids are calculated using the entire nucleotide for both residues, meaning the phophate group belonging to residue 2
+ * is also included for residue 1.
+ * 
+ * @param A gsl_matrix containing XYZ coordinates for fragment
+ * @param A_info atom_info for the gsl_matrix coordinates
+ */
 void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
 {
-    int n_r1 = A_info->count_per_res[0];
+    int n_r1 = A_info->count_per_res[0]; 
     int n_r2 = A_info->count_per_res[1];
 
-    gsl_matrix *A_1 = gsl_matrix_alloc(n_r1, 3);
+    gsl_matrix *A_1 = gsl_matrix_alloc(n_r1 + 3, 3); //+3 for inclusion of phosphate group
     gsl_matrix *A_2 = gsl_matrix_alloc(n_r2, 3);
+
+    constexpr atom_id phosphate_atoms[] = {P, OP1, OP2};
 
     double COMA_1[3] = {0, 0, 0};
     double COMA_2[3] = {0, 0, 0};
@@ -220,6 +301,13 @@ void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
         gsl_matrix_set(A_1, i, 0, gsl_matrix_get(A, i, 0));
         gsl_matrix_set(A_1, i, 1, gsl_matrix_get(A, i, 1));
         gsl_matrix_set(A_1, i, 2, gsl_matrix_get(A, i, 2));
+    }
+
+    for(int i = n_r1; i < n_r1 + 3; i++)
+    {
+        gsl_matrix_set(A_1, i , 0, gsl_matrix_get(A, A_info->get_idx_of_atom(phosphate_atoms[i - n_r1], 1), 0));
+        gsl_matrix_set(A_1, i , 1, gsl_matrix_get(A, A_info->get_idx_of_atom(phosphate_atoms[i - n_r1], 1), 1));
+        gsl_matrix_set(A_1, i , 2, gsl_matrix_get(A, A_info->get_idx_of_atom(phosphate_atoms[i - n_r1], 1), 2));
     }
 
     for(int i = n_r1; i < n_r1 + n_r2; i++)
@@ -232,17 +320,13 @@ void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
     get_matrix_COM(A_1, COMA_1);
     get_matrix_COM(A_2, COMA_2);
 
-    gsl_matrix_set(A, n_r1 + n_r2, 0, COMA_1[0]);
-    gsl_matrix_set(A, n_r1 + n_r2, 1, COMA_1[1]);
-    gsl_matrix_set(A, n_r1 + n_r2, 2, COMA_1[2]);
+    gsl_matrix_set(A, A_info->count, 0, COMA_1[0]);
+    gsl_matrix_set(A, A_info->count, 1, COMA_1[1]);
+    gsl_matrix_set(A, A_info->count, 2, COMA_1[2]);
 
-    gsl_matrix_set(A, n_r1 + n_r2 + 1, 0, COMA_2[0]);
-    gsl_matrix_set(A, n_r1 + n_r2 + 1, 1, COMA_2[1]);
-    gsl_matrix_set(A, n_r1 + n_r2 + 1, 2, COMA_2[2]);
-
-    //printf("1: %f, %f, %f\n", COMA_1[0], COMA_1[1], COMA_1[2]);
-    //printf("2: %f, %f, %f\n", COMA_2[0], COMA_2[1], COMA_2[2]);
-    //exit(0);
+    gsl_matrix_set(A, A_info->count + 1, 0, COMA_2[0]);
+    gsl_matrix_set(A, A_info->count + 1, 1, COMA_2[1]);
+    gsl_matrix_set(A, A_info->count + 1, 2, COMA_2[2]);
 
     gsl_matrix_free(A_1);
     gsl_matrix_free(A_2);
@@ -253,8 +337,8 @@ void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
  * Then the same is done but for the functional groups of the residue (N6, N2, O6, O2, N4, O4). The greatest distance between COM and either functional group or
  * residue used to set the radius of the COM sphere. (Radius of the COM sphere = distance + 1)
  * 
- * @param A Matrix of DNT
- * @param A_info Atom Info of DNT
+ * @param A gsl_matrix containing XYZ coordinates for fragment
+ * @param A_info Atom Info of fragment
  * @param radius Radius for residue
  * @param res_id Index of residue 
  */
@@ -276,10 +360,10 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     COM_vec = gsl_matrix_row(A, A->size1 - (2 - res_id));
 
     OP_vec = gsl_matrix_row(A, A_info->get_idx_of_atom(OP1, 1));
-    dists_OP[0] = distance(&COM_vec.vector, &OP_vec.vector);
+    dists_OP[0] = distance_vec2vec(&COM_vec.vector, &OP_vec.vector);
     
     OP_vec = gsl_matrix_row(A, A_info->get_idx_of_atom(OP2, 1));
-    dists_OP[1] = distance(&COM_vec.vector, &OP_vec.vector);
+    dists_OP[1] = distance_vec2vec(&COM_vec.vector, &OP_vec.vector);
 
     if(dists_OP[1] > dists_OP[0])
     {
@@ -306,11 +390,11 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 
     FG_vec = gsl_matrix_row(A, FG_idxs[0]);
-    dists_FG[0] = distance(&COM_vec.vector, &FG_vec.vector);
+    dists_FG[0] = distance_vec2vec(&COM_vec.vector, &FG_vec.vector);
     if(FG_idxs[1] != -1)
     {
         FG_vec = gsl_matrix_row(A, FG_idxs[1]);
-        dists_FG[1] = distance(&COM_vec.vector, &FG_vec.vector);
+        dists_FG[1] = distance_vec2vec(&COM_vec.vector, &FG_vec.vector);
     }
 
     if(dists_FG[1] > dists_FG[0])
@@ -328,6 +412,17 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 }
 
+/**
+ * @brief This function ensures that all of the atoms lie within the sphere created by calculate_SCC_radii, if they are not 
+ * it prints a warning and readjusts the size of the sphere to then include everything. calculate_SCC_radii method does
+ * seem to work, but because this function is only run during initialization, I don't really care if its inefficient since it only 
+ * has to run a few hundred times (instead of billions). 
+ * 
+ * @param A gsl_matrix containing XYZ coordinates for fragment
+ * @param A_info atom_info of fragment
+ * @param radius radius of sphere created by calculate_SCC_radii (modified as needed)
+ * @param res_id residue index for radius
+ */
 void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, int res_id)
 {
     gsl_vector_view V, COM;
@@ -338,34 +433,34 @@ void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, in
     for(unsigned int i = (res_id == 0 ? 0 : A_info->count_per_res[0]); i < (res_id == 0 ? A_info->count_per_res[0] : A_info->count_per_res[1]);  i++)
     {
         V = gsl_matrix_row(A, i);
-        dist = distance(&COM.vector, &V.vector);
+        dist = distance_vec2vec(&COM.vector, &V.vector);
         if(dist > *radius)
         {
-            printf("%s is outside sphere!\n", A_info->name[i]);
+            fprintf(stderr, "Warning: atom: %s in residue: %c is outside COM sphere!\n", A_info->name[i], A_info->residue[i]);
             *radius = dist + 1;
         }
     }
 }
 
-void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
+void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_record, bool for_WC)
 {
-    enum
-    {
-        model_count = 0,
-        atom_count = 1
-    };
+    enum { model_count = 0, atom_count = 1 };
     float *energies;
     gsl_matrix **data_mats;
     int model_info[2];
     double* _radii[2];
-
-    char tmp[3];
-    char line[100];
+    char line[GLOBAL_STANDARD_STRING_LENGTH];
 
     RTN.initialize(N_diNts);
 
     for (int i = 0; i < N_diNts; i++)
     {
+        if(!for_WC && duplicate_record[i] != -1)
+        {
+            RTN.map_duplicate(i, duplicate_record[i]);
+            printf("%d: %s (Points to library %d)\n", i, LibNames[i], duplicate_record[i]);
+            continue;
+        }
         bool first_itr = true;
         model_info[model_count] = model_info[atom_count] = 0;
 
@@ -380,28 +475,29 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         get_model_count(LibFile, model_info);
         printf("Models: %d, Atoms per model: %d\n", model_info[model_count], model_info[atom_count]);
 
-        model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
-        
-        RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
-        data_mats = (gsl_matrix **)malloc(sizeof(gsl_matrix *) * model_info[model_count]);
-        
-        for (int i = 0; i < model_info[model_count]; i++)
+        if(for_WC) 
         {
-            data_mats[i] = gsl_matrix_alloc(model_info[atom_count], 3);
+            RTN.alloc_lib(model_info[model_count], model_info[atom_count], 0); 
+        } 
+        else 
+        {
+            model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
+            RTN.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
         }
-
-        energies = (float *)malloc(sizeof(float) * model_info[model_count]);
-        _radii[0] = (double *)malloc(sizeof(double) * model_info[model_count]);
-        _radii[1] = (double *)malloc(sizeof(double) * model_info[model_count]);
+        
+        data_mats = RTN[i]->data_matrices;
+        energies  = RTN[i]->energy;
+        _radii[0] = RTN[i]->radii[0];
+        _radii[1] = RTN[i]->radii[1];
         
         int iterator = 0;
         int row = 0;
         while (fgets(line, sizeof(line), LibFile))
         {
-            char line_origin[100];
+            char line_origin[GLOBAL_STANDARD_STRING_LENGTH];
             char *header;
 
-            strncpy(line_origin, line, 99);
+            strncpy(line_origin, line, GLOBAL_STANDARD_STRING_LENGTH);
             header = strtok(line, " ");
 
             if (!strcmp(header, "ENERGY"))
@@ -422,11 +518,15 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
                 X = strtok(NULL, " ");
                 Y = strtok(NULL, " ");
                 Z = strtok(NULL, " ");
-
+                
+                //printf("%s %s %s %s %s %s %s\n", index, name, residue, position, X, Y, Z);
+                //exit(1);
                 // printf("name = %s\n", name);
 
                 if (first_itr)
+                {
                     RTN.add_to_atom_info(name, atoi(index), *residue, atoi(position));
+                }
 
                 gsl_matrix_set(data_mats[iterator], row, 0, atof(X));
                 gsl_matrix_set(data_mats[iterator], row, 1, atof(Y));
@@ -445,7 +545,8 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
                     calculate_SCC_radii(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
                     check_if_all_in_sphere(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[0][iterator], 0);
                     check_if_all_in_sphere(data_mats[iterator], RTN[RTN.iterator]->atom_data, &_radii[1][iterator], 1);
-                }                
+                }     
+
                 iterator++;
                 row = 0;
             }
@@ -458,20 +559,16 @@ void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, bool for_WC)
         while (default_name[name_position++] != 'X')
             ;
         name_position -= 1;
-        tmp[0] = for_WC ? LibNames[i][name_position] : LibNames[i][name_position];
-        tmp[1] = for_WC ? LibNames[i][name_position + 1] : LibNames[i][name_position + 1];
-        tmp[2] = '\0';
+        RTN[i]->name[0] = for_WC ? LibNames[i][name_position] : LibNames[i][name_position];
+        RTN[i]->name[1] = for_WC ? LibNames[i][name_position + 1] : LibNames[i][name_position + 1];
+        RTN[i]->name[2] = '\0';
 
         for(int i = 0; i < model_info[model_count]; i++)
         {
             //printf("%d  %s: 1:%f 2:%f\n", i, tmp, _radii[0][i], _radii[1][i]);
         }
-        //putchar('\n');
-
-        RTN.add_lib(data_mats, energies, tmp, _radii);
-        free(data_mats);
-        free(energies);
-        free(_radii[0]);
-        free(_radii[1]);        
+        //putchar('\n'); 
+        RTN.iterator++;    
     }
+    RTN.initialize_flags();
 }

@@ -1,21 +1,16 @@
 #include "StructureBuilders.hpp"
 
-void create_custom_structure(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArray &assembled, output_string &o_string, int *indices)
+void create_custom_structure(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, uint32_t *indices)
 {
-    RNAData *custom_attach;
-    RNAData *base;
     attach_status status;
-    assembled.rollback();
-    assembled.add_move(new RNAData(Lib, 0, indices[0]));
+    double RMSD;
+    assembled.overwrite(0, indices[0], Lib);
     for (int i = 1; i <= assembled.iterator_max; i++)
     {
-        base = assembled.current();
-        custom_attach = new RNAData(Lib, i, indices[i]);
-        
-        rotate(base, custom_attach);
-        custom_attach->update_submatrices();
-        status = check_attachment(assembled, custom_attach);
-        assembled.add_move(custom_attach);
+        assembled.overwrite(i, indices[i], Lib);
+        rotate(assembled.current(), assembled[i]);
+        status = steric_clash_check_COMFast(assembled, assembled[i]);
+        assembled.keep();
         if (status == ATTACHED)
             printf("Successful attachment on: %d\n", i);
         else
@@ -23,130 +18,122 @@ void create_custom_structure(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataA
     }
     if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
     {
-        is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0);
+        WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
+        RMSD = WC_check_pair(0);
+        assembled.update_WC_rmsd(RMSD);
     }
     assembled.update_energy();
     o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
 }
 
-void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArrayInternalLoop &assembled, output_string &o_string, int *indices)
+void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArrayInternalLoop &assembled, output_string &o_string, uint32_t *indices)
 {
-    RNAData *custom_attach;
-    RNAData *base;
     attach_status status;
-    assembled.rollback();
-    assembled.add_move(new RNAData(Lib, 0, indices[0]));
+    double RMSD;
+    assembled.overwrite_initialize(0, indices[0], Lib);
     for (int i = 1; i <= assembled.iterator_max; i++)
     {
-        base = assembled.current();
-        custom_attach = new RNAData(Lib, i, indices[i]);
-        printf("i = %d\n", i);
-        if(assembled.inLeft_or_inRight(i) == true) 
+        //printf("i = %d, indicies: %d\n", i, indices[i]);
+        assembled.overwrite(i, indices[i], Lib);
+        if (assembled.should_prepare_right(i) == true)
         {
-            printf("i = %d\n", i);
-            assembled.prepare_right(custom_attach, WC_Lib); 
-            assembled.add_move(custom_attach);
-            continue;
-            /*
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-            o_string.add_string((char *)"!!!!!!Unexpected steric clash!!!!!!\n", sizeof("!!!!!!Unexpected steric clash!!!!!!\n"));
-            */
+            //printf("i = %d\n", i);
+            prepare_right(assembled[i], WC_Lib, assembled);
+            status = steric_clash_check_COMFast_IL_1st_right(assembled, assembled[i]);
+            assembled.keep();
         }
-        rotate(base, custom_attach);
-        custom_attach->update_submatrices();
-        status = check_attachment(assembled, custom_attach);
-        assembled.add_move(custom_attach);
+        else
+        {
+            rotate(assembled.current(), assembled[i]);
+            if(assembled.count > assembled.WC_size_left)
+            {
+                status = steric_clash_check_COMFast_IL<true>(assembled, assembled[i]);
+            }
+            else 
+            {
+                status = steric_clash_check_COMFast_IL<false>(assembled, assembled[i]);
+            }
+            assembled.keep();
+        }
         if (status == ATTACHED)
             printf("Successful attachment on: %d\n", i);
         else
             printf("Unsuccessful attachment on: %d\n", i);
     }
-    is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0);
+    WC_prepare_structure_matrix(0, assembled[0], 1, assembled[assembled.iterator_max], 1);
+    RMSD = WC_check_pair(0);
+    assembled.update_WC_rmsd(RMSD);
     assembled.update_energy();
     o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
 }
 
-void create_custom_structure_list(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArray &assembled, output_string &o_string, int num_strs)
+template <bool PerformChecks, STRUCTFILTER_TYPE StructCheck>
+void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, uint32_t num_strs)
 {
-    /*RNAData *custom_attach;
-    RNAData *base;
-    for (int i = 0; i < num_strs; i++)
-    {
-        assembled.rollback_by(assembled.iterator);
-        assembled.add_move(new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
-        for (int j = 1; j <= assembled.iterator_max; j++)
-        {
-            base = assembled.current();
-            custom_attach = new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
-            rotate(base, custom_attach);
-            custom_attach->update_submatrices();
-            assembled.add_move(custom_attach);
-        }
-        if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
-        {
-            is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0);
-        }
-        assembled.update_energy();
-        o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-    }*/
-    RNAData *custom_attach;
-    RNAData *base;
     attach_status status = ATTACHED;
-    for (int i = 0; i < num_strs; i++)
+    // double RMSD = 0;
+    if (PerformChecks == true)
     {
-        assembled.rollback_by(assembled.iterator);
-        assembled.add_move(new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
-        for (int j = 1; j <= assembled.iterator_max; j++)
+        for (uint32_t i = 0; i < num_strs; i++)
         {
-            //printf("j = %d\n", j);
-            //printf("Iterator = %d\n", assembled.iterator);
-            base = assembled.current();
-            custom_attach = new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
-            rotate(base, custom_attach);
-            custom_attach->update_submatrices();
-            status = check_attachment(assembled, custom_attach);
-            if(status != ATTACHED)
+            assembled.overwrite(0, GLOBAL_INPUT_INDICES_LIST[i][0], Lib);
+            for (int j = 1; j <= assembled.iterator_max; j++)
             {
-                //assembled.rollback_by(j + 1);
-                //printf("Failed Attach\n");
-                break;
+                assembled.overwrite(j, GLOBAL_INPUT_INDICES_LIST[i][j], Lib);
+                rotate(assembled.current(), assembled[j]);
+                status = steric_clash_check_COMFast(assembled, assembled[j]);
+                if (status != ATTACHED)
+                {
+                    // assembled.rollback_by(j + 1);
+                    printf("Failed Attach\n");
+                    break;
+                }
+                else
+                {
+                    // printf("Attached\n");
+                    assembled.keep();
+                }
             }
-            else
+            if (status == ATTACHED)
             {
-                //printf("Attached\n");
-                assembled.add_move(custom_attach);
-            }            
+                if constexpr (StructCheck == HAIRPIN)
+                {
+                    WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
+                    double RMSD = WC_check_pair(0);
+                    assembled.update_WC_rmsd(RMSD);
+                }
+                assembled.update_energy();
+                o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            }
+            assembled.rollback_by(assembled.iterator);
         }
-        if(status == ATTACHED)
+        assembled.count = assembled.iterator_max + 1;
+        assembled.iterator = assembled.iterator_max;
+    }
+    else
+    {
+        for (uint32_t i = 0; i < num_strs; i++)
         {
-            if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
+            assembled.overwrite(0, GLOBAL_INPUT_INDICES_LIST[i][0], Lib);
+            for (int j = 1; j <= assembled.iterator_max; j++)
             {
-                is_WC_pair(assembled, WC_Lib, 0, assembled.iterator_max, 0);
+                assembled.overwrite(j, GLOBAL_INPUT_INDICES_LIST[i][j], Lib);
+                rotate(assembled.current(), assembled[j]);
+                assembled.keep();
             }
-            assembled.update_energy();                  
+            if constexpr (StructCheck == HAIRPIN)
+            {
+                WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
+                double RMSD = WC_check_pair(0);
+                assembled.update_WC_rmsd(RMSD);
+            }
+            assembled.update_energy();
             o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            assembled.rollback_by(assembled.iterator);
         }
+        assembled.count = assembled.iterator_max + 1;
+        assembled.iterator = assembled.iterator_max;
     }
 }
-
-void create_custom_structure_list_testing(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, int num_strs)
-{
-    RNAData *custom_attach;
-    RNAData *base;
-    for (int i = 0; i < num_strs; i++)
-    {
-        assembled.rollback_by(assembled.iterator);
-        assembled.add_move(new RNAData(Lib, 0, GLOBAL_INPUT_INDICES_LIST[i][0]));
-        for (int j = 1; j <= assembled.iterator_max; j++)
-        {
-            base = assembled.current();
-            custom_attach = new RNAData(Lib, j, GLOBAL_INPUT_INDICES_LIST[i][j]);
-            rotate(base, custom_attach);
-            custom_attach->update_submatrices();
-            SCC_record_COM_distance(assembled, custom_attach);
-            assembled.add_move(custom_attach);
-        }
-        //exit(1);
-        o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
-    }
-}
+template void create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, uint32_t num_strs);
+template void create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, NONE>(DimerLibArray &Lib,  RNADataArray &assembled, output_string &o_string, uint32_t num_strs);

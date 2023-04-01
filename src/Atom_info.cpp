@@ -179,7 +179,7 @@ atom_info::atom_info(int n)
     name = (char **)malloc(sizeof(char *) * n);
     index = (int *)malloc(sizeof(int) * n);
     residue = (char *)malloc(sizeof(char) * n);
-    dnt_pos = (int *)malloc(sizeof(int) * n);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * n);
     atom_ids = (atom_id *)malloc(sizeof(atom_id) * n);
     charges = (atom_charge *)malloc(sizeof(atom_charge) * n);
     count = n;
@@ -203,7 +203,7 @@ atom_info::atom_info(char **n, int *in, char *r, int *d, int c)
 
     index = (int *)malloc(sizeof(int) * c);
     residue = (char *)malloc(sizeof(char) * c);
-    dnt_pos = (int *)malloc(sizeof(int) * c);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * c);
 
     memcpy(index, in, sizeof(int) * c);
     memcpy(residue, r, sizeof(char) * c);
@@ -217,7 +217,7 @@ void atom_info::initialize_atom_info(int n)
     name = (char **)malloc(sizeof(char *) * n);
     index = (int *)malloc(sizeof(int) * n);
     residue = (char *)malloc(sizeof(char) * n);
-    dnt_pos = (int *)malloc(sizeof(int) * n);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * n);
     count = n;
     for (int i = 0; i < n; i++)
     {
@@ -250,12 +250,13 @@ atom_info::~atom_info()
  */
 void atom_info::add_atom(char *N, int i, char r, int p)
 {
+    atom_id ID = get_atom_id(N);
     strcpy(name[iterator], N);
     index[iterator] = i;
     residue[iterator] = r;
     dnt_pos[iterator] = p;
-    atom_ids[iterator] = get_atom_id(N);
-    charges[iterator] = get_atom_charge(atom_ids[iterator], r);
+    atom_ids[iterator] = ID;
+    charges[iterator] = get_atom_charge(ID, r);
     if(charges[iterator] != atom_charge::NEUTRAL)
     {
         num_charged_atoms++;
@@ -280,7 +281,7 @@ atom_info::atom_info(const atom_info &A)
 
     index = (int *)malloc(sizeof(int) * A.count);
     residue = (char *)malloc(sizeof(char) * A.count);
-    dnt_pos = (int *)malloc(sizeof(int) * A.count);
+    dnt_pos = (uint8_t *)malloc(sizeof(uint8_t) * A.count);
 
     memcpy(index, A.index, sizeof(int) * A.count);
     memcpy(residue, A.residue, sizeof(char) * A.count);
@@ -310,6 +311,7 @@ int atom_info::get_idx_of_atom(atom_id atom_name, int residx)
     {
         if(dnt_pos[i] == residx + 1 && atom_ids[i] == atom_name)
         {
+            //printf("i = %d\n", i);
             return i;
         }
     }

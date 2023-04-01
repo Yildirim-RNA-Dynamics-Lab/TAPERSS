@@ -4,114 +4,78 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA)
 {
     count = LA.count;
 
-    count_per_lib = (int *)malloc(sizeof(int) * LA.count);
-    attach_attempted = (bool **)malloc(sizeof(bool *) * LA.count);
+    count_per_lib = (int32_t *)malloc(sizeof(int32_t) * count);
+    attach_attempted = (int32_t *)malloc(count * sizeof(int32_t));
+    libs_completed = (bool *)calloc(count, sizeof(bool));
 
-    for (int i = 0; i < LA.count; i++)
+    memset(attach_attempted, -1, count * sizeof(int32_t));
+    for (uint32_t i = 0; i < count; i++)
     {
         count_per_lib[i] = LA[i]->count;
-        attach_attempted[i] = (bool *)calloc(LA[i]->count, sizeof(bool));
     }
 
     last_attempted[0] = 0;
     last_attempted[1] = 0;
+    attach_attempted[0] = 0;
 
     strs_built = 0;
     hairpins_built = 0;
     internal_loops_built = 0;
-    libs_completed = (bool *)calloc(count, sizeof(bool));
 }
 
 CMB_Manager::~CMB_Manager()
 {
-    for (int i = 0; i < count; i++)
-    {
-        free(attach_attempted[i]);
-    }
     free(attach_attempted);
     free(count_per_lib);
     free(libs_completed);
 }
 
-void CMB_Manager::attach_attempt(int i, int j)
+void CMB_Manager::attach_attempt(int32_t i, int32_t j)
 {
-    attach_attempted[i][j] = true;
-    last_attempted[0] = i;
-    last_attempted[1] = j;
+  attach_attempted[i] = j;
+  last_attempted[0] = i;
+  last_attempted[1] = j;
 }
 
-bool CMB_Manager::is_at_end()
+bool CMB_Manager::check_lib_completion()
 {
-    //printf("Library = %d, Model = %d, Total structures in library = %d\n", last_attempted[0], last_attempted[1], count_per_lib[last_attempted[0]] - 1);
-    if (last_attempted[1] == count_per_lib[last_attempted[0]] - 1)
+    rollback_count = 0;
+    memset(libs_completed, false, count * sizeof(bool));
+
+    for (int i = last_attempted[0]; i >= 0; i--) 
     {
-        //printf("Library = %d, Model = %d, Total structures in library = %d\n", last_attempted[0], last_attempted[1], count_per_lib[last_attempted[0]] - 1);
-        return true;
-    }
-    return false;
-}
-
-void CMB_Manager::check_lib_completion()
-{
-    int counter = 0;
-
-    int first_completed = last_attempted[0];
-
-    for (int i = last_attempted[0]; i >= 0; i--)
-    {
-        libs_completed[i] = false;
-        if (attach_attempted[i][count_per_lib[i] - 1] == true)
+        if (attach_attempted[i] == count_per_lib[i] - 1) // Checks which libraries have had all conformations tested
         {
             libs_completed[i] = true;
-            counter++;
-            if (i < first_completed)
-                first_completed = i;
-            // printf("Lib %d complete! Max = %d\n", i, count_per_lib[i] - 1);
+            attach_attempted[i] = -1;                   // Reset attempts for completed lib
+            rollback_count++;                           // Track how many libraries have been fully tested.
         }
-        /*else
+        else                                            // First lib that has not been completed is position to continue from
         {
-            printf("Lib %d not complete! Max = %d\n", i, count_per_lib[i] - 1);
-        }*/
-    }
-    if (counter != (count - first_completed))
-    {
-        bool swap = true;
-        for (int i = last_attempted[0]; i >= first_completed; i--)
-        {
-            if (libs_completed[i] == false)
-            {
-                swap = false;
-            }
-            libs_completed[i] = swap;
+            break;
         }
     }
 
-    if (counter == last_attempted[0] + 1)
-        ;
-    else
-        libs_completed[0] = false;
-    return;
+    return rollback_count == last_attempted[0] + 1; //Check if the all libraries have been fully tested (aka all viable combinations have been tested)
 }
 
+/* Deprecated */
 void CMB_Manager::clear_attempts()
 {
-    for (int i = 0; i < count; i++)
+    for (uint64_t i = 0; i < count; i++)
     {
         if (libs_completed[i] == true)
         {
-            // printf("reseting attempts for %d\n", i);
-            for (int j = 0; j < count_per_lib[i]; j++)
-            {
-                attach_attempted[i][j] = false;
-            }
+            attach_attempted[i] = -1;
         }
     }
 }
 
-int CMB_Manager::get_reset_count()
+/* Deprecated */
+uint64_t CMB_Manager::get_reset_count()
 {
-    int n_reset = 0;
-    for (int i = 0; i < last_attempted[0] + 1; i++)
+    uint64_t n_reset = 0;
+    for (int64_t i = 0; i < last_attempted[0] + 1; i++)
     {
         if (libs_completed[i] == true)
         {
@@ -122,6 +86,7 @@ int CMB_Manager::get_reset_count()
     return n_reset;
 }
 
+/* Deprecated */
 void CMB_Manager::successful_construction()
 {
     strs_built++;

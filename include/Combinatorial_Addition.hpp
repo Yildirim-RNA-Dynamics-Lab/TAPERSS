@@ -7,12 +7,13 @@
 #include "RNAData.hpp"
 #include "RNADataArrayInternalLoop.hpp"
 #include "output_string.hpp"
-#include "Hairpin.hpp"
+#include "WatsonCrickPair.hpp"
 #include "HBondDetector.hpp"
 #include "CMB_Manager.hpp"
-#include "Attaching_Functions.hpp"
+#include "FragmentAssembly.hpp"
+#include "steric_clash_check.hpp"
 
-bool combinatorial_addition(DimerLibArray& Lib, RNADataArray &assembled, CMB_Manager& manager, output_string& o_string, DimerLibArray& WC_Lib);
+template <STRUCTFILTER_TYPE FILTER> bool combinatorial_addition(DimerLibArray& Lib, RNADataArray &assembled, CMB_Manager& manager, output_string& o_string);
 bool combinatorial_addition_IL(DimerLibArray& Lib, RNADataArrayInternalLoop &assembled, CMB_Manager& manager, output_string& o_string, DimerLibArray& WC_Lib);
 
 #endif

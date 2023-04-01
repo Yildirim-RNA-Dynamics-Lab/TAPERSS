@@ -1,34 +1,51 @@
 #include "InputHandler.hpp"
 
-void get_diNt_names(char *sequence, char** rtn, int N_diNts)
+int get_diNt_names(char *sequence, char** rtn, int *duplicates, int N_diNts)
 {
-    int name_position = -1;
+    int name_position = 0;
+    int num_duplicates = 0;
     //*N_diNts = strlen(sequence) - 1;
     //char **rtn = (char **)malloc(sizeof(char *) * *N_diNts);
-    while (LIBRARY_FILENAME_PROTOTYPE[name_position++] != 'X')
-        ;
-    name_position -= 1;
+    while (LIBRARY_FILENAME_PROTOTYPE[name_position] != 'X')
+    {
+        name_position++;
+    };
+    //name_position -= 1;
+
     for (int i = 0; i < N_diNts; i++)
     {
-        rtn[i] = (char *)malloc(sizeof(char) * sizeof(LIBRARY_FILENAME_PROTOTYPE));
+        rtn[i] = (char *)malloc(sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(rtn[i], LIBRARY_FILENAME_PROTOTYPE, sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(&rtn[i][name_position], sequence++, sizeof(char) * 2);
     }
-    //return rtn;
+
+
+    for (int i = N_diNts - 1; i > -1; i--)
+    {
+        for(int j = 0; j < i; j++)
+        {
+            if(!strcmp(rtn[i], rtn[j]))
+            {
+                duplicates[i] = j;
+                num_duplicates++;
+            }
+        }
+    }
+    return num_duplicates;
 }
 
-void get_WC_partner(char *sequence, char** rtn, int N_Nts)
+void get_WC_partner(char *sequence, char** rtn, int Nt1, int Nt2)
 {
     char WC_pair[3];
 
     int name_position = 0;
-    while (WATSON_CRICK_LIBRARY_PROTOTYPE[name_position++] != 'X')
-        ;
-    name_position -= 1;
+    while (WATSON_CRICK_LIBRARY_PROTOTYPE[name_position] != 'X')
+    {
+        name_position++;
+    }
 
-    WC_pair[0] = sequence[0];
-    WC_pair[1] = sequence[N_Nts];
-    printf("S: %s N_Nts = %d\n", sequence, N_Nts);
+    WC_pair[0] = sequence[Nt1];
+    WC_pair[1] = sequence[Nt2];
     WC_pair[2] = '\0';
 
     if (WC_pair[0] == 'A')
@@ -73,7 +90,7 @@ void get_WC_partner(char *sequence, char** rtn, int N_Nts)
     memcpy(&rtn[0][name_position], WC_pair, sizeof(char) * 2);
 }
 
-void get_index_int(char *index, int *indices)
+void get_index_int(char *index, uint32_t *indices)
 {
     char buffer[5];
     int count = 0, buf_c = 0;
@@ -96,8 +113,8 @@ void get_index_int(char *index, int *indices)
 int read_input_index_file(char *file_name, int n_DiNts)
 {
     FILE *input = fopen(file_name, "r");
-    char line[LINESIZE];
-    char indices[LINESIZE];
+    char line[GLOBAL_STANDARD_STRING_LENGTH];
+    char indices[GLOBAL_STANDARD_STRING_LENGTH];
     int str_count = 0;
 
     while (fgets(line, sizeof(line), input)) // Get line count
@@ -109,11 +126,11 @@ int read_input_index_file(char *file_name, int n_DiNts)
     }
     rewind(input);
 
-    GLOBAL_INPUT_INDICES_LIST = (int **)malloc(str_count * sizeof(int *));
+    GLOBAL_INPUT_INDICES_LIST = (uint32_t **)malloc(str_count * sizeof(int *));
 
     for (int i = 0; i < str_count; i++)
     {
-        GLOBAL_INPUT_INDICES_LIST[i] = (int *)malloc(n_DiNts * sizeof(int));
+        GLOBAL_INPUT_INDICES_LIST[i] = (uint32_t *)malloc(n_DiNts * sizeof(int));
         if(fgets(line, sizeof(line), input) != NULL)
         {
             char *str1;
@@ -128,7 +145,7 @@ int read_input_index_file(char *file_name, int n_DiNts)
             get_index_int(indices, GLOBAL_INPUT_INDICES_LIST[i]);
         }
     }
-
+    fclose(input);
     return str_count;
 }
 
@@ -140,7 +157,8 @@ void read_input_file(char *file_name)
         printf("Could not open file: %s\n", file_name);
         exit(3);
     }
-    char line[LINESIZE];
+    GLOBAL_OUTPUT_FILE[0] = '\0';
+    char line[GLOBAL_STANDARD_STRING_LENGTH];
     while (fgets(line, sizeof(line), input))
     {
         char *str1;
@@ -267,7 +285,7 @@ void read_input_file(char *file_name)
             str1[strcspn(str1, "\n")] = '\0';
             if (!strcasecmp(str1, "TRUE"))
             {
-                GLOBAL_WRITE_COORDINATES = true;;
+                GLOBAL_WRITE_COORDINATES = true;
             }
             else if (!strcasecmp(str1, "FALSE"))
             {
