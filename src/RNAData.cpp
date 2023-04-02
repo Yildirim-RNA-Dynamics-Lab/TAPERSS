@@ -708,7 +708,6 @@ void RNADataArray::printall()
 void RNADataArray::initialize_string()
 {
 	get_atom_sum();
-	printf("ATOMSUM =  %d\n",atom_sum)
 	string_buffer = 55 * atom_sum + GLOBAL_STANDARD_STRING_LENGTH; //55 = length of ATOM line in PDB format + 2kb extra for REMARK lines and ENDMDLs
 	string_out = (char *)malloc(sizeof(char) * string_buffer);
 	string_index = 0;
@@ -718,20 +717,26 @@ void RNADataArray::initialize_string()
 
 int RNADataArray::get_atom_sum()
 {
-	if (string_initialized)
-		return atom_sum;
 	atom_sum = sequence[0].atom_data->count_per_res[0];
-	for (int i = 1; i < count; i++)
+	for (int i = 0; i <= iterator_max; i++)
 	{
 		atom_sum += sequence[i].atom_data->count_per_res[1];
 	}
 	return atom_sum;
 }
+
 int RNADataArray::out_string_header_coord()
 {
+	char FORMAT_STRING[100];
+	int jump_pos1, jump_pos2;
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %d\n", ++model_count);
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "REMARK ");
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
+	snprintf(&FORMAT_STRING[0], 100, "%s%d%s%1s", "%", (iterator_max + 1) * 4 - 1, "s", " ");
+	jump_pos1 = string_index;
+	string_index += snprintf(&string_out[string_index], string_buffer - string_index, FORMAT_STRING, " ");
+	jump_pos2 = string_index;
+	string_index = jump_pos1;
 	for (int i = 0; i < count; i++)
 	{
 		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]);
@@ -740,6 +745,8 @@ int RNADataArray::out_string_header_coord()
 			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
 		}
 	}
+	string_out[string_index] = ' ';
+	string_index = jump_pos2;
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %6.3f ", structure_energy);
 	if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
 	{
@@ -781,6 +788,7 @@ int RNADataArray::out_string_header()
 
 char *RNADataArray::to_string()
 {
+	return overwrite_string_prototype();
 	int idx_offset;
 
 	if (string_initialized)
@@ -812,16 +820,16 @@ char *RNADataArray::to_string()
 
 void RNADataArray::generate_string_prototype()
 {
-	int idx_offset = sequence[0].count;
+	int idx_offset = 0;
 	initialize_string();
 	string_index = out_string_header();
 	string_index = sequence[0].generate_string_prototype(0, 0, string_out, string_buffer, string_index, &idx_offset);
-	for(int i = 1; i < count; i++)
+	idx_offset = sequence[0].count;
+	for(int i = 0; i <= iterator_max; i++)
 	{
 		string_index = sequence[i].generate_string_prototype(1, i, string_out, string_buffer, string_index, &idx_offset);
 	}
 	string_index = snprintf(&string_out[string_index], string_buffer - string_index, "ENDMDL\n");
-	printf("%s", string_out);
 }
 
 char* RNADataArray::overwrite_string_prototype()
@@ -831,7 +839,7 @@ char* RNADataArray::overwrite_string_prototype()
 	string_index = out_string_header();
 	string_out[string_index] = 'A'; //snprintf will always attach a '\0' to the end of the string it creates. So we replace '\0' with 'A' b/c next line starts w/ "ATOM"
 	string_index = sequence[0].overwrite_string_prototype(0, string_out, string_buffer, string_index, &idx_offset);
-	for(int i = 1; i < count; i++)
+	for(int i = 0; i <= iterator_max; i++)
 	{
 		string_index = sequence[i].overwrite_string_prototype(1, string_out, string_buffer, string_index, &idx_offset);
 	}
