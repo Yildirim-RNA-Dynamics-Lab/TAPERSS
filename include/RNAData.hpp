@@ -135,3 +135,7 @@ inline bool RNADataArray::is_complete()
 }
 
 #endif
+<<<<<<< HEAD
+=======
+
+>>>>>>> cmb_optimization

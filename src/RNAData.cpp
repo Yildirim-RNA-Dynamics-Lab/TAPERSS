@@ -802,7 +802,6 @@ uint_fast64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L
 		}
 	}
 
-
 	/* Size for Charged Rows */
 	for(int i = 0; i < L[idx]->atom_data->count; i++)
 	{
@@ -812,7 +811,6 @@ uint_fast64_t RNADataArray::calculate_index_array_memory_needed(DimerLibArray& L
 		}
 	}
 
-	//printf("IN CALC: Array Offset: %lu\n", memsize);
 	memsize *= sizeof(uint16_t);
 
 	return memsize;
@@ -860,18 +858,12 @@ void RNADataArray::keep()
 
 void RNADataArray::rollback()
 {
-	//DEBUG(printf("attach: %ld deleted @ rollback @ %d\n", sequence[iterator]->id, iterator));
-	//delete sequence[iterator];
 	iterator--;
 	count--;
 }
 
 void RNADataArray::safe_rollback() // unused
 {
-	/*if (sequence[iterator]->position_in_lib[1] == sequence[iterator]->position_max)
-			;
-	else
-			delete sequence[iterator];*/
 	iterator--;
 	count--;
 }
