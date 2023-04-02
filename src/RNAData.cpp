@@ -1,5 +1,7 @@
 #include "RNAData.hpp"
+#include "RNACMB.hpp"
 #include "RNADataArrayInternalLoop.hpp"
+#include <sys/types.h>
 
 void RNAData::initialize(DimerLibArray &L, int idx, int idx_L, gsl_block *MemBlock, size_t *offset_matrix, uint16_t *ArrayMemBlock, size_t *offset_array)
 {
@@ -372,12 +374,43 @@ int RNAData::to_string_offset(int res, int position, char *s, int buffer_size, i
 			continue;
 		}
 		*idx_offset += 1;
-		string_index += snprintf(&s[string_index], buffer_size - string_index, "%-6s%5d %4s %3c  %4d    ", "ATOM", *idx_offset, atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "%4s  %5d %-4s %3c  %4d    ", "ATOM", *idx_offset, atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
 		for (unsigned int j = 0; j < data_matrix->size2; j++)
 		{
 			string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f", gsl_matrix_get(data_matrix, i, j));
 		}
 		string_index += snprintf(&s[string_index], buffer_size - string_index, "\n");
+	}
+	return string_index;
+}
+
+int RNAData::generate_string_prototype(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset)
+{
+	for (unsigned int i = 0; i < count; i++)
+	{
+		if (atom_data->dnt_pos[i] != (res + 1))
+		{
+			continue;
+		}
+		*idx_offset += 1;
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "%4s  %5d %-4s %3c  %4d    ", "ATOM", *idx_offset, atom_data->name[i], atom_data->residue[i], atom_data->dnt_pos[i] + position);
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f%8.3f%8.3f\n", 0.0F,0.0F,0.0F);
+	}
+	return string_index;
+}
+
+int RNAData::overwrite_string_prototype(int res, char *s, int buffer_size, int string_index, int *idx_offset)
+{
+	for(u_int32_t i = 0; i < count; i++)
+	{
+		if (atom_data->dnt_pos[i] != (res + 1))
+		{
+			continue;
+		}
+		*idx_offset += 1;
+		string_index += 30;
+		string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f%8.3f%8.3f\n", gsl_matrix_get(data_matrix,i,0),gsl_matrix_get(data_matrix,i,1),gsl_matrix_get(data_matrix,i,2));
+		s[string_index] = 'A'; //snprintf will always attach a '\0' to the end of the string it creates. So we replace '\0' with 'A' b/c next line starts w/ "ATOM"
 	}
 	return string_index;
 }
@@ -424,6 +457,7 @@ void RNADataArray::initialize(size_t size, DimerLibArray& Library)
 	PassedCOMCheck = (bool*)malloc((size + 1) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
 																														 // in all other DNTs, only second residue is needed.
 	overwrite_initialize(0,0, Library);
+	generate_string_prototype();
 }
 
 void RNADataArray::overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library)
@@ -539,7 +573,6 @@ void RNADataArray::add_move(RNAData *A)
 	*A->_flag = USED;
 }
 
-
 RNAData *RNADataArray::current()
 {
 	return &sequence[iterator];
@@ -640,10 +673,10 @@ int FindInteraction(int A_ResId, int A_Idx, RNAData *AData, int B_ResId, int B_I
 		{
 				if(distance_mat2mat(A, A_P_Rows[i], B, B_N_Rows[j]) < INTERACTION_DISTANCE)
 				{
-						IDX1 = IDX_FLAT2D(A_Idx, A_P_Rows[i], DIM2);
-						IDX2 = IDX_FLAT2D(B_Idx, B_N_Rows[j], DIM2);
-						gsl_matrix_set(AdjMatrix, PAdjMap[IDX1], NAdjMap[IDX2], 1);
-						Interactions++;
+					IDX1 = IDX_FLAT2D(A_Idx, A_P_Rows[i], DIM2);
+					IDX2 = IDX_FLAT2D(B_Idx, B_N_Rows[j], DIM2);
+					gsl_matrix_set(AdjMatrix, PAdjMap[IDX1], NAdjMap[IDX2], 1);
+					Interactions++;
 				}
 		}
 	}
@@ -675,12 +708,10 @@ void RNADataArray::printall()
 void RNADataArray::initialize_string()
 {
 	get_atom_sum();
-
-	string_buffer = 54 * atom_sum;
+	string_buffer = 55 * atom_sum + GLOBAL_STANDARD_STRING_LENGTH; //55 = length of ATOM line in PDB format + 2kb extra for REMARK lines and ENDMDLs
 	string_out = (char *)malloc(sizeof(char) * string_buffer);
 	string_index = 0;
 	model_count = 0;
-
 	string_initialized = true;
 }
 
@@ -688,10 +719,10 @@ int RNADataArray::get_atom_sum()
 {
 	if (string_initialized)
 		return atom_sum;
-	atom_sum = 0;
-	for (int i = 0; i < count; i++)
+	atom_sum = sequence[0].atom_data->count_per_res[0];
+	for (int i = 1; i < count; i++)
 	{
-		atom_sum += sequence[i].count;
+		atom_sum += sequence[i].atom_data->count_per_res[1];
 	}
 	return atom_sum;
 }
@@ -708,10 +739,10 @@ int RNADataArray::out_string_header_coord()
 			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
 		}
 	}
-	string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
+	string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %6.3f ", structure_energy);
 	if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
 	{
-		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd0_N);
+		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%6.3f", WC_rmsd0_N);
 	}
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
 	return string_index;
@@ -735,13 +766,12 @@ int RNADataArray::out_string_header()
 				string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
 			}
 		}
-		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\t");
-		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
-		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\t", structure_energy);
+		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY");
+		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%6.3f    ", structure_energy);
 		if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
 		{
-			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
-			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd0_N);
+			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD");
+			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%6.3f", WC_rmsd0_N);
 		}
 		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
 	}
@@ -779,6 +809,35 @@ char *RNADataArray::to_string()
 	return string_out;
 }
 
+void RNADataArray::generate_string_prototype()
+{
+	int idx_offset = sequence[0].count;
+	initialize_string();
+	string_index = out_string_header();
+	string_index = sequence[0].generate_string_prototype(0, 0, string_out, string_buffer, string_index, &idx_offset);
+	for(int i = 1; i < count; i++)
+	{
+		string_index = sequence[i].generate_string_prototype(1, i, string_out, string_buffer, string_index, &idx_offset);
+	}
+	string_index = snprintf(&string_out[string_index], string_buffer - string_index, "ENDMDL\n");
+	printf("%s", string_out);
+}
+
+char* RNADataArray::overwrite_string_prototype()
+{
+	int idx_offset = sequence[0].count;
+	string_index = 0;
+	string_index = out_string_header();
+	string_out[string_index] = 'A'; //snprintf will always attach a '\0' to the end of the string it creates. So we replace '\0' with 'A' b/c next line starts w/ "ATOM"
+	string_index = sequence[0].overwrite_string_prototype(0, string_out, string_buffer, string_index, &idx_offset);
+	for(int i = 1; i < count; i++)
+	{
+		string_index = sequence[i].overwrite_string_prototype(1, string_out, string_buffer, string_index, &idx_offset);
+	}
+	string_out[string_index] = 'E';
+	return string_out;
+}
+
 int* RNADataArray::get_index()
 {
 	int *ar = (int *)malloc(sizeof(int) * count);
@@ -786,7 +845,7 @@ int* RNADataArray::get_index()
 	{
 		ar[i] = sequence[i].position_in_lib[1];
 	}
-	return ar;
+	return ar; 
 }
 
 void RNADataArray::print_index(int offset)

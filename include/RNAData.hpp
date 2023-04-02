@@ -61,6 +61,8 @@ struct RNAData
 	int to_string(char *s, int buffer_size, int string_index);
 	void print_offset(int res, int position);
 	int to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset);
+	int generate_string_prototype(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset);
+	int overwrite_string_prototype(int res, char *s, int buffer_size, int string_index, int *idx_offset);
 };
 
 struct RNADataArray
@@ -87,6 +89,8 @@ struct RNADataArray
 	char *string_out;
 	int string_buffer;
 	int string_index;
+	int header_pos_record[5];
+	int header_length;
 	int model_count;
 	bool string_initialized = false;
 	bool string_print_coordinates = GLOBAL_WRITE_COORDINATES;
@@ -119,6 +123,8 @@ struct RNADataArray
 	int out_string_header_coord();
 	int out_string_header();
 	char *to_string();
+	void generate_string_prototype(); 
+	char* overwrite_string_prototype(); 
 	int *get_index();
 	void print_index(int offset);
 	void print_index();
