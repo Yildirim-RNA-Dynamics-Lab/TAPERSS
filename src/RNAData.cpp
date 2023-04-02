@@ -708,6 +708,7 @@ void RNADataArray::printall()
 void RNADataArray::initialize_string()
 {
 	get_atom_sum();
+	printf("ATOMSUM =  %d\n",atom_sum)
 	string_buffer = 55 * atom_sum + GLOBAL_STANDARD_STRING_LENGTH; //55 = length of ATOM line in PDB format + 2kb extra for REMARK lines and ENDMDLs
 	string_out = (char *)malloc(sizeof(char) * string_buffer);
 	string_index = 0;
