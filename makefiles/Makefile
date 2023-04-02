@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-CC = clang++-8
-=======
 CC = clang
->>>>>>> cmb_optimization
 
 CFLAGS = -Wall
 CFLAGS += -W
