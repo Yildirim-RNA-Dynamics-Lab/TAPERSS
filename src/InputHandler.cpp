@@ -237,6 +237,15 @@ void read_input_file(char *file_name)
             strcpy(GLOBAL_INPUT_FILE, str1);
             continue;
         }
+        if (!strcmp(header, "NUM_LOWEST"))
+        {
+            str1 = strtok(NULL, " ");
+            str1 = strtok(NULL, " ");
+            str1[strcspn(str1, "\n")] = '\0';
+            GLOBAL_N_LOWEST = atoi(str1);
+						GLOBAL_USE_N_LOWEST = true;
+            continue;
+        }
         if (!strcmp(header, "INDICES"))
         {
             str1 = strtok(NULL, " ");

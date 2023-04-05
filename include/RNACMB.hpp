@@ -55,6 +55,7 @@ extern bool GLOBAL_RUN_BUILD_STRUCTURE;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING; /* This will probably be a temporary setting */
 extern bool GLOBAL_WRITE_COORDINATES;
+extern bool GLOBAL_USE_N_LOWEST;
 //extern bool GLOBAL_PERFORM_HAIRPIN_CHECK;
 //extern bool GLOBAL_PERFORM_HBOND_CHECK;
 extern STRUCTFILTER_TYPE GLOBAL_PERFORM_STRUCTCHECK;
@@ -64,6 +65,7 @@ extern double GLOBAL_WC_RMSD_LIMIT;
 extern double GLOBAL_SCC_LIMIT;
 extern uint32_t **GLOBAL_INPUT_INDICES_LIST;
 extern uint32_t GLOBAL_STRUCTURE_LIMIT_COUNT;
+extern uint32_t GLOBAL_N_LOWEST;
 
 extern char LIBRARY_FILENAME_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];        // = "../AGAAAU_test/XX_library_combined.txt";
 extern char WATSON_CRICK_LIBRARY_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];    // = "../AGAAAU_test/WC_XX_library.txt";

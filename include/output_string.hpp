@@ -5,17 +5,17 @@
 
 struct output_string
 {
-    FILE *output_file;
-    char **string_storage;
-    int iterator;
-    int num_allocated;
-    int max_string;
+	FILE *output_file;
+	char **string_storage;
+	int iterator;
+	int num_allocated;
+	int max_string;
+	int max_size;
 
-    bool all_init = false;
-
-    output_string(const char *F, int max_s, char *action);
-    ~output_string();
-    void add_string(char *s, int max_atoms);
+	output_string(const char *F, int max_s, char *action, char* string_prototype);
+	~output_string();
+	void add_string(char *s);
+	void overwrite_string(char *src, int dest_idx);
 };
 
 #endif

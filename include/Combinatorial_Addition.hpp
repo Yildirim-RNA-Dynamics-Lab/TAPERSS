@@ -12,6 +12,7 @@
 #include "CMB_Manager.hpp"
 #include "FragmentAssembly.hpp"
 #include "steric_clash_check.hpp"
+#include "n_lowest_energy.hpp"
 
 template <STRUCTFILTER_TYPE FILTER> bool combinatorial_addition(DimerLibArray& Lib, RNADataArray &assembled, CMB_Manager& manager, output_string& o_string);
 bool combinatorial_addition_IL(DimerLibArray& Lib, RNADataArrayInternalLoop &assembled, CMB_Manager& manager, output_string& o_string, DimerLibArray& WC_Lib);

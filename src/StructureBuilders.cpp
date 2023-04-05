@@ -23,7 +23,7 @@ void create_custom_structure(DimerLibArray &Lib, RNADataArray &assembled, output
         assembled.update_WC_rmsd(RMSD);
     }
     assembled.update_energy();
-    o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+    o_string.add_string(assembled.to_string());
 }
 
 void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArrayInternalLoop &assembled, output_string &o_string, uint32_t *indices)
@@ -64,7 +64,7 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
     RMSD = WC_check_pair(0);
     assembled.update_WC_rmsd(RMSD);
     assembled.update_energy();
-    o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+    o_string.add_string(assembled.to_string());
 }
 
 template <bool PerformChecks, STRUCTFILTER_TYPE StructCheck>
@@ -103,7 +103,7 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
                     assembled.update_WC_rmsd(RMSD);
                 }
                 assembled.update_energy();
-                o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+                o_string.add_string(assembled.to_string());
             }
             assembled.rollback_by(assembled.iterator);
         }
@@ -128,7 +128,7 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
                 assembled.update_WC_rmsd(RMSD);
             }
             assembled.update_energy();
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            o_string.add_string(assembled.to_string());
             assembled.rollback_by(assembled.iterator);
         }
         assembled.count = assembled.iterator_max + 1;

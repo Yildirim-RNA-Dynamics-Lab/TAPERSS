@@ -729,7 +729,7 @@ int RNADataArray::out_string_header_coord()
 {
 	char FORMAT_STRING[100];
 	int jump_pos1, jump_pos2;
-	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %d\n", ++model_count);
+	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %-100d\n", ++model_count);
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "REMARK ");
 	string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
 	snprintf(&FORMAT_STRING[0], 100, "%s%d%s%1s", "%", (iterator_max + 1) * 4 - 1, "s", " ");
