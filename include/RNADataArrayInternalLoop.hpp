@@ -69,9 +69,9 @@ struct RNADataArrayInternalLoop : public RNADataArray
         MatrixOffset += (2 * size * MATRIX_DIMENSION2);
         WC_rows[0] = &ArrayMemBlock[ArrayOffset];
         ArrayOffset += target1Size;
-        printf("AFTER2: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
-        printf("Target 2 size: %lu\n", target2Size);
-        printf("Array memsize: %lu\n", array_memsize);
+        //printf("AFTER2: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+        //printf("Target 2 size: %lu\n", target2Size);
+        //printf("Array memsize: %lu\n", array_memsize);
         WC_rows[1] = &ArrayMemBlock[ArrayOffset];
         for(int i = 0; i < WC_Library[1]->atom_data->count; i++)
         {
