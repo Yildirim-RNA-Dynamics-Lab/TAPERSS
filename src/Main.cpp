@@ -51,7 +51,8 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
 			pointer = (int *)malloc(sizeof(int) * *N);
 			memset(pointer, -1, *N * sizeof(int));
 			rtn = (char **)malloc(sizeof(char *) * *N);
-			get_diNt_names(sequence, rtn, pointer, *N);
+			get_diNt_names(sequence, rtn, *N);
+			find_duplicates(rtn, pointer, *N);
 			break;
 		case INTERNAL_LOOP:
 			*N = strlen(sequence) - 3; // e.g. A G A X U G U, will have 7 - 3 = 4 diN
@@ -76,8 +77,9 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
 			left--, right--;
 			*leftStrand = left;
 			*rightStrand = right;
-			get_diNt_names(sequence, rtn, pointer, left);
-			get_diNt_names(&sequence[x_loc + 1], &rtn[left], &pointer[left], right);
+			get_diNt_names(sequence, rtn, left);
+			get_diNt_names(&sequence[x_loc + 1], &rtn[left], right);
+			find_duplicates(rtn, pointer, left + right);
 			break;
 		case NONE:
 			// get_diNt_names;
@@ -85,7 +87,8 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
 			pointer = (int *)malloc(sizeof(int) * *N);
 			memset(pointer, -1, *N * sizeof(int));
 			rtn = (char **)malloc(sizeof(char *) * *N);
-			get_diNt_names(sequence, rtn, pointer, *N);
+			get_diNt_names(sequence, rtn, *N);
+			find_duplicates(rtn, pointer, *N);
 			break;
 	}
 

@@ -1,9 +1,8 @@
 #include "InputHandler.hpp"
 
-int get_diNt_names(char *sequence, char** rtn, int *duplicates, int N_diNts)
+void get_diNt_names(char *sequence, char** rtn, int N_diNts)
 {
     int name_position = 0;
-    int num_duplicates = 0;
     //*N_diNts = strlen(sequence) - 1;
     //char **rtn = (char **)malloc(sizeof(char *) * *N_diNts);
     while (LIBRARY_FILENAME_PROTOTYPE[name_position] != 'X')
@@ -18,8 +17,11 @@ int get_diNt_names(char *sequence, char** rtn, int *duplicates, int N_diNts)
         memcpy(rtn[i], LIBRARY_FILENAME_PROTOTYPE, sizeof(LIBRARY_FILENAME_PROTOTYPE));
         memcpy(&rtn[i][name_position], sequence++, sizeof(char) * 2);
     }
+}
 
-
+int find_duplicates(char** rtn, int *duplicates, int N_diNts)
+{
+    uint num_duplicates = 0;
     for (int i = N_diNts - 1; i > -1; i--)
     {
         for(int j = 0; j < i; j++)

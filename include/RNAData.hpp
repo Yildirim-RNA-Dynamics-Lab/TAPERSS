@@ -124,7 +124,7 @@ struct RNADataArray
 	int out_string_header();
 	char *to_string();
 	void generate_string_prototype(); 
-	char* overwrite_string_prototype(); 
+	virtual char* overwrite_string_prototype(); 
 	int *get_index();
 	void print_index(int offset);
 	void print_index();
