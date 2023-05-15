@@ -71,7 +71,7 @@ template <STRUCTFILTER_TYPE FILTER> void output_handler(CMB_Manager &manager, RN
 			if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1)
 			{
 				o_string.overwrite_string(assembled.to_string(), idx);
-				manager.hairpins_built++;
+				manager.strs_built++;
 			}
 		}
 		else
