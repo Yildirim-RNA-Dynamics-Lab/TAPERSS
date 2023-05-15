@@ -9,6 +9,11 @@ int32_t* HKMemBlock;
 
 enum HKENUM {HK_NIL = 0, HK_INF = -2};
 
+/**  
+ 	*	Initializes memory for HK arrays and queue structure. Memory is kept contiguous using HKMemblock.
+ 	*	size_t N_U: Number of vertices in U side of graph (AKA number of positively charged groups)
+ 	* size_t N_V: Number of vertices in V side of graph (AKA number of negatively charged groups)
+**/
 void HK_create(size_t N_U, size_t N_V)
 {
     //(((N_U + N_V) * (N_U + N_V))/4) == Maximum Number of Possible Edges
@@ -120,6 +125,17 @@ uint32_t HK_GetMaxMatching(gsl_matrix* Graph)
             }
         }
     }
+		/*for(uint i = 1; i < SizeU; i++)
+		{
+				printf("PairU[i] = %d\n", Pair_U[i]);
+			for(size_t j = 0; j < Graph->size2; j++)
+			{
+				if(j != (size_t)Pair_U[i] - 1)
+				{
+					gsl_matrix_set(Graph, i - 1, j, 0);
+				}
+			}
+		}*/
     //printf("#########HK ENDED###########\n");
     return Matching;
 }
