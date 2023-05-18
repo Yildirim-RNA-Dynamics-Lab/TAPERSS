@@ -33,6 +33,7 @@ int find_duplicates(char** rtn, int *duplicates, int N_diNts)
             }
         }
     }
+    //Comment
     return num_duplicates;
 }
 
