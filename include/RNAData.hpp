@@ -99,11 +99,7 @@ struct RNADataArray
 	int atom_sum;
 
 	RNADataArray();
-<<<<<<< HEAD
-	void initialize_SS(size_t size, DimerLibArray &Library);
-=======
 	void initialize(size_t size, DimerLibArray &Library);
->>>>>>> cmb_optimization
 	void overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
 	void overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
 	~RNADataArray();
@@ -128,11 +124,7 @@ struct RNADataArray
 	int out_string_header();
 	char *to_string();
 	void generate_string_prototype(); 
-<<<<<<< HEAD
-	char* overwrite_string_prototype(); 
-=======
 	virtual char* overwrite_string_prototype(); 
->>>>>>> cmb_optimization
 	int *get_index();
 	void print_index(int offset);
 	void print_index();

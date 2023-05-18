@@ -409,14 +409,9 @@ int RNAData::overwrite_string_prototype(int res, char *s, int buffer_size, int s
 		}
 		*idx_offset += 1;
 		string_index += 30;
-<<<<<<< HEAD
-		string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f%8.3f%8.3f\n", gsl_matrix_get(data_matrix,i,0),gsl_matrix_get(data_matrix,i,1),gsl_matrix_get(data_matrix,i,2));
-		s[string_index] = 'A'; //snprintf will always attach a '\0' to the end of the string it creates. So we replace '\0' with 'A' b/c next line starts w/ "ATOM"
-=======
 		string_index += snprintf(&s[string_index], buffer_size - string_index, "%8.3f%8.3f%8.3f", gsl_matrix_get(data_matrix,i,0),gsl_matrix_get(data_matrix,i,1),gsl_matrix_get(data_matrix,i,2));
 		s[string_index] = '\n'; //snprintf will always attach a '\0' to the end of the string it creates. So we replace '\0' with '\n'
 		string_index++;
->>>>>>> cmb_optimization
 	}
 	return string_index;
 }
@@ -732,10 +727,7 @@ void RNADataArray::initialize_string()
 int RNADataArray::get_atom_sum()
 {
 	atom_sum = sequence[0].atom_data->count_per_res[0];
-<<<<<<< HEAD
-=======
 	atom_sum *= 2; //for Double Stranded
->>>>>>> cmb_optimization
 	for (int i = 0; i <= iterator_max; i++)
 	{
 		atom_sum += sequence[i].atom_data->count_per_res[1];
@@ -852,10 +844,6 @@ void RNADataArray::generate_string_prototype()
 
 char* RNADataArray::overwrite_string_prototype()
 {
-<<<<<<< HEAD
-=======
-	printf("RNADATA VERSION\n");
->>>>>>> cmb_optimization
 	int idx_offset = sequence[0].count;
 	string_index = 0;
 	string_index = out_string_header();
