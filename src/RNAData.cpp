@@ -644,10 +644,16 @@ void RNADataArray::update_energy()
 		}
 	}
 	
+	//printf("Before HK:\n");
+	//print_gsl_matrix(InteractionTable);
+	
 	if(Interactions > 1)
 	{
 		Interactions = HK_GetMaxMatching(InteractionTable);
 	}
+	//printf("After HK:\n");
+	//print_gsl_matrix(InteractionTable);
+
 	energy_ -= Interactions;
 	structure_energy = energy_;
 
@@ -674,6 +680,7 @@ int FindInteraction(int A_ResId, int A_Idx, RNAData *AData, int B_ResId, int B_I
 		{
 				if(distance_mat2mat(A, A_P_Rows[i], B, B_N_Rows[j]) < INTERACTION_DISTANCE)
 				{
+					//printf("Interaction between Resid: %d, atom: %s and Resid: %d, atom %s\n", AData->atom_data->dnt_pos[A_P_Rows[i]] - 1 + AData->position_in_lib[0], AData->atom_data->name[A_P_Rows[i]], BData->atom_data->dnt_pos[B_N_Rows[j]] - 1 + BData->position_in_lib[0], BData->atom_data->name[B_N_Rows[j]]);
 					IDX1 = IDX_FLAT2D(A_Idx, A_P_Rows[i], DIM2);
 					IDX2 = IDX_FLAT2D(B_Idx, B_N_Rows[j], DIM2);
 					gsl_matrix_set(AdjMatrix, PAdjMap[IDX1], NAdjMap[IDX2], 1);
@@ -687,6 +694,7 @@ int FindInteraction(int A_ResId, int A_Idx, RNAData *AData, int B_ResId, int B_I
 		{
 			if(distance_mat2mat(A, A_N_Rows[i], B, B_P_Rows[j]) < INTERACTION_DISTANCE)
 			{
+					//printf("Interaction between Resid: %d, atom: %s and Resid: %d, atom %s\n", AData->atom_data->dnt_pos[A_N_Rows[i]] - 1 + AData->position_in_lib[0], AData->atom_data->name[A_N_Rows[i]], BData->atom_data->dnt_pos[B_P_Rows[j]] - 1 + BData->position_in_lib[0], BData->atom_data->name[B_P_Rows[j]]);
 				IDX1 = IDX_FLAT2D(A_Idx, A_N_Rows[i], DIM2);
 				IDX2 = IDX_FLAT2D(B_Idx, B_P_Rows[j], DIM2);
 				gsl_matrix_set(AdjMatrix, PAdjMap[IDX2], NAdjMap[IDX1], 1);

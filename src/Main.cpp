@@ -43,7 +43,7 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
 	int* pointer = duplicate_record[0];
 	unsigned int x_loc = get_x_location(sequence);
 	int left = 0, right = 0;
-	//printf("%s\n", sequence);
+	printf("%s\n", sequence);
 	switch (GLOBAL_PERFORM_STRUCTCHECK)
 	{
 		case HAIRPIN:
