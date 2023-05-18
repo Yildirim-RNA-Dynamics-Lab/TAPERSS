@@ -34,7 +34,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         iterator_max_1 = size1 - 1;
         iterator_max = size1 + size2 - 1;
         size_t size = size1 + size2;
-        printf("size1 = %d, size2 = %d\n", size1, size2);
+        //printf("size1 = %d, size2 = %d\n", size1, size2);
         sequence = (RNAData *)malloc(sizeof(RNAData) * (size));
         uint64_t matrix_memsize = 0;
         uint64_t array_memsize = 0;
@@ -69,9 +69,9 @@ struct RNADataArrayInternalLoop : public RNADataArray
         MatrixOffset += (2 * size * MATRIX_DIMENSION2);
         WC_rows[0] = &ArrayMemBlock[ArrayOffset];
         ArrayOffset += target1Size;
-        printf("AFTER2: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
-        printf("Target 2 size: %lu\n", target2Size);
-        printf("Array memsize: %lu\n", array_memsize);
+        //printf("AFTER2: Array Offset : %lu\nMatrix Offset: %lu\n", ArrayOffset, MatrixOffset);
+        //printf("Target 2 size: %lu\n", target2Size);
+        //printf("Array memsize: %lu\n", array_memsize);
         WC_rows[1] = &ArrayMemBlock[ArrayOffset];
         for(int i = 0; i < WC_Library[1]->atom_data->count; i++)
         {
@@ -102,6 +102,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
         PassedCOMCheck = (bool*)malloc((size + 2) * sizeof(bool)); // in normal building of structure only first DNT will have valid 1st residue.
                                                                         // in all other DNTs, only second residue is needed.
         overwrite_initialize(0, 0, Library);
+        generate_string_prototype();
     }
 
     bool should_prepare_right(int working_pos) //return true if in left strand
@@ -134,8 +135,65 @@ struct RNADataArrayInternalLoop : public RNADataArray
         }
     }
 
+    void generate_string_prototype()
+    {
+        int idx_offset = 0;
+        int pos = 0;
+        initialize_string();
+        model_count = -1;
+        string_index = out_string_header();
+        string_out[string_index] = '\n';
+        string_index++;
+        string_index = sequence[0].generate_string_prototype(0, 0, string_out, string_buffer, string_index, &idx_offset);
+        idx_offset = sequence[0].count;
+        for(int i = 0; i <= iterator_max; i++, pos++)
+        {
+            if(i == iterator_max_1 + 1)
+            {
+                string_index += snprintf(&string_out[string_index], string_buffer - string_index, "TER\n");
+                pos++;
+                string_index = sequence[i].generate_string_prototype(0, pos, string_out, string_buffer, string_index, &idx_offset);
+                string_index = sequence[i].generate_string_prototype(1, pos, string_out, string_buffer, string_index, &idx_offset);
+            }
+            else
+            {
+                string_index = sequence[i].generate_string_prototype(1, pos, string_out, string_buffer, string_index, &idx_offset);
+            }
+        }
+        string_index = snprintf(&string_out[string_index], string_buffer - string_index, "ENDMDL\n");
+    }
+
+    char* overwrite_string_prototype() override
+    {
+        int idx_offset = sequence[0].count;
+        string_index = 0;
+        string_index = out_string_header();
+        string_out[string_index] = '\n'; //snprintf will always attach a '\0' to the end of the string it creates. So we replace '\0' with '\n'
+        string_index++;
+        string_index = sequence[0].overwrite_string_prototype(0, string_out, string_buffer, string_index, &idx_offset);
+        for(int i = 0; i <= iterator_max; i++)
+        {   
+            if(i == iterator_max_1 + 1)
+            {
+                //string_out[string_index] = 'T';
+                string_index += 4;
+                string_index = sequence[i].overwrite_string_prototype(0, string_out, string_buffer, string_index, &idx_offset);
+                string_index = sequence[i].overwrite_string_prototype(1, string_out, string_buffer, string_index, &idx_offset);
+            }
+            else
+            {
+                string_index = sequence[i].overwrite_string_prototype(1, string_out, string_buffer, string_index, &idx_offset);
+            }
+        }
+        //string_out[string_index] = 'E';
+        //DIE;
+        return string_out;
+    }
+
+
     char* to_string()
     {
+        return overwrite_string_prototype();
         int idx_offset;
 
         if (string_initialized)
@@ -177,9 +235,16 @@ struct RNADataArrayInternalLoop : public RNADataArray
     }
     int out_string_header_coord()
     {
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %d\n", ++model_count);
+        char FORMAT_STRING[100];
+        int jump_pos1, jump_pos2;
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "MODEL %-100d\n", ++model_count);
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "REMARK ");
         string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%s ", GLOBAL_INPUT_SEQUENCE);
+        snprintf(&FORMAT_STRING[0], 100, "%s%d%s%1s", "%", (iterator_max + 1) * 4 - 1, "s", " ");
+        jump_pos1 = string_index;
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, FORMAT_STRING, " ");
+        jump_pos2 = string_index;
+        string_index = jump_pos1;
         for (int i = 0; i < count; i++)
         {
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]);
@@ -188,10 +253,12 @@ struct RNADataArrayInternalLoop : public RNADataArray
                 string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
             }
         }
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %f ", structure_energy);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f ", WC_rmsd0_N);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd3_4);
-        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
+        string_out[string_index] = ' ';
+        string_index = jump_pos2;
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, " %6.3f ", structure_energy);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%6.3f ", WC_rmsd0_N);
+        string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%6.3f", WC_rmsd3_4);
+        //string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");
         return string_index;
     }
     int out_string_header()
@@ -214,7 +281,7 @@ struct RNADataArrayInternalLoop : public RNADataArray
             }
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\t");
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#ENERGY ");
-            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f\t", structure_energy);
+            string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%6.3f", structure_energy);
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "#WC-RMSD ");
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%f", WC_rmsd0_N);
             string_index += snprintf(&string_out[string_index], string_buffer - string_index, "\n");

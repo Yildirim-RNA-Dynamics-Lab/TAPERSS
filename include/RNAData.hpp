@@ -12,10 +12,10 @@ constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};
 constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
 constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
 
-constexpr atom_id WCtargetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, /*C4, N6, C1p, C2p, C3p, C4p, O4p*/};
-constexpr atom_id WCtargetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
-constexpr atom_id WCtargetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, /*C4, N2, O6, C1p, C2p, C3p, C4p, O4p*/};
-constexpr atom_id WCtargetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
+constexpr atom_id WCtargetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, C1p, C2p, C3p, C4p, O4p};
+constexpr atom_id WCtargetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, C1p, C2p, C3p, C4p, O4p};
+constexpr atom_id WCtargetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6, C1p, C2p, C3p, C4p, O4p};
+constexpr atom_id WCtargetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, C1p, C2p, C3p, C4p, O4p};
 
 struct RNAData
 {
@@ -99,7 +99,11 @@ struct RNADataArray
 	int atom_sum;
 
 	RNADataArray();
+<<<<<<< HEAD
 	void initialize_SS(size_t size, DimerLibArray &Library);
+=======
+	void initialize(size_t size, DimerLibArray &Library);
+>>>>>>> cmb_optimization
 	void overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
 	void overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
 	~RNADataArray();
@@ -124,7 +128,11 @@ struct RNADataArray
 	int out_string_header();
 	char *to_string();
 	void generate_string_prototype(); 
+<<<<<<< HEAD
 	char* overwrite_string_prototype(); 
+=======
+	virtual char* overwrite_string_prototype(); 
+>>>>>>> cmb_optimization
 	int *get_index();
 	void print_index(int offset);
 	void print_index();

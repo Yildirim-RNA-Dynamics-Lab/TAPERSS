@@ -56,7 +56,11 @@ template <STRUCTFILTER_TYPE FILTER> void output_handler(CMB_Manager &manager, RN
 		{
 			assembled.update_WC_rmsd(RMSD);
 			assembled.update_energy();
+<<<<<<< HEAD
 			o_string.add_string(assembled.to_string());
+=======
+			o_string.add_string(assembled.overwrite_string_prototype());
+>>>>>>> cmb_optimization
 			manager.internal_loops_built++;
 		}
 		manager.strs_built++;
