@@ -1,10 +1,6 @@
 #include "StructureBuilders.hpp"
 
-<<<<<<< HEAD
 void create_custom_structure(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, uint32_t *indices)
-=======
-void create_custom_structure(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, int *indices)
->>>>>>> cmb_optimization
 {
     attach_status status;
     double RMSD;
@@ -27,7 +23,7 @@ void create_custom_structure(DimerLibArray &Lib, RNADataArray &assembled, output
         assembled.update_WC_rmsd(RMSD);
     }
     assembled.update_energy();
-    o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+    o_string.add_string(assembled.to_string());
 }
 
 void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArrayInternalLoop &assembled, output_string &o_string, uint32_t *indices)
@@ -68,25 +64,17 @@ void create_custom_structure_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADa
     RMSD = WC_check_pair(0);
     assembled.update_WC_rmsd(RMSD);
     assembled.update_energy();
-    o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+    o_string.add_string(assembled.to_string());
 }
 
 template <bool PerformChecks, STRUCTFILTER_TYPE StructCheck>
-<<<<<<< HEAD
 void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, uint32_t num_strs)
-=======
-void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, int num_strs)
->>>>>>> cmb_optimization
 {
     attach_status status = ATTACHED;
     // double RMSD = 0;
     if (PerformChecks == true)
     {
-<<<<<<< HEAD
         for (uint32_t i = 0; i < num_strs; i++)
-=======
-        for (int i = 0; i < num_strs; i++)
->>>>>>> cmb_optimization
         {
             assembled.overwrite(0, GLOBAL_INPUT_INDICES_LIST[i][0], Lib);
             for (int j = 1; j <= assembled.iterator_max; j++)
@@ -115,7 +103,7 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
                     assembled.update_WC_rmsd(RMSD);
                 }
                 assembled.update_energy();
-                o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+                o_string.add_string(assembled.to_string());
             }
             assembled.rollback_by(assembled.iterator);
         }
@@ -124,11 +112,7 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
     }
     else
     {
-<<<<<<< HEAD
         for (uint32_t i = 0; i < num_strs; i++)
-=======
-        for (int i = 0; i < num_strs; i++)
->>>>>>> cmb_optimization
         {
             assembled.overwrite(0, GLOBAL_INPUT_INDICES_LIST[i][0], Lib);
             for (int j = 1; j <= assembled.iterator_max; j++)
@@ -144,17 +128,12 @@ void create_custom_structure_list(DimerLibArray &Lib, RNADataArray &assembled, o
                 assembled.update_WC_rmsd(RMSD);
             }
             assembled.update_energy();
-            o_string.add_string(assembled.to_string(), assembled.get_atom_sum());
+            o_string.add_string(assembled.to_string());
             assembled.rollback_by(assembled.iterator);
         }
         assembled.count = assembled.iterator_max + 1;
         assembled.iterator = assembled.iterator_max;
     }
 }
-<<<<<<< HEAD
 template void create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, uint32_t num_strs);
 template void create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, NONE>(DimerLibArray &Lib,  RNADataArray &assembled, output_string &o_string, uint32_t num_strs);
-=======
-template void create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(DimerLibArray &Lib, RNADataArray &assembled, output_string &o_string, int num_strs);
-template void create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, NONE>(DimerLibArray &Lib,  RNADataArray &assembled, output_string &o_string, int num_strs);
->>>>>>> cmb_optimization

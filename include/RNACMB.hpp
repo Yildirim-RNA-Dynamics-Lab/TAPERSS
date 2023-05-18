@@ -37,11 +37,7 @@ constexpr bool PERFORM_CHECKS_ON_CUSTOM_BUILD = true;
 constexpr uint8_t MATRIX_DIMENSION2 = 3; //DIM2 = 3, for X,Y,Z
 
 constexpr int GLOBAL_MAX_STRINGS = 1000;
-<<<<<<< HEAD
 constexpr int GLOBAL_STANDARD_STRING_LENGTH = 2048; //==2kB
-=======
-constexpr int GLOBAL_STANDARD_STRING_LENGTH = 2000;
->>>>>>> cmb_optimization
 
 /* Global Variables */
 extern uint64_t rna_dat_tracker;
@@ -59,6 +55,7 @@ extern bool GLOBAL_RUN_BUILD_STRUCTURE;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST;
 extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING; /* This will probably be a temporary setting */
 extern bool GLOBAL_WRITE_COORDINATES;
+extern bool GLOBAL_USE_N_LOWEST;
 //extern bool GLOBAL_PERFORM_HAIRPIN_CHECK;
 //extern bool GLOBAL_PERFORM_HBOND_CHECK;
 extern STRUCTFILTER_TYPE GLOBAL_PERFORM_STRUCTCHECK;
@@ -66,13 +63,9 @@ extern STRUCTFILTER_TYPE GLOBAL_PERFORM_STRUCTCHECK;
 extern double GLOBAL_RMSD_LIMIT;
 extern double GLOBAL_WC_RMSD_LIMIT;
 extern double GLOBAL_SCC_LIMIT;
-<<<<<<< HEAD
 extern uint32_t **GLOBAL_INPUT_INDICES_LIST;
 extern uint32_t GLOBAL_STRUCTURE_LIMIT_COUNT;
-=======
-extern int **GLOBAL_INPUT_INDICES_LIST;
-extern uint_fast64_t GLOBAL_STRUCTURE_LIMIT_COUNT;
->>>>>>> cmb_optimization
+extern uint32_t GLOBAL_N_LOWEST;
 
 extern char LIBRARY_FILENAME_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];        // = "../AGAAAU_test/XX_library_combined.txt";
 extern char WATSON_CRICK_LIBRARY_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];    // = "../AGAAAU_test/WC_XX_library.txt";

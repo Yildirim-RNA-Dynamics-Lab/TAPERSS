@@ -168,7 +168,10 @@ atom_charge get_atom_charge(atom_id name, char res)
     }
     return charge;
 }
-
+/**
+ * Empty constructor.
+ *
+**/
 atom_info::atom_info()
 {
     iterator = 0;
@@ -241,7 +244,8 @@ atom_info::~atom_info()
     free(name);
 }
 /**
- * @brief Adds atom to atom info while setting specific parameters as needed.
+ * @brief Adds new atom to atom_info. Note this will go out of array bounds, so ensure atom_info initialized
+ * with enough space.
  * 
  * @param N Name of atom
  * @param i index of atom

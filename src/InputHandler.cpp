@@ -158,11 +158,7 @@ void read_input_file(char *file_name)
         exit(3);
     }
     GLOBAL_OUTPUT_FILE[0] = '\0';
-<<<<<<< HEAD
     char line[GLOBAL_STANDARD_STRING_LENGTH];
-=======
-    char line[LINESIZE];
->>>>>>> cmb_optimization
     while (fgets(line, sizeof(line), input))
     {
         char *str1;
@@ -239,6 +235,15 @@ void read_input_file(char *file_name)
             str1 = strtok(NULL, " ");
             str1[strcspn(str1, "\n")] = '\0';
             strcpy(GLOBAL_INPUT_FILE, str1);
+            continue;
+        }
+        if (!strcmp(header, "NUM_LOWEST"))
+        {
+            str1 = strtok(NULL, " ");
+            str1 = strtok(NULL, " ");
+            str1[strcspn(str1, "\n")] = '\0';
+            GLOBAL_N_LOWEST = atoi(str1);
+						GLOBAL_USE_N_LOWEST = true;
             continue;
         }
         if (!strcmp(header, "INDICES"))

@@ -1,6 +1,7 @@
 #include "DimerLib.hpp"
+#include <cstdlib>
 /**
- * @brief Construct a DimerLib
+ * @brief Construct a DimerLib. Uses the number of atoms + extra elements, namely the steric clash centroids.
  * 
  * @param n Number of structures in a library
  * @param a_n Number of elements in each structure (atoms + extra)
@@ -140,47 +141,28 @@ void DimerLibArray::get_charged_atom_map()
     int NegMapTracker = 0;
     for(uint32_t i = 0; i < count; i++)
     {
-        TmpPos = 0;
-        TmpNeg = 0;
-        for(uint32_t j = 0; j < library[i]->atom_data->count; j++)
-<<<<<<< HEAD
-        {
-            if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
-            {
-                TmpPos++;
-            }
-            if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
-            {
-                TmpNeg++;
-            }
-        }
-        if(TmpPos > LargestPositiveCount)
-        {
-            LargestPositiveCount = TmpPos;
-        }       
-        if(TmpNeg > LargestNegativeCount)
-        {
-=======
-        {
-            if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
-            {
-                TmpPos++;
-            }
-            if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
-            {
-                TmpNeg++;
-            }
-        }
-        if(TmpPos > LargestPositiveCount)
-        {
-            LargestPositiveCount = TmpPos;
-        }       
-        if(TmpNeg > LargestNegativeCount)
-        {
->>>>>>> cmb_optimization
-            LargestNegativeCount = TmpNeg;
-        }   
-        
+			TmpPos = 0;
+			TmpNeg = 0;
+			for(uint32_t j = 0; j < library[i]->atom_data->count; j++)
+			{
+				if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE)
+				{
+					TmpPos++;
+				}
+				if(library[i]->atom_data->charges[j] == atom_charge::NEGATIVE)
+				{
+					TmpNeg++;
+				}
+			}
+			if(TmpPos > LargestPositiveCount)
+			{
+				LargestPositiveCount = TmpPos;
+			}       
+			if(TmpNeg > LargestNegativeCount)
+			{
+				LargestNegativeCount = TmpNeg;
+			}   
+			
     }
 
     PositiveAtomMap = (int*)malloc(LargestAtomCount * count * sizeof(int));
@@ -431,7 +413,6 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
     }
 }
 
-<<<<<<< HEAD
 /**
  * @brief This function ensures that all of the atoms lie within the sphere created by calculate_SCC_radii, if they are not 
  * it prints a warning and readjusts the size of the sphere to then include everything. calculate_SCC_radii method does
@@ -443,9 +424,6 @@ void calculate_SCC_radii(gsl_matrix *A, atom_info *A_info, double* radius, int r
  * @param radius radius of sphere created by calculate_SCC_radii (modified as needed)
  * @param res_id residue index for radius
  */
-=======
-/* Method of using Functional group and Phospate group to define sphere radius seems to work, but to be safe, we ensure that all atoms are within the sphere*/
->>>>>>> cmb_optimization
 void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, int res_id)
 {
     gsl_vector_view V, COM;
@@ -459,16 +437,23 @@ void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, in
         dist = distance_vec2vec(&COM.vector, &V.vector);
         if(dist > *radius)
         {
-<<<<<<< HEAD
-            fprintf(stderr, "Warning: atom: %s in residue: %c is outside COM sphere!\n", A_info->name[i], A_info->residue[i]);
-=======
-            printf("%s is outside COM sphere!\n", A_info->name[i]);
->>>>>>> cmb_optimization
-            *radius = dist + 1;
+					fprintf(stderr, "Warning: atom: %s in residue: %c is outside COM sphere!\n", A_info->name[i], A_info->residue[i]);
+					*radius = dist + 1;
         }
     }
 }
 
+/**
+ * @breif Reads all files given in LibNames, assuming they are library files, and will load them into the given DimerLibArray
+ * This function works for both WatsonCrick libraries and normal DNMP libraries, determined by bool for_WC.
+ *
+ * @param LibNames array of strings containing file location/name to read from.
+ * @param N_diNts number of DNMP (fragment) libraries to load.
+ * @param &RTN reference to  uninitialized DimerLibArray
+ * @param duplicate_record array which maps any repeat libries to the index of the first occurance, e.g. there are two AA libraries, 
+ * one at index 0, the next at index 4. In this array index [4] = 0. This is to stop any duplicate loading of libraries.
+ * @param for_WC boolean value. if true: these libraries are for watson crick pairs, if false: these are for regular DNMP libs.
+**/
 void load_libs(char **LibNames, int N_diNts, DimerLibArray &RTN, int* duplicate_record, bool for_WC)
 {
     enum { model_count = 0, atom_count = 1 };

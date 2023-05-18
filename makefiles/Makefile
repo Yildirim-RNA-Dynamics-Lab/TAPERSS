@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-CC = clang++-8
-=======
 CC = clang
->>>>>>> cmb_optimization
 
 CFLAGS = -Wall
 CFLAGS += -W
@@ -24,7 +20,7 @@ BINDIR = ./bin/
 SRCDIR = ./src/
 INCDIR = ./include/
 
-_OBJ = Atom_info RNAData RNADataArrayInternalLoop steric_clash_check FragmentAssembly CMB_Manager Combinatorial_Addition DimerLib WatsonCrickPair InputHandler Kabsch output_string RNA_Math StructureBuilders HopcroftKarp Main Globals
+_OBJ = Atom_info n_lowest_energy RNAData RNADataArrayInternalLoop steric_clash_check FragmentAssembly CMB_Manager Combinatorial_Addition DimerLib WatsonCrickPair InputHandler Kabsch output_string RNA_Math StructureBuilders HopcroftKarp Main Globals
 DBUGOBJ = $(patsubst %, %_debug.o,$(_OBJ))
 PRFOBJ = $(patsubst %, %_profiled.o,$(_OBJ))
 PRODOBJ = $(patsubst %, %_production.o,$(_OBJ))

@@ -2,7 +2,7 @@
 
 attach_status rotate(RNAData *reference, RNAData *rotated)
 {
-    double rmsd_;
+    double rmsd;
     double COMP[] = {0, 0, 0};
     double COMQ[] = {0, 0, 0};
     attach_status status = FAILED;
@@ -15,9 +15,9 @@ attach_status rotate(RNAData *reference, RNAData *rotated)
 
     kabsch_calculate_rotation_matrix_Nx3fast(P, Q, P_WORK, COMP, COMQ);
     R = kabsch_get_rotation_matrix();
-    rmsd_ = rmsd_generic(P, Q);
+    rmsd = rmsd_generic(P, Q);
 
-    if (rmsd_ <= GLOBAL_RMSD_LIMIT)
+    if (rmsd <= GLOBAL_RMSD_LIMIT)
     {
         status = ATTACHED;
         translate_matrix(COMP, MODEL, -1.0F);
