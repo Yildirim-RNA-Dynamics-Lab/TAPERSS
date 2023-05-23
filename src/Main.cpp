@@ -32,8 +32,6 @@ uint32_t get_x_location(char *sequence)
 			break;
 		}
 	}
-	//putchar('\n');
-	//printf("n = %d\n", n);
 	return n;
 }
 
@@ -55,7 +53,7 @@ char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStran
 			find_duplicates(rtn, pointer, *N);
 			break;
 		case INTERNAL_LOOP:
-			*N = strlen(sequence) - 3; // e.g. A G A X U G U, will have 7 - 3 = 4 diN
+			*N = strlen(sequence) - 3; // e.g. A G A X U G U, will have 7 - 3 = 4 DNMP
 			pointer = (int *)malloc(sizeof(int) * *N);
 			memset(pointer, -1, *N * sizeof(int));
 			rtn = (char **)malloc(sizeof(char *) * *N);
@@ -122,7 +120,7 @@ char **get_WC_wrapper(char *sequence, int *N)
 	return rtn;
 }
 
-	template <typename T>
+template <typename T>
 void Run()
 {
 	int N_diNts = 0;
@@ -284,7 +282,8 @@ void Run()
 
 int main(int argc, char *ARGV[])
 {
-	input_handler(argc, ARGV);
+	RunInfo run_info;
+	input_handler(argc, ARGV, run_info);
 	switch (GLOBAL_PERFORM_STRUCTCHECK)
 	{
 		case INTERNAL_LOOP:

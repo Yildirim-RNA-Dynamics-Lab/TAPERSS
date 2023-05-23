@@ -21,3 +21,10 @@ This is already partially implemented in the WatsonCrickPair functions, so now i
 	For a single strand for sequence AGAAAU as a hairpin I would use:
 		"1:6"
 		to specifiy I want the first nucleotide to be paired with the last.
+
+
+Split up main/ run.
+	- first - read input with input handler and fill run_info struct
+	- new function: initialize, which takes run_info struct to initialize data.
+	- modify run: will only run requested run type
+	- new function: finish, takes run_info struct and cleans up.
