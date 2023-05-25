@@ -34,7 +34,7 @@ template <STRUCTFILTER_TYPE FILTER> void output_handler(CMB_Manager &manager, RN
 				int idx;
 				if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1)
 				{
-					o_string.overwrite_string(assembled.to_string(), idx);
+					o_string.overwrite_and_shift_strings(assembled.to_string(), idx);
 					manager.hairpins_built++;
 				}
 			}
@@ -70,7 +70,7 @@ template <STRUCTFILTER_TYPE FILTER> void output_handler(CMB_Manager &manager, RN
 			int idx;
 			if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1)
 			{
-				o_string.overwrite_string(assembled.to_string(), idx);
+				o_string.overwrite_and_shift_strings(assembled.to_string(), idx);
 				manager.strs_built++;
 			}
 		}

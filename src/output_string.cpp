@@ -1,11 +1,11 @@
 #include "output_string.hpp"
 
-output_string::output_string(const char *F, int max_s, char *action, char* string_prototype)
+output_string::output_string(RunInfo& run_info, char* string_prototype)
 {
-	output_file = fopen(F, action);
-	string_storage = (char **)malloc(sizeof(char *) * max_s);
+	output_file = fopen(run_info.output_file, "w");
 	max_size = strlen(string_prototype); 
-	max_string = max_s;
+	max_string = (uint32_t)(run_info.memory_limit / max_size);
+	string_storage = (char **)malloc(sizeof(char *) * max_string);
 	string_storage[0] = (char *)malloc(sizeof(char) * max_size * max_string + 1); //+1 b/c end of packed string needs to have '\0' included.
 	string_storage[0][max_size * max_string] = '\0';
 	for(int i = 0, j = 0; i < max_string; i++, j +=max_size)
@@ -41,13 +41,12 @@ void output_string::add_string(char *s)
 	return;
 }
 
-void output_string::overwrite_string(char *src, int dest_idx)
+void output_string::overwrite_and_shift_strings(char *src, int dest_idx)
 {
 	int shift_size = 0;
 	if(dest_idx < iterator)
 	{
 		shift_size = iterator - dest_idx;
-		//printf("Dest: %d, Max: %d, iter: %d\n", dest_idx + 1, max_string - 1, iterator);
 		memmove(string_storage[dest_idx + 1], string_storage[dest_idx], max_size * (shift_size));
 	}
 	memmove(string_storage[dest_idx], src, max_size);

@@ -15,111 +15,6 @@
 
 using namespace std;
 
-uint32_t get_x_location(char *sequence)
-{
-	char *ptr = sequence;
-	unsigned int size = strlen(sequence);
-	unsigned int n = 0;
-	for (unsigned int i = 0; i < size; i++)
-	{
-		//putchar(ptr[i]);
-		if (ptr[i] != 'x')
-		{
-			n++;
-		}
-		else
-		{
-			break;
-		}
-	}
-	return n;
-}
-
-char **get_diNt_wrapper(char *sequence, int *N, int *leftStrand, int *rightStrand, int** duplicate_record)
-{
-	char **rtn = nullptr;
-	int* pointer = duplicate_record[0];
-	unsigned int x_loc = get_x_location(sequence);
-	int left = 0, right = 0;
-	printf("%s\n", sequence);
-	switch (GLOBAL_PERFORM_STRUCTCHECK)
-	{
-		case HAIRPIN:
-			*N = strlen(sequence) - 1;
-			pointer = (int *)malloc(sizeof(int) * *N);
-			memset(pointer, -1, *N * sizeof(int));
-			rtn = (char **)malloc(sizeof(char *) * *N);
-			get_diNt_names(sequence, rtn, *N);
-			find_duplicates(rtn, pointer, *N);
-			break;
-		case INTERNAL_LOOP:
-			*N = strlen(sequence) - 3; // e.g. A G A X U G U, will have 7 - 3 = 4 DNMP
-			pointer = (int *)malloc(sizeof(int) * *N);
-			memset(pointer, -1, *N * sizeof(int));
-			rtn = (char **)malloc(sizeof(char *) * *N);
-			for (unsigned int i = 0; i < strlen(sequence); i++)
-			{
-				if (i < x_loc)
-				{
-					left++;
-				}
-				else if (i == x_loc)
-				{
-					continue;
-				}
-				else
-				{
-					right++;
-				}
-			}
-			left--, right--;
-			*leftStrand = left;
-			*rightStrand = right;
-			get_diNt_names(sequence, rtn, left);
-			get_diNt_names(&sequence[x_loc + 1], &rtn[left], right);
-			find_duplicates(rtn, pointer, left + right);
-			break;
-		case NONE:
-			// get_diNt_names;
-			*N = strlen(sequence) - 1;
-			pointer = (int *)malloc(sizeof(int) * *N);
-			memset(pointer, -1, *N * sizeof(int));
-			rtn = (char **)malloc(sizeof(char *) * *N);
-			get_diNt_names(sequence, rtn, *N);
-			find_duplicates(rtn, pointer, *N);
-			break;
-	}
-
-	duplicate_record[0] = pointer;
-	return rtn;
-}
-
-/* I should add a duplicate checker for this function as well */
-char **get_WC_wrapper(char *sequence, int *N)
-{
-	char **rtn = nullptr;
-	unsigned int x_loc = get_x_location(sequence);
-	int length;
-	switch (GLOBAL_PERFORM_STRUCTCHECK)
-	{
-		case HAIRPIN:
-			length = strlen(sequence) - 1;
-			rtn = (char **)malloc(sizeof(char *) * length);
-			get_WC_partner(sequence, rtn, 0, length);
-			*N = 1;
-			break;
-		case INTERNAL_LOOP:
-			*N = 2;
-			rtn = (char **)malloc(sizeof(char *) * *N);
-			get_WC_partner(sequence, rtn, 0, strlen(sequence) - 1);
-			get_WC_partner(sequence, &rtn[1], x_loc - 1, x_loc + 1);
-			break;
-		case NONE:
-			break;
-	}
-	return rtn;
-}
-
 template <typename T>
 void Run()
 {
@@ -142,21 +37,21 @@ void Run()
 
 	Start = clock();
 
-	Libs2Load = get_diNt_wrapper(GLOBAL_INPUT_SEQUENCE, &N_diNts, &leftStrand, &rightStrand, &DuplicateRecord);
+	//Libs2Load = get_diNt_wrapper(GLOBAL_INPUT_SEQUENCE, &N_diNts, &leftStrand, &rightStrand, &DuplicateRecord);
 	load_libs(Libs2Load, N_diNts, Library, DuplicateRecord);
 	Library.get_charged_atom_map();
 	if constexpr (is_same<T, RNADataArray>::value)
 	{
 		if(GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::HAIRPIN)
 		{
-			WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
+			//WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
 			load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
 		}
 		RNA.initialize(N_diNts, Library);
 	}
 	if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
 	{
-		WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
+		//WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
 		load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
 		RNA.initialize(leftStrand, rightStrand, Library, WC_Library);
 	}
@@ -168,7 +63,7 @@ void Run()
 		printf("No output file specified...\n");
 		exit(1);
 	}	
-	output_string output_s(GLOBAL_OUTPUT_FILE, GLOBAL_USE_N_LOWEST ? GLOBAL_N_LOWEST : GLOBAL_MAX_STRINGS, GLOBAL_IO_ACTION, RNA.string_out);
+	output_string output_s(run_info, RNA.string_out);
 	create_n_lowest_E(GLOBAL_N_LOWEST);
 	kabsch_create(Library.LargestAtomCount, MATRIX_DIMENSION2);
 	if(GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::INTERNAL_LOOP) WC_create(WC_Library);
@@ -284,6 +179,7 @@ int main(int argc, char *ARGV[])
 {
 	RunInfo run_info;
 	input_handler(argc, ARGV, run_info);
+	exit(1);
 	switch (GLOBAL_PERFORM_STRUCTCHECK)
 	{
 		case INTERNAL_LOOP:

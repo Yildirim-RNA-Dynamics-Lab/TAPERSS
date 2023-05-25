@@ -12,10 +12,10 @@ struct output_string
 	int max_string;
 	int max_size;
 
-	output_string(const char *F, int max_s, char *action, char* string_prototype);
+	output_string(RunInfo& run_info, char* string_prototype);
 	~output_string();
 	void add_string(char *s);
-	void overwrite_string(char *src, int dest_idx);
+	void overwrite_and_shift_strings(char *src, int dest_idx);
 };
 
 #endif

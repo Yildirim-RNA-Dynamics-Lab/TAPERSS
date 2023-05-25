@@ -26,7 +26,7 @@ enum attach_status{FAILED, ATTACHED, NOT_CHECKED, FAILED_SC};
 
 enum RunType{combinatorial, build_from_index, build_from_index_list, runtype_undef};
 enum StrType{single_strand, double_strand, strtype_undef};
-enum RunOpts{build_limit_by_energy=0x00000001, blind_build_limit=0x00000002, write_coordinates=0x00000004, use_h_bond_filter=0x00000008};
+enum RunOpts{build_limit_by_energy=0x00000001, blind_build_limit=0x00000002, write_coordinates=0x00000004, use_structure_filter=0x00000008};
 
 /* Compile-time evaluated constants */
 constexpr float VDW_RADIUS = 1.5;
@@ -37,6 +37,7 @@ constexpr float RADIUS_O   = 0.75;
 constexpr float INTERACTION_DISTANCE = 3.6;
 constexpr float DEFAULT_RMSD_LIMIT = 0.5;
 constexpr float DEFAULT_WC_RMSD_LIMIT = 2.5;
+constexpr char  DEFAULT_OUTPUT_FILENAME[] = "RNACMB_Output.dat";
 constexpr bool STRUCTURE_BUILD_LIMIT = false;
 constexpr bool PERFORM_CHECKS_ON_CUSTOM_BUILD = true;
 constexpr uint8_t MATRIX_DIMENSION2 = 3; //DIM2 = 3, for X,Y,Z
@@ -86,13 +87,22 @@ struct RunInfo
 	size_t    memory_limit = 0;
 	size_t 		build_limit = 0;
 	size_t		n_fragments = 0;
+	size_t		n_wc_pairs = 0;
+	size_t		ds_strand1_n_frags = 0;
+	size_t		ds_strand2_n_frags = 0;
 	char      sequence[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char		  library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char		  wc_library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char      output_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char      input_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char      index_list_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char      dot_bracket[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	uint32_t* index = nullptr;
+	char**		fragment_lib_list = nullptr;
+	char** 		wc_lib_list = nullptr;
+	size_t*		lib_duplicate_record = nullptr;
+	size_t*		wc_lib_duplicate_record = nullptr;
+	uint32_t*	wc_pair_list = nullptr;
 };
 
 

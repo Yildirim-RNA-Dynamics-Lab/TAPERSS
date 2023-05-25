@@ -72,8 +72,8 @@ attach_status prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib, RNA
     COMP[0] = COMP[1] = COMP[2] = 0;
     COMQ[0] = COMQ[1] = COMQ[2] = 0;
 
-    WC_prepare_structure_matrix(1, assembled_ref, 1, to_be_assembled, 0);
-    double RMSD = WC_check_pair(1);
+    WC_prepare_structure_matrix(0, assembled_ref, 1, to_be_assembled, 0);
+    double RMSD = WC_check_pair(0);
     if(RMSD <= GLOBAL_WC_RMSD_LIMIT)
     {
         assembled.WC_rmsd3_4 = RMSD;
