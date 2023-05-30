@@ -1,6 +1,27 @@
 #include "InputHandler.hpp"
 #include <cstdint>
 
+void trim_whitespace(char* s)
+{
+	const char whitespace[] = {' ', '\t', '\n'};
+	size_t str_len = strlen(s);
+	size_t match_loc = strcspn(s, whitespace);
+	unsigned int idx = 0;
+
+	if(match_loc == 0) {
+		while(isspace(s[idx])) {
+			idx++;
+		}
+		memmove(s, &s[idx], str_len + 1 - idx);
+		str_len -= idx;
+	}
+	idx = str_len - 1;	
+	while(isspace(s[idx])) {
+		idx--;
+	}
+	s[idx + 1] = '\0';
+}
+
 void get_DNMP_lib_names(RunInfo& run_info)
 {
 	int name_position = strcspn(run_info.library_prototype, "X");
@@ -37,16 +58,25 @@ uint32_t find_duplicates(RunInfo& run_info, bool for_WC)
 	uint32_t num_duplicates = 0;
 	uint32_t N = for_WC ? run_info.n_wc_pairs : run_info.n_fragments;
 	char**   lib = for_WC ? run_info.wc_lib_list : run_info.fragment_lib_list;
-	size_t*	 dup = for_WC ? run_info.wc_lib_duplicate_record : run_info.lib_duplicate_record;
-	for (uint32_t i = N - 1; i > -1; i--)
+	size_t*	 dup; 
+	printf("N = %u\n", N);
+	dup = (size_t *)calloc(N, sizeof(size_t));
+	for (uint32_t i = N - 1; i > 0; i--)
 	{
+		dup[i] = i;
 		for(uint32_t j = 0; j < i; j++)
 		{
 			if(!strcmp(lib[i], lib[j])) {
 				dup[i] = j;
 				num_duplicates++;
+				break;
 			}
 		}
+	}
+	if(for_WC) { 
+		run_info.wc_lib_duplicate_record = dup;
+	} else {
+		run_info.lib_duplicate_record = dup;
 	}
 	return num_duplicates;
 }
@@ -89,24 +119,27 @@ uint32_t get_WC_partner_single(RunInfo& run_info, size_t idx1, size_t idx2, size
 	return 0;
 }
 
-uint32_t get_WC_partner_full(RunInfo& run_info, size_t len)
+uint32_t get_WC_partner_full(RunInfo& run_info, size_t len, uint32_t* pair_record)
 {
 	uint32_t err_count = 0;
-	uint32_t name_position = strcspn(run_info.sequence, "X");
+	uint32_t name_position = strcspn(run_info.wc_library_prototype, "X");
 	uint32_t pairs_made = 0;
 	uint32_t bypass_idx = run_info.n_fragments + 1;
 	if(run_info.structure_type == StrType::double_strand)	{
 		uint32_t x_loc = run_info.ds_strand1_n_frags + 1;
 		bypass_idx = x_loc - 1;
 		err_count += get_WC_partner_single(run_info, x_loc - 1, x_loc + 1, 0, name_position);
-		if(run_info.wc_pair_list[x_loc - 1] != x_loc - 1) {
+		if(pair_record[x_loc - 1] != x_loc - 1) {
+			run_info.wc_pair_list[pairs_made] = {x_loc - 1, x_loc + 1};
 			pairs_made++;
+			run_info.run_options |= RunOpts::str_filter_uses_ds_closing_bp;
 		}
 	}
 	for(uint32_t i = 0; i < len; i++) {
 		if(pairs_made == run_info.n_wc_pairs) {break;}
-		if(run_info.wc_pair_list[i] != i && i != bypass_idx) {
-			err_count += get_WC_partner_single(run_info, i, run_info.wc_pair_list[i], pairs_made, name_position);
+		if(pair_record[i] != i && i != bypass_idx) {
+			err_count += get_WC_partner_single(run_info, i, pair_record[i], pairs_made, name_position);
+			run_info.wc_pair_list[pairs_made] = {i, pair_record[i]};
 			pairs_made++;
 		}
 	}
@@ -132,7 +165,7 @@ uint32_t get_index_int(char *index, uint32_t *indices)
 	return count;
 }
 
-uint8_t parse_dot_backet(RunInfo& run_info, size_t len)
+uint8_t parse_dot_backet(RunInfo& run_info, size_t len, uint32_t* pair_record)
 {
 	uint32_t open_brkt = 0;
 	uint32_t clse_brkt = 0;
@@ -150,20 +183,19 @@ uint8_t parse_dot_backet(RunInfo& run_info, size_t len)
 		return 0;
 	}
 
-	run_info.wc_pair_list = (uint32_t *)malloc(sizeof(uint32_t) * len);
-	for(size_t i = 0; i < len; i++) { run_info.wc_pair_list[i] = i; }
+	for(size_t i = 0; i < len; i++) { pair_record[i] = i; }
 	for(size_t i = 0; i < len; i++) {
 		if(run_info.dot_bracket[i] == '(') {
 			open_brkt = 0;
 			clse_brkt = 0;
 			for(size_t j = i + 1; j < len; j++) {
-				if(run_info.dot_bracket[i] == '(') {
+				if(run_info.dot_bracket[j] == '(') {
 					open_brkt++;
-				} if(run_info.dot_bracket[i] == ')') {
+				} if(run_info.dot_bracket[j] == ')') {
 					if(open_brkt != clse_brkt) { clse_brkt++; }
 					else { 
 						run_info.n_wc_pairs++; 
-						run_info.wc_pair_list[i] = j;
+						pair_record[i] = j;
 					}
 				}
 			}
@@ -172,60 +204,18 @@ uint8_t parse_dot_backet(RunInfo& run_info, size_t len)
 	return 1;
 }
 
-int read_input_index_file(char *file_name, int n_DiNts)
+bool get_next_index_from_file(FILE* file, RunInfo& run_info)
 {
-	FILE *input = fopen(file_name, "r");
 	char line[GLOBAL_STANDARD_STRING_LENGTH];
 	char indices[GLOBAL_STANDARD_STRING_LENGTH];
-	int str_count = 0;
-
-	while (fgets(line, sizeof(line), input)) {
-		char *header;
-		header = strtok(line, " ");
-		if (!strcmp(header, GLOBAL_INPUT_SEQUENCE))
-			str_count++;
+	if(fgets(line, sizeof(line), file) != NULL) {
+		trim_whitespace(line);
+		strcpy(indices, line);
+	} else {
+		return false;
 	}
-	rewind(input);
-
-	GLOBAL_INPUT_INDICES_LIST = (uint32_t **)malloc(str_count * sizeof(int *));
-
-	for (int i = 0; i < str_count; i++) {
-		GLOBAL_INPUT_INDICES_LIST[i] = (uint32_t *)malloc(n_DiNts * sizeof(int));
-		if(fgets(line, sizeof(line), input) != NULL) {
-			char *str1;
-			char *header = strtok(line, " ");
-			if (!strcmp(header, GLOBAL_INPUT_SEQUENCE)) {
-				str1 = strtok(NULL, " ");
-				str1 = strtok(NULL, " ");
-				str1[strcspn(str1, "\t")] = '\0'; // equivalent to chomp() from perl
-				strcpy(indices, str1);
-			}
-			get_index_int(indices, GLOBAL_INPUT_INDICES_LIST[i]);
-		}
-	}
-	fclose(input);
-	return str_count;
-}
-
-void trim_whitespace(char* s)
-{
-	const char whitespace[] = {' ', '\t', '\n'};
-	size_t str_len = strlen(s);
-	size_t match_loc = strcspn(s, whitespace);
-	unsigned int idx = 0;
-
-	if(match_loc == 0) {
-		while(isspace(s[idx])) {
-			idx++;
-		}
-		memmove(s, &s[idx], str_len + 1 - idx);
-		str_len -= idx;
-	}
-	idx = str_len - 1;	
-	while(isspace(s[idx])) {
-		idx--;
-	}
-	s[idx + 1] = '\0';
+	get_index_int(indices, run_info.index);
+	return true;
 }
 
 void read_input_file(char *file_name, RunInfo& run_info, char* idx_tmp)
@@ -339,7 +329,6 @@ uint32_t complete_run_info(RunInfo& run_info, char* idx_tmp, uint32_t err_count)
 
 	get_DNMP_lib_names(run_info);
 	find_duplicates(run_info, false);
-
 	if(run_info.run_options & RunOpts::use_structure_filter) {
 		size_t len_db = strlen(run_info.dot_bracket);
 		if(len_db != strlen(run_info.sequence)) {
@@ -347,14 +336,19 @@ uint32_t complete_run_info(RunInfo& run_info, char* idx_tmp, uint32_t err_count)
 			err_count++;
 			return err_count;
 		}
-		if(!parse_dot_backet(run_info, len_db)) {err_count++; return err_count;}
+		uint32_t* tmp_pair_record = (uint32_t*)malloc(sizeof(uint32_t) * len_db);
+		if(!parse_dot_backet(run_info, len_db, tmp_pair_record)) {err_count++; return err_count;}
 		run_info.wc_lib_list = (char **)malloc(sizeof(char *) * run_info.n_wc_pairs);
-		err_count += get_WC_partner_full(run_info, len_db);
+		run_info.wc_pair_list = (IndexPair*)malloc(sizeof(IndexPair) * run_info.n_wc_pairs);
+		err_count += get_WC_partner_full(run_info, len_db, tmp_pair_record);
+		free(tmp_pair_record);
 		find_duplicates(run_info, true);
 	}
 
-	if(run_info.run_type == RunType::build_from_index) {
+	if(run_info.run_type == RunType::build_from_index || run_info.run_type == RunType::build_from_index_list) {
 		run_info.index = (uint32_t*)malloc(sizeof(uint32_t) * (strlen(run_info.sequence) - 1));
+	}
+	if(run_info.run_type == RunType::build_from_index) {
 		get_index_int(idx_tmp, run_info.index);
 	}
 	return err_count;
@@ -437,7 +431,7 @@ void validate_run_info(RunInfo& run_info, char* tmp_idx)
 	}
 
 	if(warn_count > 0) {
-		printf("Warnings issued in setup\n\n\n\n");
+		printf("Warnings issued in setup\n\n");
 	}
 }
 

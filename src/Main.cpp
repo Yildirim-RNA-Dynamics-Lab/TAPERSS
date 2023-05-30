@@ -4,7 +4,7 @@
 #include "DimerLib.hpp"
 #include "RNAData.hpp"
 #include "Combinatorial_Addition.hpp"
-#include "output_string.hpp"
+#include "OutputString.hpp"
 #include "WatsonCrickPair.hpp"
 #include "HBondDetector.hpp"
 #include "InputHandler.hpp"
@@ -15,178 +15,94 @@
 
 using namespace std;
 
-template <typename T>
-void Run()
+void initialize(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_library, OutputString& output, RunInfo& run_info)
 {
-	int N_diNts = 0;
-	int N_WC = 0;
-	int *DuplicateRecord = nullptr;
+	run_info.init_timer.start_timer();
 
-	int leftStrand = 0;
-	int rightStrand = 0;
-
-	char **Libs2Load = nullptr;
-	char **WCLibs2Load = nullptr;
-	T RNA;
-
-	DimerLibArray Library;
-	DimerLibArray WC_Library;
-
-	clock_t Start, End;
-	double TimeUsed;
-
-	Start = clock();
-
-	//Libs2Load = get_diNt_wrapper(GLOBAL_INPUT_SEQUENCE, &N_diNts, &leftStrand, &rightStrand, &DuplicateRecord);
-	load_libs(Libs2Load, N_diNts, Library, DuplicateRecord);
-	Library.get_charged_atom_map();
-	if constexpr (is_same<T, RNADataArray>::value)
-	{
-		if(GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::HAIRPIN)
-		{
-			//WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
-			load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
-		}
-		RNA.initialize(N_diNts, Library);
+	load_libs(run_info, frag_library, false);
+	frag_library.get_charged_atom_map();
+	if(run_info.run_options & RunOpts::use_structure_filter || run_info.structure_type == StrType::double_strand) {
+		load_libs(run_info, wc_library, true);
+		WC_create(wc_library);
 	}
-	if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
-	{
-		//WCLibs2Load = get_WC_wrapper(GLOBAL_INPUT_SEQUENCE, &N_WC);
-		load_libs(WCLibs2Load, N_WC, WC_Library, nullptr, true);
-		RNA.initialize(leftStrand, rightStrand, Library, WC_Library);
+	model.initialize(run_info, frag_library, wc_library);
+	output.initialize(run_info, model.string_out);
+	kabsch_create(frag_library.LargestAtomCount, MATRIX_DIMENSION2);
+	HK_create(frag_library.PositiveAtomCount, frag_library.NegativeAtomCount);
+	if(run_info.run_options & RunOpts::build_limit_by_energy) {
+		create_n_lowest_E(run_info.build_limit);
 	}
 
-	CMB_Manager manager(Library);
+	run_info.init_timer.stop_timer();
+}
 
-	if (GLOBAL_OUTPUT_FILE[0] == '\0')
+void run(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_library, OutputString& output, RunInfo& run_info)
+{
+	switch(run_info.run_type)
 	{
-		printf("No output file specified...\n");
-		exit(1);
-	}	
-	output_string output_s(run_info, RNA.string_out);
-	create_n_lowest_E(GLOBAL_N_LOWEST);
-	kabsch_create(Library.LargestAtomCount, MATRIX_DIMENSION2);
-	if(GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK == STRUCTFILTER_TYPE::INTERNAL_LOOP) WC_create(WC_Library);
-	HK_create(Library.PositiveAtomCount, Library.NegativeAtomCount);
-
-	End = clock();
-
-	TimeUsed = ((double)(End - Start)) / CLOCKS_PER_SEC;
-
-	printf("Time to load: %fms\n", TimeUsed * 1000);
-
-	if (GLOBAL_RUN_COMBINATORIAL)
-	{
-		printf("Performing combinatorial run on sequence: %s\n", GLOBAL_INPUT_SEQUENCE);
-		Start = clock();
-		if constexpr (is_same<T, RNADataArray>::value)
-		{
-			if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
-			{
-				while (combinatorial_addition<HAIRPIN>(Library, RNA, manager, output_s) != true)
-				{
-					;
-				}  
+		case RunType::combinatorial:
+			run_combinatorial(model, frag_library, wc_library, output, run_info);
+			break;
+		case RunType::build_from_index:
+			if(run_info.structure_type == StrType::double_strand) {
+				build_structure_from_index_ds(model, frag_library, wc_library, output, run_info);
+			} else {
+				build_structure_from_index(model, frag_library, output, run_info);
 			}
-			else
-			{
-				while (combinatorial_addition<NONE>(Library, RNA, manager, output_s) != true)
-				{
-					;
-				}  
-			}
-		}
-		if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
-		{
-			while (!combinatorial_addition_IL(Library, RNA, manager, output_s, WC_Library))
-				;
-		}
-		End = clock();
-		TimeUsed = ((double)(End - Start)) / CLOCKS_PER_SEC;
-		printf("# of Structures Built: %ld\n", manager.strs_built);
-		if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
-		{
-			printf("# of Hairpins Built: %ld\n", manager.hairpins_built);
-		}
-		if (GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
-		{
-			printf("# of Internal loops Built: %ld\n", manager.internal_loops_built);
-		}
-		//printf("# of Steric Clash Checks Attempted: %ld\n", steric_clash_checks_attempted);
-		//printf("# of Steric Clash Checks Skipped: %ld\n", steric_clash_checks_skipped);
-		//printf("%% of Steric Clash Checks Skipped: %f\n", (float)steric_clash_checks_skipped / (float)steric_clash_checks_attempted * 100);
-		printf("Calculation Time: ");
-		printf("%dh:%dm:%ds\n", (int)(TimeUsed / (60 * 60)), ((int)TimeUsed % (60 * 60))/60, ((int)TimeUsed % (60 * 60)) % 60);
+			break;
+		case RunType::build_from_index_list:
+			build_structure_from_index_list(model, frag_library, wc_library, output, run_info);
+			break;
+		case RunType::runtype_undef:
+			break;
 	}
+}
 
-	if (GLOBAL_RUN_BUILD_STRUCTURE)
-	{
-		printf("Creating Single Structure of Sequence: %s, with Indices: %s\n", GLOBAL_INPUT_SEQUENCE, GLOBAL_INPUT_INDICES);
-		uint32_t *indices = (uint32_t *)alloca(N_diNts * sizeof(uint32_t));
-		get_index_int(GLOBAL_INPUT_INDICES, indices);
-		if constexpr (is_same<T, RNADataArray>::value)
-		{
-			create_custom_structure(Library, RNA, output_s, indices);
-		}
-		if constexpr (is_same<T, RNADataArrayInternalLoop>::value)
-		{
-			create_custom_structure_IL(Library, WC_Library, RNA, output_s, indices);
-		}
+void destroy_run_info(RunInfo& run_info)
+{
+	for(uint i = 0; i < run_info.n_fragments; i++) {
+		free(run_info.fragment_lib_list[i]);
 	}
-	if (GLOBAL_RUN_BUILD_STRUCTURE_LIST)
-	{
-		printf("Creating structures from index list...\n");
-		int num_strs = read_input_index_file(GLOBAL_INPUT_FILE, N_diNts);
-		printf("Done reading input...\n");
-		if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN)
-		{
-			create_custom_structure_list<PERFORM_CHECKS_ON_CUSTOM_BUILD, HAIRPIN>(Library, RNA, output_s, num_strs); // Need to define for IL at somepoint
+	free(run_info.fragment_lib_list);
+	free(run_info.lib_duplicate_record);
+	if(run_info.run_options & RunOpts::use_structure_filter || run_info.structure_type == StrType::double_strand) {
+		for(uint i = 0; i < run_info.n_wc_pairs; i++) {
+			free(run_info.wc_lib_list[i]);
 		}
-		for (int i = 0; i < num_strs; i++)
-		{
-			free(GLOBAL_INPUT_INDICES_LIST[i]);
-		}
-		free(GLOBAL_INPUT_INDICES_LIST);
+		free(run_info.wc_lib_duplicate_record);
 	}
-	if (GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING)
-	{
-		printf("Reading input... ");
-		int num_strs = read_input_index_file(GLOBAL_INPUT_FILE, N_diNts);
-		printf("Done!\n");
+	if(run_info.run_type == RunType::build_from_index) {
+		free(run_info.index);
+	}
+}
 
-		printf("Creating structures from index list for testing...\n");
-		//create_custom_structure_list_testing(Library, RNA, output_s, num_strs);
-		for (int i = 0; i < num_strs; i++)
-		{
-			free(GLOBAL_INPUT_INDICES_LIST[i]);
-		}
-		free(GLOBAL_INPUT_INDICES_LIST);
-	}
-
-	free_libs(Libs2Load, N_diNts);
-	if (GLOBAL_PERFORM_STRUCTCHECK == HAIRPIN || GLOBAL_PERFORM_STRUCTCHECK == INTERNAL_LOOP)
-	{
-		free_libs(WCLibs2Load, N_WC);
+void destroy(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_library, OutputString& output, RunInfo& run_info)
+{
+	model.destroy();
+	frag_library.destroy();
+	output.destroy();
+	if(run_info.run_options & RunOpts::use_structure_filter || run_info.structure_type == StrType::double_strand) {
+		wc_library.destroy();
+		WC_destroy();
 	}
 	kabsch_destroy();
-	WC_destroy();
 	HK_destroy();
-	destroy_n_lowest_E();
-	free(DuplicateRecord);
+	if(run_info.run_options & RunOpts::build_limit_by_energy) {
+		destroy_n_lowest_E();
+	}
+	destroy_run_info(run_info);
 }
 
 int main(int argc, char *ARGV[])
 {
 	RunInfo run_info;
+	RNADataArray model;
+	DimerLibArray frag_library;
+	DimerLibArray wc_library;
+	OutputString  output;
+
 	input_handler(argc, ARGV, run_info);
-	exit(1);
-	switch (GLOBAL_PERFORM_STRUCTCHECK)
-	{
-		case INTERNAL_LOOP:
-			Run<RNADataArrayInternalLoop>();
-			break;
-		default:
-			Run<RNADataArray>();
-			break;
-	}
+	initialize(model, frag_library, wc_library, output, run_info);
+	run(model, frag_library, wc_library, output, run_info);
+	destroy(model, frag_library, wc_library, output, run_info);
 }

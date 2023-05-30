@@ -54,124 +54,144 @@ void overwrite_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B, gsl_matrix *WC_mat
     //printf("WC MAT SIZE = %ld\n", (A->WC_submatrices[0]->size1));
     return WC_matrix;
 }*/
+template <bool RTN_ON_FAIL> bool WC_full_check(RNADataArray& assembled, uint start, RunInfo& run_info) 
+{
+	double RMSD;
+	for(uint i = start; i < run_info.n_wc_pairs; i++) {
+		size_t idx1 = assembled.wc_pairs[i].idx1;
+		size_t idx2 = assembled.wc_pairs[i].idx2;
+		size_t res1 = assembled.wc_pair_res[i].idx1;
+		size_t res2 = assembled.wc_pair_res[i].idx2;
+		WC_prepare_structure_matrix(i, assembled[idx1], res1, assembled[idx2], res2);
+		RMSD = WC_check_pair(i);
+		if(RMSD <= run_info.wc_rmsd_limit) {
+			assembled.update_WC_rmsd(RMSD, i);
+		} else if (RTN_ON_FAIL){
+			return false;
+		}
+	}
+	return true;
+}
+template bool WC_full_check<true>(RNADataArray& assembled, uint start, RunInfo& run_info);
+template bool WC_full_check<false>(RNADataArray& assembled, uint start, RunInfo& run_info);
 
 double RMSD_WC_pair_gsl(gsl_matrix *WC_matrix, gsl_matrix *Sequence_matrix)
 {
-    double COMP[] = {0, 0, 0};
-    double COMQ[] = {0, 0, 0};
-    gsl_matrix* Work_matrix;
-    Work_matrix = kabsch_allocate_work_matrix(WC_matrix);
-    kabsch_calculate_rotation_matrix_Nx3fast(WC_matrix, Sequence_matrix, Work_matrix, COMP, COMQ);
-    gsl_matrix_free(Work_matrix);
-    return rmsd_generic(Sequence_matrix, WC_matrix);
+	double COMP[] = {0, 0, 0};
+	double COMQ[] = {0, 0, 0};
+	gsl_matrix* Work_matrix;
+	Work_matrix = kabsch_allocate_work_matrix(WC_matrix);
+	kabsch_calculate_rotation_matrix_Nx3fast(WC_matrix, Sequence_matrix, Work_matrix, COMP, COMQ);
+	gsl_matrix_free(Work_matrix);
+	return rmsd_generic(Sequence_matrix, WC_matrix);
 }
 
 double WC_check_pair(int WC_pair_idx)
 {
-    gsl_matrix *sequence_matrix = WC_structure_matrices[WC_pair_idx];
-    gsl_matrix *WC_model_matrix = WC_reference_matrices[WC_pair_idx];
-    gsl_matrix *Work_matrix = WC_work[WC_pair_idx];
-    double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};
-    kabsch_calculate_rotation_matrix_Nx3fast(WC_model_matrix, sequence_matrix, Work_matrix, COMP, COMQ);
-    return (rmsd_generic(sequence_matrix, WC_model_matrix));
+	gsl_matrix *sequence_matrix = WC_structure_matrices[WC_pair_idx];
+	gsl_matrix *WC_model_matrix = WC_reference_matrices[WC_pair_idx];
+	gsl_matrix *Work_matrix = WC_work[WC_pair_idx];
+	double COMP[] = {0, 0, 0}, COMQ[] = {0, 0, 0};
+	kabsch_calculate_rotation_matrix_Nx3fast(WC_model_matrix, sequence_matrix, Work_matrix, COMP, COMQ);
+	return (rmsd_generic(sequence_matrix, WC_model_matrix));
 }
 
 void WC_prepare_structure_matrix(int WC_pair_idx, RNAData* A_data, uint16_t idxA, RNAData* B_data, uint16_t idxB)
 {
-    gsl_matrix *A = A_data->data_matrix; 
-    uint16_t *A_rows = A_data->WC_submatrix_rows[idxA];
-    size_t A_row_count = A_data->count_per_WC_sub[idxA];
-    gsl_matrix *B = B_data->data_matrix;
-    uint16_t *B_rows = B_data->WC_submatrix_rows[idxB];
-    size_t B_row_count = B_data->count_per_WC_sub[idxB];
-    int rel_idx = 0;
-    for(size_t i = 0; i < A_row_count; i++)
-    {
-        gsl_matrix_row_copy(WC_structure_matrices[WC_pair_idx], rel_idx, A, A_rows[i]);
-        rel_idx++;
-    }
-    for(size_t i = 0; i < B_row_count; i++)
-    {
-        gsl_matrix_row_copy(WC_structure_matrices[WC_pair_idx], rel_idx, B, B_rows[i]);
-        rel_idx++;
-    }
+	gsl_matrix *A = A_data->data_matrix; 
+	uint16_t *A_rows = A_data->WC_submatrix_rows[idxA];
+	size_t A_row_count = A_data->count_per_WC_sub[idxA];
+	gsl_matrix *B = B_data->data_matrix;
+	uint16_t *B_rows = B_data->WC_submatrix_rows[idxB];
+	size_t B_row_count = B_data->count_per_WC_sub[idxB];
+	int rel_idx = 0;
+	for(size_t i = 0; i < A_row_count; i++)
+	{
+		gsl_matrix_row_copy(WC_structure_matrices[WC_pair_idx], rel_idx, A, A_rows[i]);
+		rel_idx++;
+	}
+	for(size_t i = 0; i < B_row_count; i++)
+	{
+		gsl_matrix_row_copy(WC_structure_matrices[WC_pair_idx], rel_idx, B, B_rows[i]);
+		rel_idx++;
+	}
 }
 
 void WC_create(DimerLibArray &WC_Library) 
 {
-    size_t memsize = 0;
-    const atom_id *target1 = nullptr;
-    const atom_id *target2 = nullptr;
-    size_t offset = 0;
-    size_t matrixsize = 0;
-    size_t target1size = 0;
-    size_t target2size = 0;
-    N_matrices = WC_Library.count;
-    for(uint64_t i = 0; i < WC_Library.count; i++)
-    {
-        memsize += get_WC_target(WC_Library[i]->name[0], &target1) * MATRIX_DIMENSION2;
-        memsize += get_WC_target(WC_Library[i]->name[1], &target2) * MATRIX_DIMENSION2;
-    }
-    WC_memblock = gsl_block_alloc(memsize * 3); // Times 3 because space is needed for Work matrices AND matrices from built structure
-    WC_reference_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
-    WC_structure_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
-    WC_work = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
-    for(uint64_t i = 0; i < WC_Library.count; i++)
-    {
-        matrixsize = 0;
-        matrixsize = get_WC_target(WC_Library[i]->name[0], &target1);
-        //printf("Matrix size: %lu\n", matrixsize);
-        matrixsize += get_WC_target(WC_Library[i]->name[1], &target2);
-        //printf("Matrix size: %lu\n", matrixsize);
-        WC_reference_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
-        offset += matrixsize * MATRIX_DIMENSION2;
-        WC_structure_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
-        offset += matrixsize * MATRIX_DIMENSION2;
-        WC_work[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, MATRIX_DIMENSION2, matrixsize, matrixsize);
-        offset += matrixsize * MATRIX_DIMENSION2;
+	size_t memsize = 0;
+	const atom_id *target1 = nullptr;
+	const atom_id *target2 = nullptr;
+	size_t offset = 0;
+	size_t matrixsize = 0;
+	size_t target1size = 0;
+	size_t target2size = 0;
+	N_matrices = WC_Library.count;
+	for(uint64_t i = 0; i < WC_Library.count; i++)
+	{
+		memsize += get_WC_target(WC_Library[i]->name[0], &target1) * MATRIX_DIMENSION2;
+		memsize += get_WC_target(WC_Library[i]->name[1], &target2) * MATRIX_DIMENSION2;
+	}
+	WC_memblock = gsl_block_alloc(memsize * 3); // Times 3 because space is needed for Work matrices AND matrices from built structure
+	WC_reference_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
+	WC_structure_matrices = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
+	WC_work = (gsl_matrix**)malloc(sizeof(gsl_matrix*) * WC_Library.count);
+	for(uint64_t i = 0; i < WC_Library.count; i++)
+	{
+		matrixsize = 0;
+		matrixsize = get_WC_target(WC_Library[i]->name[0], &target1);
+		//printf("Matrix size: %lu\n", matrixsize);
+		matrixsize += get_WC_target(WC_Library[i]->name[1], &target2);
+		//printf("Matrix size: %lu\n", matrixsize);
+		WC_reference_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+		offset += matrixsize * MATRIX_DIMENSION2;
+		WC_structure_matrices[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, matrixsize, MATRIX_DIMENSION2, MATRIX_DIMENSION2);
+		offset += matrixsize * MATRIX_DIMENSION2;
+		WC_work[i] = gsl_matrix_alloc_from_block(WC_memblock, offset, MATRIX_DIMENSION2, matrixsize, matrixsize);
+		offset += matrixsize * MATRIX_DIMENSION2;
 
-        target1size = get_WC_target(WC_Library[i]->name[0], &target1);
-        target2size = get_WC_target(WC_Library[i]->name[1], &target2);
-        //size_t rel_idx = 0;
+		target1size = get_WC_target(WC_Library[i]->name[0], &target1);
+		target2size = get_WC_target(WC_Library[i]->name[1], &target2);
+		//size_t rel_idx = 0;
 
-        for (uint64_t j = 0; j < WC_Library[i]->atom_data->count; j++)
-        {
-            for (unsigned int k = 0; k < target1size; k++)
-            {
-                if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 0)
-                {
-                    gsl_matrix_set(WC_reference_matrices[i], k, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
-                    gsl_matrix_set(WC_reference_matrices[i], k, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
-                    gsl_matrix_set(WC_reference_matrices[i], k, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
-                    //rel_idx++;
-                    // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
-                }
-            }
-            for (unsigned int k = 0; k < target2size; k++)
-            {
-                if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 1)
-                {
-                    gsl_matrix_set(WC_reference_matrices[i], k + target1size, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
-                    gsl_matrix_set(WC_reference_matrices[i], k + target1size, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
-                    gsl_matrix_set(WC_reference_matrices[i], k + target1size, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
-                    //rel_idx++;
-                    // printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
-                }
-            }
-        }
-    }
+		for (uint64_t j = 0; j < WC_Library[i]->atom_data->count; j++)
+		{
+			for (unsigned int k = 0; k < target1size; k++)
+			{
+				if ((target1[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 0)
+				{
+					gsl_matrix_set(WC_reference_matrices[i], k, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
+					gsl_matrix_set(WC_reference_matrices[i], k, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
+					gsl_matrix_set(WC_reference_matrices[i], k, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
+					//rel_idx++;
+					// printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
+				}
+			}
+			for (unsigned int k = 0; k < target2size; k++)
+			{
+				if ((target2[k] == WC_Library[i]->atom_data->atom_ids[j]) && (uint8_t)(WC_Library[i]->atom_data->dnt_pos[j] - 1) == 1)
+				{
+					gsl_matrix_set(WC_reference_matrices[i], k + target1size, 0, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 0));
+					gsl_matrix_set(WC_reference_matrices[i], k + target1size, 1, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 1));
+					gsl_matrix_set(WC_reference_matrices[i], k + target1size, 2, gsl_matrix_get(WC_Library[i]->data_matrices[0], j, 2));
+					//rel_idx++;
+					// printf("%s:%ld\tGetting Atom %s from row %d\n", name, id, atom_data->name[j], j);
+				}
+			}
+		}
+	}
 }
 
 void WC_destroy()
 {
-    for(size_t i = 0; i < N_matrices; i++)
-    {
-        gsl_matrix_free(WC_reference_matrices[i]);
-        gsl_matrix_free(WC_structure_matrices[i]);
-        gsl_matrix_free(WC_work[i]);
-    }
-    free(WC_reference_matrices);
-    free(WC_structure_matrices);
-    free(WC_work);
-    gsl_block_free(WC_memblock);
+	for(size_t i = 0; i < N_matrices; i++)
+	{
+		gsl_matrix_free(WC_reference_matrices[i]);
+		gsl_matrix_free(WC_structure_matrices[i]);
+		gsl_matrix_free(WC_work[i]);
+	}
+	free(WC_reference_matrices);
+	free(WC_structure_matrices);
+	free(WC_work);
+	gsl_block_free(WC_memblock);
 }

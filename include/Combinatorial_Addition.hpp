@@ -6,7 +6,7 @@
 #include "DimerLib.hpp"
 #include "RNAData.hpp"
 #include "RNADataArrayInternalLoop.hpp"
-#include "output_string.hpp"
+#include "OutputString.hpp"
 #include "WatsonCrickPair.hpp"
 #include "HBondDetector.hpp"
 #include "CMB_Manager.hpp"
@@ -14,7 +14,6 @@
 #include "steric_clash_check.hpp"
 #include "n_lowest_energy.hpp"
 
-template <STRUCTFILTER_TYPE FILTER> bool combinatorial_addition(DimerLibArray& Lib, RNADataArray &assembled, CMB_Manager& manager, output_string& o_string);
-bool combinatorial_addition_IL(DimerLibArray& Lib, RNADataArrayInternalLoop &assembled, CMB_Manager& manager, output_string& o_string, DimerLibArray& WC_Lib);
+void run_combinatorial(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_library, OutputString& output, RunInfo& run_info);
 
 #endif

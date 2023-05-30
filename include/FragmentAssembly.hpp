@@ -9,10 +9,7 @@
 #include "steric_clash_check.hpp"
 #include "CMB_Manager.hpp"
 
-attach_status rotate(RNAData *reference, RNAData *rotated);
-attach_status fragment_assembly(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager);
-attach_status prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib, RNADataArrayInternalLoop &assembled);
-attach_status fragment_assembly_IL(DimerLibArray &Lib, DimerLibArray &WC_Lib, RNADataArrayInternalLoop &assembled, CMB_Manager &manager);
-
-
+AttachStatus rotate(RNAData *reference, RNAData *rotated);
+template <uint32_t OPTS> AttachStatus fragment_assembly(DimerLibArray &lib, DimerLibArray &wc_lib, RNADataArray &assembled, CMB_Manager &manager);
+template <uint32_t OPTS> AttachStatus prepare_right(RNAData* to_be_assembled, DimerLibArray &WC_Lib, RNADataArray &assembled);
 #endif

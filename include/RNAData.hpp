@@ -60,9 +60,17 @@ struct RNAData
 	void print(int res);
 	int to_string(char *s, int buffer_size, int string_index);
 	void print_offset(int res, int position);
-	int to_string_offset(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset);
-	int generate_string_prototype(int res, int position, char *s, int buffer_size, int string_index, int *idx_offset);
-	int overwrite_string_prototype(int res, char *s, int buffer_size, int string_index, int *idx_offset);
+	int to_string_offset(int res, int position, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
+	int generate_string_prototype(int res, int position, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
+	int overwrite_string_prototype(int res, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
+};
+
+struct DoubleStrandData
+{
+	int iterator_max_Strand1;
+	int strand1_size;
+	uint16_t *wc_rows[2];
+	size_t wc_rowsize[2];
 };
 
 struct RNADataArray
@@ -72,6 +80,7 @@ struct RNADataArray
 	gsl_matrix *COMS;
 	gsl_block *MatrixMemBlock;
 	uint16_t *ArrayMemBlock;
+	StrType structure_type;
 
 	double *Radii;
 	bool *PassedCOMCheck;
@@ -84,7 +93,11 @@ struct RNADataArray
 	int iterator;
 	int iterator_max;
 	float structure_energy;
-	float WC_rmsd0_N = -1.0F;
+	DoubleStrandData ds_data;
+	IndexPair* wc_pairs;
+	IndexPair* wc_pair_res;
+	float* wc_rmsd;
+	size_t n_wc_pairs;
 
 	char *string_out;
 	int string_buffer;
@@ -98,11 +111,11 @@ struct RNADataArray
 
 	int atom_sum;
 
-	RNADataArray();
-	void initialize(size_t size, DimerLibArray &Library);
+	void initialize(RunInfo& run_info, DimerLibArray &library, DimerLibArray& wc_library);
+	void initialize_ds(RunInfo& run_info, DimerLibArray &wc_library, size_t& arr_offset);
 	void overwrite(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
 	void overwrite_initialize(size_t LibIdx, size_t IdxInLib, DimerLibArray &Library);
-	~RNADataArray();
+	void destroy();
 	uint64_t calculate_matrix_memory_needed(DimerLibArray &L, int i);
 	uint64_t calculate_index_array_memory_needed(DimerLibArray &L, int i);
 	RNAData *operator[](int i);
@@ -115,16 +128,20 @@ struct RNADataArray
 	void safe_rollback(); // unused
 	void rollback_by(int amount);
 	bool is_empty();
-	void update_WC_rmsd(float rmsd_val);
+	bool should_prepare_right(int working_pos); 
+	void update_WC_rmsd(float rmsd_val, size_t idx);
 	void update_energy();
 	void printall();
 	void initialize_string();
 	int get_atom_sum();
-	int out_string_header_coord();
-	int out_string_header();
-	char *to_string();
-	void generate_string_prototype(); 
-	virtual char* overwrite_string_prototype(); 
+	int out_string_header_coord(RunInfo& run_info);
+	int out_string_header(RunInfo& run_info);
+	void generate_string_prototype(RunInfo& run_info); 
+	void gen_string_prototype_ds(uint32_t& idx_offset);
+	void gen_string_prototype_ss(uint32_t& idx_offset);
+	char* overwrite_string_prototype(RunInfo& run_info); 
+	void overwrite_string_prototype_ds(uint32_t& idx_offset);
+	void overwrite_string_prototype_ss(uint32_t& idx_offset);
 	int *get_index();
 	void print_index(int offset);
 	void print_index();

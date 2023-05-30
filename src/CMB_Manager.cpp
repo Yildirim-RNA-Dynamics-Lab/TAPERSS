@@ -21,10 +21,6 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA)
 	last_attempted[0] = 0;
 	last_attempted[1] = 0;
 	attach_attempted[0] = 0;
-
-	strs_built = 0;
-	hairpins_built = 0;
-	internal_loops_built = 0;
 }
 
 CMB_Manager::~CMB_Manager()
@@ -88,11 +84,5 @@ uint64_t CMB_Manager::get_reset_count()
 	}
 	//printf("n_reset = %d\n", n_reset);
 	return n_reset;
-}
-
-/* Deprecated */
-void CMB_Manager::successful_construction()
-{
-	strs_built++;
 }
 

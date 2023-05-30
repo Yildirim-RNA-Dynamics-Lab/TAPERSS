@@ -17,8 +17,8 @@ struct DimerLib
     int               count; //Number of structures in Library
     double*           radii[2];
 
-    DimerLib(int n, int a_n, int e_n);
-    ~DimerLib();
+    void initialize(int n, int a_n, int e_n);
+    void destroy();
     void save_lib(gsl_matrix** d_m, float* e, char* n, double** r);
     void clear_flags();
 };
@@ -38,10 +38,8 @@ struct DimerLibArray
     uint32_t NegativeAtomCount;
     uint32_t LargestAtomCount = 0;
 
-    DimerLibArray();
-    DimerLibArray(int s);
-    ~DimerLibArray();
     void initialize(int s);
+		void destroy();
     DimerLib* operator[](int i);
     void alloc_lib(size_t n, size_t a_n, size_t e_n);
     void add_to_atom_info(char *N, int i, char r, int p);
@@ -58,6 +56,6 @@ struct DimerLibArray
 
 void get_model_count(FILE* fp, int* i);
 void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info);
-void load_libs(char **LibNames, int N_diNts, DimerLibArray& RTN, int* duplicate_record, bool for_WC = false);
+void load_libs(RunInfo& run_info, DimerLibArray& rtn_lib_array, bool for_WC);
 
 #endif

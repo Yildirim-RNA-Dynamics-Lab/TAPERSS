@@ -1,10 +1,10 @@
-#include "output_string.hpp"
+#include "OutputString.hpp"
 
-output_string::output_string(RunInfo& run_info, char* string_prototype)
+void OutputString::initialize(RunInfo& run_info, char* string_prototype)
 {
 	output_file = fopen(run_info.output_file, "w");
 	max_size = strlen(string_prototype); 
-	max_string = (uint32_t)(run_info.memory_limit / max_size);
+	max_string = (uint32_t)(run_info.memory_limit / (max_size + sizeof(char *)));
 	string_storage = (char **)malloc(sizeof(char *) * max_string);
 	string_storage[0] = (char *)malloc(sizeof(char) * max_size * max_string + 1); //+1 b/c end of packed string needs to have '\0' included.
 	string_storage[0][max_size * max_string] = '\0';
@@ -16,7 +16,7 @@ output_string::output_string(RunInfo& run_info, char* string_prototype)
 	num_allocated = 0;
 }
 
-output_string::~output_string()
+void OutputString::destroy()
 {
 	fprintf(output_file, "%s", string_storage[0]);
 	free(string_storage[0]);
@@ -24,7 +24,7 @@ output_string::~output_string()
 	fclose(output_file);
 }
 
-void output_string::add_string(char *s)
+void OutputString::add_string(char *s)
 {
 	if (iterator == max_string - 1)
 	{
@@ -41,7 +41,7 @@ void output_string::add_string(char *s)
 	return;
 }
 
-void output_string::overwrite_and_shift_strings(char *src, int dest_idx)
+void OutputString::insert_string(char *src, int dest_idx)
 {
 	int shift_size = 0;
 	if(dest_idx < iterator)

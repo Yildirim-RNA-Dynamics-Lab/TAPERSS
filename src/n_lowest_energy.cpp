@@ -8,7 +8,7 @@ void create_n_lowest_E(int n)
 	NLowestE = (float *)malloc(sizeof(float) * N);
 	for(int i = 0; i < n; i++)
 	{
-		NLowestE[i] = 9999;
+		NLowestE[i] = MAXFLOAT;
 	}
 }
 

@@ -22,12 +22,18 @@
 #define DIE do { printf("DIED at line %d in file %s!\n", __LINE__, __FILE__); exit(2);} while (0)
 
 enum STRUCTFILTER_TYPE{HAIRPIN, INTERNAL_LOOP, NONE};
-enum attach_status{FAILED, ATTACHED, NOT_CHECKED, FAILED_SC};
+enum AttachStatus{FAILED, ATTACHED};
 
 enum RunType{combinatorial, build_from_index, build_from_index_list, runtype_undef};
 enum StrType{single_strand, double_strand, strtype_undef};
-enum RunOpts{build_limit_by_energy=0x00000001, blind_build_limit=0x00000002, write_coordinates=0x00000004, use_structure_filter=0x00000008};
-
+enum RunOpts{
+	build_limit_by_energy=0x00000001, 
+	blind_build_limit=0x00000002, 
+	write_coordinates=0x00000004, 
+	use_structure_filter=0x00000008, 
+	strtype_ds=0x00000010,
+	str_filter_uses_ds_closing_bp=0x00000020,
+};
 /* Compile-time evaluated constants */
 constexpr float VDW_RADIUS = 1.5;
 constexpr float RADIUS_C   = 0.75;
@@ -77,8 +83,31 @@ extern uint32_t GLOBAL_N_LOWEST;
 extern char LIBRARY_FILENAME_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];        // = "../AGAAAU_test/XX_library_combined.txt";
 extern char WATSON_CRICK_LIBRARY_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];    // = "../AGAAAU_test/WC_XX_library.txt";
 
-struct RunInfo
-{
+struct Timer {
+	clock_t start,end;
+	double time_used;
+	void start_timer() {
+		start = clock();
+	}
+	void stop_timer() {
+		end = clock();
+	}
+	void print() {
+		time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+		int h = time_used / (60 * 60);
+		int m = (time_used - (h * 60 * 60)) / 60;
+		int s = time_used - ((h * 60 * 60) + (m * 60));
+		int ms = (time_used - ((h * 60 * 60) + (m * 60) + s)) * 1000;
+		printf("%dh:%dm:%ds:%dms\n", h, m, s, ms);
+	}
+};
+
+struct IndexPair {
+	size_t idx1;
+	size_t idx2;
+};
+
+struct RunInfo {
 	StrType   structure_type = StrType::strtype_undef;
 	RunType   run_type = RunType::runtype_undef;
 	uint32_t  run_options = 0;
@@ -90,6 +119,8 @@ struct RunInfo
 	size_t		n_wc_pairs = 0;
 	size_t		ds_strand1_n_frags = 0;
 	size_t		ds_strand2_n_frags = 0;
+	uint64_t	n_total_structs_built = 0;
+	uint64_t  n_filter_structs_built = 0;
 	char      sequence[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char		  library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
 	char		  wc_library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
@@ -102,7 +133,9 @@ struct RunInfo
 	char** 		wc_lib_list = nullptr;
 	size_t*		lib_duplicate_record = nullptr;
 	size_t*		wc_lib_duplicate_record = nullptr;
-	uint32_t*	wc_pair_list = nullptr;
+	IndexPair*	wc_pair_list = nullptr;
+	Timer 		init_timer;
+	Timer     run_timer;
 };
 
 

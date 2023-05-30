@@ -1,175 +1,94 @@
 #include "Combinatorial_Addition.hpp"
-template <STRUCTFILTER_TYPE FILTER> bool early_exit_handler(CMB_Manager &manager)
+bool early_exit_handler(RunInfo& run_info)
 {
-	if constexpr (FILTER == HAIRPIN)
-	{
-		return manager.hairpins_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
-	}
-	if constexpr (FILTER == INTERNAL_LOOP)
-	{
-		return manager.internal_loops_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
-	}
-	if constexpr (FILTER == NONE)
-	{
-		return manager.strs_built == GLOBAL_STRUCTURE_LIMIT_COUNT;
+	if(run_info.run_options & RunOpts::use_structure_filter) {
+		return run_info.n_filter_structs_built == run_info.build_limit;
+	} else {
+		return run_info.n_total_structs_built == run_info.build_limit;
 	}
 }
-template bool early_exit_handler<STRUCTFILTER_TYPE::HAIRPIN>(CMB_Manager &manager);
-template bool early_exit_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(CMB_Manager &manager);
-template bool early_exit_handler<STRUCTFILTER_TYPE::NONE>(CMB_Manager &manager);
 
-template <STRUCTFILTER_TYPE FILTER> void output_handler(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string)
+void output_handler(RNADataArray &assembled, OutputString &o_string, RunInfo& run_info)
 {
-	if constexpr (FILTER == HAIRPIN)
-	{
-		double RMSD;
-		WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
-		RMSD = WC_check_pair(0);
-		if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
-		{
-			assembled.update_WC_rmsd(RMSD);
-			assembled.update_energy();
-			if(GLOBAL_USE_N_LOWEST)
-			{
-				int idx;
-				if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1)
-				{
-					o_string.overwrite_and_shift_strings(assembled.to_string(), idx);
-					manager.hairpins_built++;
-				}
-			}
-			else
-			{
-				o_string.add_string(assembled.to_string());
-				manager.hairpins_built++;
-			}
-		}
-		manager.strs_built++;
-		return;
+	run_info.n_total_structs_built++;
+	if(run_info.run_options & RunOpts::use_structure_filter) {
+		uint start = run_info.run_options & RunOpts::str_filter_uses_ds_closing_bp ? 1 : 0;
+		if(WC_full_check<true>(assembled, start, run_info) != true) { return; }
 	}
-	if constexpr (FILTER == INTERNAL_LOOP)
-	{
-		double RMSD;
-		WC_prepare_structure_matrix(0, assembled[0], 0, assembled[assembled.iterator_max], 1);
-		RMSD = WC_check_pair(0);
-		if (RMSD <= GLOBAL_WC_RMSD_LIMIT)
-		{
-			assembled.update_WC_rmsd(RMSD);
-			assembled.update_energy();
-			o_string.add_string(assembled.overwrite_string_prototype());
-			manager.internal_loops_built++;
+	assembled.update_energy();
+	if(run_info.run_options & RunOpts::build_limit_by_energy) {
+		int idx;
+		if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1) {
+			o_string.insert_string(assembled.overwrite_string_prototype(run_info), idx);
 		}
-		manager.strs_built++;
-		return;
+	} else {
+		o_string.add_string(assembled.overwrite_string_prototype(run_info));
 	}
-	if constexpr (FILTER == NONE)
-	{
-		assembled.update_energy();
-		if(GLOBAL_USE_N_LOWEST)
-		{
-			int idx;
-			if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1)
-			{
-				o_string.overwrite_and_shift_strings(assembled.to_string(), idx);
-				manager.strs_built++;
-			}
-		}
-		else
-		{
-			o_string.add_string(assembled.to_string());
-			manager.strs_built++;
-		}
-	}
+	run_info.n_filter_structs_built++;
+	return;
 }
-template void output_handler<STRUCTFILTER_TYPE::HAIRPIN>(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string);
-template void output_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string);
-template void output_handler<STRUCTFILTER_TYPE::NONE>(CMB_Manager &manager, RNADataArray &assembled, output_string &o_string);
 
 void fill_if_empty(CMB_Manager &manager, RNADataArray &assembled, DimerLibArray &Lib)
 {
-	if (assembled.is_empty())
-	{
-		uint32_t dnmp_pos = assembled.iterator + 1;
-		uint32_t lib_pos = manager.attach_attempted[dnmp_pos] + 1;
-		assembled.overwrite(dnmp_pos, lib_pos, Lib);
-		assembled.keep();
-		manager.attach_attempt(dnmp_pos, lib_pos);
-	}
+	uint32_t dnmp_pos = assembled.iterator + 1;
+	uint32_t lib_pos = manager.attach_attempted[dnmp_pos] + 1;
+	assembled.overwrite(dnmp_pos, lib_pos, Lib);
+	assembled.keep();
+	manager.attach_attempt(dnmp_pos, lib_pos);
 }
 
-template <attach_status status> bool rollback_handler(CMB_Manager &manager, RNADataArray &assembled, DimerLibArray &Lib)
+template <AttachStatus status> bool rollback_handler(CMB_Manager &manager, RNADataArray &assembled, DimerLibArray &Lib)
 {
-	if (manager.is_at_end())
-	{
-		if (manager.check_lib_completion())
-		{
+	constexpr uint roll_back_offset = status == AttachStatus::ATTACHED ? 1 : 0;//+1 b/c we called keep(),we need to rollback an extra fragment to move on.
+	if (manager.is_at_end()) {
+		if (manager.check_lib_completion()) {
 			return true;
+		} else {
+			assembled.rollback_by(manager.rollback_count + roll_back_offset); 
+			if(assembled.is_empty()) { fill_if_empty(manager, assembled, Lib); }
 		}
-		if constexpr (status == attach_status::ATTACHED) 
-		{ 
-			assembled.rollback_by(manager.rollback_count + 1); //+1 b/c we called keep(), so we need to rollback an extra dnmp to move on.
-			fill_if_empty(manager, assembled, Lib);
-			return false; 
-		} 
-		if constexpr (status == attach_status::FAILED)   
-		{ 
-			assembled.rollback_by(manager.rollback_count); 
-			fill_if_empty(manager, assembled, Lib);
-			return false; 
-		}
-	}
-	else
-	{
+	} else {
 		assembled.rollback();
-		return false;
 	}  
-}
-template bool rollback_handler<attach_status::ATTACHED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
-template bool rollback_handler<attach_status::FAILED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
-
-template <STRUCTFILTER_TYPE FILTER> bool combinatorial_addition(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string)
-{
-	switch(fragment_assembly(Lib, assembled, manager))
-	{
-		case attach_status::ATTACHED:
-			assembled.keep();
-			break;
-		case attach_status::FAILED:
-			return rollback_handler<attach_status::FAILED>(manager, assembled, Lib);
-		default:      //This condition will never be reached..only here to stop compiler warnings
-			break;
-	}
-
-	if (assembled.is_complete())
-	{
-		output_handler<FILTER>(manager, assembled, o_string);
-		if constexpr (STRUCTURE_BUILD_LIMIT){ if(early_exit_handler<FILTER>(manager)){return true;} }
-		return rollback_handler<attach_status::ATTACHED>(manager, assembled, Lib);
-	}
 	return false;
 }
-template bool combinatorial_addition<STRUCTFILTER_TYPE::HAIRPIN>(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string);
-template bool combinatorial_addition<STRUCTFILTER_TYPE::NONE>(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager, output_string &o_string);
+template bool rollback_handler<AttachStatus::ATTACHED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
+template bool rollback_handler<AttachStatus::FAILED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
 
-bool combinatorial_addition_IL(DimerLibArray &Lib, RNADataArrayInternalLoop &assembled, CMB_Manager &manager, output_string &o_string, DimerLibArray &WC_Lib)
+typedef AttachStatus(*FragAssemPtr)(DimerLibArray&, DimerLibArray&, RNADataArray&, CMB_Manager&);
+FragAssemPtr setup_frag_assembly_branch(uint32_t opts) 
 {
-
-	switch(fragment_assembly_IL(Lib, WC_Lib, assembled, manager))
-	{
-		case attach_status::ATTACHED:
-			assembled.keep();
-			break;
-		case attach_status::FAILED:
-			return rollback_handler<attach_status::FAILED>(manager, assembled, Lib);
-		default:      //This condition will never be reached..only here to stop compiler warnings
-			break;
+	FragAssemPtr p;
+	if(opts & RunOpts::strtype_ds) {
+		if(opts & RunOpts::str_filter_uses_ds_closing_bp) {
+			p = &fragment_assembly<RunOpts::strtype_ds | RunOpts::str_filter_uses_ds_closing_bp>;
+		} else {
+			p = &fragment_assembly<RunOpts::strtype_ds>;
+		}
+	} else {
+		p = &fragment_assembly<0>;
 	}
+	return p;
+}
 
-	if (assembled.is_complete())
-	{
-		output_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(manager, assembled, o_string);
-		if constexpr (STRUCTURE_BUILD_LIMIT){ if(early_exit_handler<STRUCTFILTER_TYPE::INTERNAL_LOOP>(manager)){return true;} }
-		return rollback_handler<attach_status::ATTACHED>(manager, assembled, Lib);
+void run_combinatorial(RNADataArray &assembled, DimerLibArray& frag_lib, DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)
+{
+	CMB_Manager manager(frag_lib);
+	FragAssemPtr fragment_assembly_ptr = setup_frag_assembly_branch(run_info.run_options);
+	bool run_done = false;
+	while(run_done == false) {
+		switch((*fragment_assembly_ptr)(frag_lib, wc_lib, assembled, manager)) {
+			case AttachStatus::ATTACHED:
+				assembled.keep();
+				break;
+			case AttachStatus::FAILED:
+				run_done = rollback_handler<AttachStatus::FAILED>(manager, assembled, frag_lib);
+				continue;
+		}
+		if (assembled.is_complete()) {
+			output_handler(assembled, o_string, run_info);
+			if (run_info.run_options & RunOpts::blind_build_limit){ if(early_exit_handler(run_info)) break; }
+			run_done = rollback_handler<AttachStatus::ATTACHED>(manager, assembled, frag_lib);
+		}
 	}
-	return false;
 }

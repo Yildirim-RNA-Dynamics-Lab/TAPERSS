@@ -3,7 +3,7 @@
 
 #include "RNACMB.hpp"
 
-struct output_string
+struct OutputString
 {
 	FILE *output_file;
 	char **string_storage;
@@ -12,10 +12,10 @@ struct output_string
 	int max_string;
 	int max_size;
 
-	output_string(RunInfo& run_info, char* string_prototype);
-	~output_string();
+	void initialize(RunInfo& run_info, char* string_prototype);
+	void destroy();
 	void add_string(char *s);
-	void overwrite_and_shift_strings(char *src, int dest_idx);
+	void insert_string(char *src, int dest_idx);
 };
 
 #endif
