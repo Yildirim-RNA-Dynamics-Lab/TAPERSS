@@ -102,40 +102,43 @@ struct Timer {
 	}
 };
 
-struct IndexPair {
-	size_t idx1;
-	size_t idx2;
+template <typename T> struct IndexPair {
+	T idx1;
+	T idx2;
 };
 
 struct RunInfo {
-	StrType   structure_type = StrType::strtype_undef;
-	RunType   run_type = RunType::runtype_undef;
-	uint32_t  run_options = 0;
-	double 		rmsd_limit = 0;
-	double  	wc_rmsd_limit = 0;
-	size_t    memory_limit = 0;
-	size_t 		build_limit = 0;
-	size_t		n_fragments = 0;
-	size_t		n_wc_pairs = 0;
-	size_t		ds_strand1_n_frags = 0;
-	size_t		ds_strand2_n_frags = 0;
-	uint64_t	n_total_structs_built = 0;
-	uint64_t  n_filter_structs_built = 0;
-	char      sequence[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	char		  library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	char		  wc_library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	char      output_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	char      input_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	char      index_list_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	char      dot_bracket[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
-	uint32_t* index = nullptr;
-	char**		fragment_lib_list = nullptr;
-	char** 		wc_lib_list = nullptr;
-	size_t*		lib_duplicate_record = nullptr;
-	size_t*		wc_lib_duplicate_record = nullptr;
-	IndexPair*	wc_pair_list = nullptr;
-	Timer 		init_timer;
-	Timer     run_timer;
+	StrType							structure_type = StrType::strtype_undef;
+	RunType							run_type = RunType::runtype_undef;
+	uint32_t						run_options = 0;
+	double							rmsd_limit = 0;
+	double							wc_rmsd_limit = 0;
+	size_t							memory_limit = 0;
+	size_t							build_limit = 0;
+	size_t							n_fragments = 0;
+	size_t							n_wc_pairs = 0;
+	size_t							ds_strand1_n_frags = 0;
+	size_t							ds_strand2_n_frags = 0;
+	uint64_t						n_total_structs_built = 0;
+	uint64_t						n_filter_structs_built = 0;
+	char								sequence[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								wc_library_prototype[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								output_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								input_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								index_list_file[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								dot_bracket[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								parallel_lib_len[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	char								parallel_lib_idx[GLOBAL_STANDARD_STRING_LENGTH] = {'\0'};
+	uint32_t*						index = nullptr;
+	char**							fragment_lib_list = nullptr;
+	char**							wc_lib_list = nullptr;
+	size_t*							lib_duplicate_record = nullptr;
+	size_t*							wc_lib_duplicate_record = nullptr;
+	IndexPair<size_t>*	wc_pair_list = nullptr;
+	IndexPair<size_t>*	frag_lib_bounds = nullptr;
+	Timer								init_timer;
+	Timer								run_timer;
 };
 
 

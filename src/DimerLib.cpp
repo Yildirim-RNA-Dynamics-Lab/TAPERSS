@@ -393,6 +393,19 @@ void check_if_all_in_sphere(gsl_matrix *A, atom_info *A_info, double* radius, in
 	}
 }
 
+void prepare_run_info_lib_bounds(RunInfo& run_info, uint32_t lib_len, uint32_t idx) 
+{
+	uint32_t split_idx = run_info.frag_lib_bounds[idx].idx1;
+	uint32_t split_len = run_info.frag_lib_bounds[idx].idx2;
+	uint32_t splits = ceil(lib_len/split_len);
+	run_info.frag_lib_bounds[idx].idx1 = split_len * split_idx;
+	if(split_idx == splits - 1) {
+		run_info.frag_lib_bounds[idx].idx2 = lib_len;
+	} else {
+		run_info.frag_lib_bounds[idx].idx2 = (split_len * (split_idx + 1));
+	}
+}
+
 /**
  * @breif Reads all files given in lib_files, assuming they are library files, and will load them into the given DimerLibArray
  * This function works for both WatsonCrick libraries and normal DNMP libraries, determined by bool for_WC.
@@ -444,6 +457,7 @@ void load_libs(RunInfo& run_info, DimerLibArray &rtn_lib_array, bool for_WC)
 		} else {
 			model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
 			rtn_lib_array.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
+			prepare_run_info_lib_bounds(run_info, model_info[model_count], i);
 		}
 
 		data_mats = rtn_lib_array[i]->data_matrices;

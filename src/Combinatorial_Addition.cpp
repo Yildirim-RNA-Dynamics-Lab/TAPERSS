@@ -73,7 +73,7 @@ FragAssemPtr setup_frag_assembly_branch(uint32_t opts)
 
 void run_combinatorial(RNADataArray &assembled, DimerLibArray& frag_lib, DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)
 {
-	CMB_Manager manager(frag_lib);
+	CMB_Manager manager(frag_lib, run_info);
 	FragAssemPtr fragment_assembly_ptr = setup_frag_assembly_branch(run_info.run_options);
 	bool run_done = false;
 	while(run_done == false) {

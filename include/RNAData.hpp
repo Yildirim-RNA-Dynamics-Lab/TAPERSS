@@ -94,8 +94,8 @@ struct RNADataArray
 	int iterator_max;
 	float structure_energy;
 	DoubleStrandData ds_data;
-	IndexPair* wc_pairs;
-	IndexPair* wc_pair_res;
+	IndexPair<size_t>* wc_pairs;
+	IndexPair<size_t>* wc_pair_res;
 	float* wc_rmsd;
 	size_t n_wc_pairs;
 

@@ -165,6 +165,52 @@ uint32_t get_index_int(char *index, uint32_t *indices)
 	return count;
 }
 
+template <typename T> uint32_t get_index_int_pair(char *index, IndexPair<T> *indices, uint8_t idx)
+{
+	char buffer[5];
+	uint32_t count = 0, buf_c = 0;
+	for (char c = *index; c != '\0'; c = *(++index)) {
+		if (c == '-') {
+			buffer[buf_c] = '\0';
+			if(idx == 1)
+				indices[count].idx1 = atoi(buffer);
+			else
+				indices[count].idx2 = atoi(buffer);
+			buf_c = 0;
+			count++;
+			continue;
+		}
+		buffer[buf_c++] = *index;
+	}
+	buffer[buf_c] = '\0';
+	if(idx == 1)
+		indices[count].idx1 = atoi(buffer);
+	else
+		indices[count].idx2 = atoi(buffer);
+	return count;
+}
+
+void parse_parallel_input(RunInfo& run_info) 
+{
+	run_info.frag_lib_bounds = (IndexPair<size_t>*)malloc(sizeof(IndexPair<size_t>) * run_info.n_fragments);
+	if(run_info.parallel_lib_len[0] == '\0' && run_info.parallel_lib_idx[0] == '\0') {
+		for(uint i = 0; i < run_info.n_fragments; i++) {
+			run_info.frag_lib_bounds[i].idx1 = 0;
+			run_info.frag_lib_bounds[i].idx2 = 0;
+		}
+	} else if (run_info.parallel_lib_len[0] == '\0' || run_info.parallel_lib_idx[0] == '\0') {
+		fprintf(stderr, "Parallel run setup incomplete: missing either library segments lengths or indices!\n");
+		exit(3);
+	} else {
+		uint32_t idx_len = get_index_int_pair(run_info.parallel_lib_idx, run_info.frag_lib_bounds, 1);
+		uint32_t lib_len = get_index_int_pair(run_info.parallel_lib_len, run_info.frag_lib_bounds, 2);
+		if(idx_len != lib_len || idx_len != run_info.n_fragments) {
+			fprintf(stderr, "Parallel run setup error: incorrect number of library segments lengths or indices!\n");
+			exit(3);
+		}
+	}
+}
+
 uint8_t parse_dot_backet(RunInfo& run_info, size_t len, uint32_t* pair_record)
 {
 	uint32_t open_brkt = 0;
@@ -235,12 +281,10 @@ void read_input_file(char *file_name, RunInfo& run_info, char* idx_tmp)
 		if (!strcasecmp(header, "sequence")) {
 			strcpy(run_info.sequence, str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "OUTPUT-FILE")) {
+		} else if (!strcasecmp(header, "OUTPUT-FILE")) {
 			strcpy(run_info.output_file, str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "RUN-TYPE")) {
+		} else if (!strcasecmp(header, "RUN-TYPE")) {
 			if (!strcasecmp(str1, "cmb") || !strcasecmp(str1, "combinatorial")) {
 				run_info.run_type = RunType::combinatorial;
 			} else if (!strcasecmp(str1, "idx") || !strcasecmp(str1,"from-index")) {
@@ -251,56 +295,44 @@ void read_input_file(char *file_name, RunInfo& run_info, char* idx_tmp)
 				printf("Unrecognized option: %s = %s\n", header, str1);
 			}
 			continue;
-		}
-		else if (!strcasecmp(header, "INDEX-LIST-FILE")) {
+		} else if (!strcasecmp(header, "INDEX-LIST-FILE")) {
 			strcpy(run_info.index_list_file, str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "structure-count-limit")) {
+		} else if (!strcasecmp(header, "structure-count-limit")) {
 			run_info.build_limit = atoi(str1);
-		}
-		else if (!strcasecmp(header, "structure-count-limit-type")) {
+		} else if (!strcasecmp(header, "structure-count-limit-type")) {
 			if (!strcasecmp(str1, "energy")) {
 				run_info.run_options |= RunOpts::build_limit_by_energy;
-			}
-			else if (!strcasecmp(str1, "blind")) {
+			} else if (!strcasecmp(str1, "blind")) {
 				run_info.run_options |= RunOpts::blind_build_limit;
 			} else {
 				printf("Unrecognized option: %s = %s\n", header, str1);
 			}
 			continue;
-		}
-		else if (!strcasecmp(header, "single-index-set")) {
+		} else if (!strcasecmp(header, "single-index-set")) {
 			strcpy(idx_tmp, str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "overlap-rmsd-limit")) {
+		} else if (!strcasecmp(header, "overlap-rmsd-limit")) {
 			run_info.rmsd_limit = atof(str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "watson-crick-rmsd-limit")) {
+		} else if (!strcasecmp(header, "watson-crick-rmsd-limit")) {
 			run_info.wc_rmsd_limit = atof(str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "library-prototype")) {
+		} else if (!strcasecmp(header, "library-prototype")) {
 			strcpy(run_info.library_prototype, str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "watson-crick-library-prototype")) {
+		} else if (!strcasecmp(header, "watson-crick-library-prototype")) {
 			strcpy(run_info.wc_library_prototype, str1);
 			continue;
-		}
-		else if (!strcasecmp(header, "WRITE-COORDINATES")) {
+		} else if (!strcasecmp(header, "WRITE-COORDINATES")) {
 			if (!strcasecmp(str1, "TRUE")) {
 				run_info.run_options |= RunOpts::write_coordinates;
 			}
-		}
-		else if (!strcasecmp(header, "secondary-structure-filter")) {
+		} else if (!strcasecmp(header, "secondary-structure-filter")) {
 			strcpy(run_info.dot_bracket, str1);
 			run_info.run_options |= RunOpts::use_structure_filter;
 			continue;
-		}
-		else {
+		} else {
 			printf("Warning: Ignored unknown option in input file: %s\n", header);
 		}
 	}
@@ -321,14 +353,14 @@ uint32_t complete_run_info(RunInfo& run_info, char* idx_tmp, uint32_t err_count)
 			err_count += get_WC_partner_single(run_info, x_loc - 1, x_loc + 1, 0, name_position);
 			run_info.n_wc_pairs = 1;
 		}
-	}
-	else {
+	} else {
 		run_info.structure_type = StrType::single_strand;
 		run_info.n_fragments = strlen(run_info.sequence) - 1;
 	}
 
 	get_DNMP_lib_names(run_info);
 	find_duplicates(run_info, false);
+	parse_parallel_input(run_info);
 	if(run_info.run_options & RunOpts::use_structure_filter) {
 		size_t len_db = strlen(run_info.dot_bracket);
 		if(len_db != strlen(run_info.sequence)) {
@@ -339,7 +371,7 @@ uint32_t complete_run_info(RunInfo& run_info, char* idx_tmp, uint32_t err_count)
 		uint32_t* tmp_pair_record = (uint32_t*)malloc(sizeof(uint32_t) * len_db);
 		if(!parse_dot_backet(run_info, len_db, tmp_pair_record)) {err_count++; return err_count;}
 		run_info.wc_lib_list = (char **)malloc(sizeof(char *) * run_info.n_wc_pairs);
-		run_info.wc_pair_list = (IndexPair*)malloc(sizeof(IndexPair) * run_info.n_wc_pairs);
+		run_info.wc_pair_list = (IndexPair<size_t>*)malloc(sizeof(IndexPair<size_t>) * run_info.n_wc_pairs);
 		err_count += get_WC_partner_full(run_info, len_db, tmp_pair_record);
 		free(tmp_pair_record);
 		find_duplicates(run_info, true);
@@ -507,49 +539,40 @@ void parse_long_cmdline_opt(char* ARGV[], RunInfo& run_info, size_t idx, char* i
 	char* field = ARGV[idx + 1];
 	if(!strcasecmp(opt, "index")) {	
 		strcpy(idx_tmp, field);
-	}
-	else if(!strcasecmp(opt, "index-list")) {
+	} else if(!strcasecmp(opt, "index-list")) {
 		strcpy(run_info.index_list_file, field);
-	}
-	else if(!strcasecmp(opt, "rmsd-lim")) {
+	} else if(!strcasecmp(opt, "rmsd-lim")) {
 		run_info.rmsd_limit = atof(field);
-	}
-	else if(!strcasecmp(opt, "wc-rmsd-lim")) {
+	} else if(!strcasecmp(opt, "wc-rmsd-lim")) {
 		run_info.wc_rmsd_limit = atof(field);
-	}
-	else if (!strcasecmp(opt, "run-type")) {
+	} else if (!strcasecmp(opt, "run-type")) {
 		if (!strcasecmp(field, "cmb") || !strcasecmp(field, "combinatorial")) {
 			run_info.run_type = RunType::combinatorial;
-		}
-		else if (!strcasecmp(field, "idx") || !strcasecmp(field,"from-index")) {
+		} else if (!strcasecmp(field, "idx") || !strcasecmp(field,"from-index")) {
 			run_info.run_type = RunType::build_from_index;
 		}
 		if (!strcasecmp(field, "idx-list") || !strcasecmp(field, "from-index-list")) {
 			run_info.run_type = RunType::build_from_index_list;
 		}
-	}
-	else if (!strcasecmp(opt, "str-count-limit")) {
+	} else if (!strcasecmp(opt, "str-count-limit")) {
 		run_info.build_limit = atoi(field);
-	}
-	else if (!strcasecmp(opt, "str-count-limit-type")) {
+	} else if (!strcasecmp(opt, "str-count-limit-type")) {
 		if (!strcasecmp(field, "energy"))	{
 			run_info.run_options |= RunOpts::build_limit_by_energy;
-		}
-		else if (!strcasecmp(field, "none"))	{
+		} else if (!strcasecmp(field, "none"))	{
 			run_info.run_options |= RunOpts::blind_build_limit;
 		}
-	}
-	else if (!strcasecmp(opt, "lib-prototype")) {
+	} else if (!strcasecmp(opt, "lib-prototype")) {
 		strcpy(run_info.library_prototype, field);
-	}
-	else if (!strcasecmp(opt, "wc-lib-prototype")) {
+	} else if (!strcasecmp(opt, "wc-lib-prototype")) {
 		strcpy(run_info.wc_library_prototype, field);
-	}
-	else if (!strcasecmp(opt, "secondary-structure-filter")) {
+	} else if (!strcasecmp(opt, "secondary-structure-filter")) {
 		strcpy(run_info.dot_bracket, field);
-	}
-	else
-	{
+	} else if (!strcasecmp(opt, "parallel-lib-lengths")) {
+		strcpy(run_info.parallel_lib_len, field);
+	} else if (!strcasecmp(opt, "parallel-lib-index")) {
+		strcpy(run_info.parallel_lib_idx, field);
+	} else {
 		printf("Unknown argument flag: %s. Ignoring...\n", ARGV[idx]);
 	}
 }

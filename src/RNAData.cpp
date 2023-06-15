@@ -500,8 +500,8 @@ void RNADataArray::initialize(RunInfo& run_info, DimerLibArray& library, DimerLi
 	if(n_wc_pairs != 0)
 	{
 		wc_rmsd = (float *)malloc(sizeof(float) * n_wc_pairs);
-		wc_pairs = (IndexPair*)malloc(sizeof(IndexPair) * n_wc_pairs);
-		wc_pair_res = (IndexPair*)malloc(sizeof(IndexPair) * n_wc_pairs);
+		wc_pairs = (IndexPair<size_t>*)malloc(sizeof(IndexPair<size_t>) * n_wc_pairs);
+		wc_pair_res = (IndexPair<size_t>*)malloc(sizeof(IndexPair<size_t>) * n_wc_pairs);
 		for(uint i = 0; i < n_wc_pairs; i++) {
 			size_t idx1 = run_info.wc_pair_list[i].idx1;
 			size_t idx2 = run_info.wc_pair_list[i].idx2;

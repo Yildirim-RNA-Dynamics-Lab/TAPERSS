@@ -1,4 +1,4 @@
-// First attempt for Combinatorial building RNA  **03/5/21**
+//Started by Ivan Riveros on: **03/5/21**
 #include "RNACMB.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
@@ -65,6 +65,7 @@ void destroy_run_info(RunInfo& run_info)
 	}
 	free(run_info.fragment_lib_list);
 	free(run_info.lib_duplicate_record);
+	free(run_info.frag_lib_bounds);
 	if(run_info.run_options & RunOpts::use_structure_filter || run_info.structure_type == StrType::double_strand) {
 		for(uint i = 0; i < run_info.n_wc_pairs; i++) {
 			free(run_info.wc_lib_list[i]);

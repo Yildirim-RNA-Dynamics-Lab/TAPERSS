@@ -82,9 +82,9 @@ template <uint32_t OPTS> AttachStatus prepare_right(RNAData* to_be_assembled, Di
 AttachStatus fragment_assembly_ss(DimerLibArray &Lib, RNADataArray &assembled, CMB_Manager &manager)
 {
 	uint32_t dnmp_position = assembled.iterator + 1; // Position in sequence where new DNMP will be attached.
-	uint32_t library_position = manager.attach_attempted[dnmp_position] + 1;
+	uint32_t library_position = manager.attach_attempted[dnmp_position] + 1; //Continue from last attempted frag in lib + 1
 
-	for (int i = library_position; i < Lib[dnmp_position]->count; i++) {
+	for (int i = library_position; i < manager.lib_bounds[dnmp_position].idx2; i++) {
 		assembled.overwrite(dnmp_position, i, Lib);
 		manager.attach_attempt(dnmp_position, i);
 		if (rotate(assembled.current(), assembled[dnmp_position]) != AttachStatus::ATTACHED) {
@@ -103,7 +103,7 @@ template <uint32_t OPTS> AttachStatus fragment_assembly_ds(DimerLibArray &Lib, D
 	uint32_t library_position = manager.attach_attempted[dnmp_position] + 1;
 
 	if (assembled.should_prepare_right(dnmp_position) == true) {
-		for (int i = library_position; i < Lib[dnmp_position]->count; i++) {
+		for (int i = library_position; i < manager.lib_bounds[dnmp_position].idx2; i++) {
 			assembled.overwrite(dnmp_position, i, Lib);
 			manager.attach_attempt(dnmp_position, i);
 			if (prepare_right<OPTS>(assembled[dnmp_position], WC_Lib, assembled) == AttachStatus::ATTACHED) {
@@ -115,7 +115,7 @@ template <uint32_t OPTS> AttachStatus fragment_assembly_ds(DimerLibArray &Lib, D
 	}
 
 	if(assembled.count > assembled.ds_data.strand1_size) {
-		for (int i = library_position; i < Lib[dnmp_position]->count; i++)
+		for (int i = library_position; i < manager.lib_bounds[dnmp_position].idx2; i++)
 		{
 			assembled.overwrite(dnmp_position, i, Lib);
 			manager.attach_attempt(dnmp_position, i);
@@ -129,7 +129,7 @@ template <uint32_t OPTS> AttachStatus fragment_assembly_ds(DimerLibArray &Lib, D
 		}
 		return AttachStatus::FAILED;
 	} else {
-		for (int i = library_position; i < Lib[dnmp_position]->count; i++) {
+		for (int i = library_position; i < manager.lib_bounds[dnmp_position].idx2; i++) {
 			assembled.overwrite(dnmp_position, i, Lib);
 			manager.attach_attempt(dnmp_position, i);
 			if (rotate(assembled.current(), assembled[dnmp_position]) != AttachStatus::ATTACHED) {
