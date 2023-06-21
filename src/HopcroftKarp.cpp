@@ -125,17 +125,5 @@ uint32_t HK_GetMaxMatching(gsl_matrix* Graph)
             }
         }
     }
-		/*for(uint i = 1; i < SizeU; i++)
-		{
-				printf("PairU[i] = %d\n", Pair_U[i]);
-			for(size_t j = 0; j < Graph->size2; j++)
-			{
-				if(j != (size_t)Pair_U[i] - 1)
-				{
-					gsl_matrix_set(Graph, i - 1, j, 0);
-				}
-			}
-		}*/
-    //printf("#########HK ENDED###########\n");
     return Matching;
 }

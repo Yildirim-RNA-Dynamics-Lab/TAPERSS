@@ -17,11 +17,11 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA, RunInfo& run_info)
 	{
 		lib_bounds[i].idx1 = run_info.frag_lib_bounds[i].idx1;
 		lib_bounds[i].idx2 = run_info.frag_lib_bounds[i].idx2;
+	attach_attempted[i] = lib_bounds[i].idx1 - 1;
 	}
 
 	last_attempted[0] = 0;
-	last_attempted[1] = 0;
-	attach_attempted[0] = 0;
+	last_attempted[1] = lib_bounds[0].idx1;
 }
 
 CMB_Manager::~CMB_Manager()

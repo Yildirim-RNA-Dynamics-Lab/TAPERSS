@@ -4,7 +4,7 @@
 #include "RNACMB.hpp"
 
 enum atom_id{N1, N2, N3, N4, N6, N7, N9, C2, C4, C5, C6, C8, C1p, C2p, C3p, C4p, C5p, O2, O4, O6, O2p, O3p, O4p, O5p, O1P, O2P, OP1 = O1P, OP2 = O2P, P, NOTATOM};
-enum atom_charge{POSITIVE = 1, NEGATIVE = -1, NEUTRAL = 0}; //simplistic charge model for rudimentary energy calculations.
+enum atom_charge{POSITIVE = 1, NEGATIVE = -1, NEUTRAL = 0}; 
 
 struct atom_info
 {

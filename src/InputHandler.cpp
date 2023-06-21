@@ -59,7 +59,6 @@ uint32_t find_duplicates(RunInfo& run_info, bool for_WC)
 	uint32_t N = for_WC ? run_info.n_wc_pairs : run_info.n_fragments;
 	char**   lib = for_WC ? run_info.wc_lib_list : run_info.fragment_lib_list;
 	size_t*	 dup; 
-	printf("N = %u\n", N);
 	dup = (size_t *)calloc(N, sizeof(size_t));
 	for (uint32_t i = N - 1; i > 0; i--)
 	{
@@ -187,6 +186,7 @@ template <typename T> uint32_t get_index_int_pair(char *index, IndexPair<T> *ind
 		indices[count].idx1 = atoi(buffer);
 	else
 		indices[count].idx2 = atoi(buffer);
+	count++;
 	return count;
 }
 
@@ -204,6 +204,7 @@ void parse_parallel_input(RunInfo& run_info)
 	} else {
 		uint32_t idx_len = get_index_int_pair(run_info.parallel_lib_idx, run_info.frag_lib_bounds, 1);
 		uint32_t lib_len = get_index_int_pair(run_info.parallel_lib_len, run_info.frag_lib_bounds, 2);
+		printf("%d %d\n", idx_len, lib_len);
 		if(idx_len != lib_len || idx_len != run_info.n_fragments) {
 			fprintf(stderr, "Parallel run setup error: incorrect number of library segments lengths or indices!\n");
 			exit(3);
@@ -531,6 +532,11 @@ void print_run_info(RunInfo& run_info)
 		printf("No limit\n");
 	}
 	printf("\tBuffer Memory Limit (kB): %lu\n", run_info.memory_limit / 1000);
+	if(run_info.parallel_lib_idx[0] != '\0' && run_info.parallel_lib_len[0] != '\0') {
+		printf("\tParallel library segment lengths: %s\n", run_info.parallel_lib_len);
+		printf("\tParallel library segment index set: %s\n", run_info.parallel_lib_idx);
+	} 
+
 }
 
 void parse_long_cmdline_opt(char* ARGV[], RunInfo& run_info, size_t idx, char* idx_tmp)

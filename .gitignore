@@ -2,3 +2,4 @@
 !.gitignore
 .cache
 compile_commands.json
+tests/combinatorial_run_test/outputs

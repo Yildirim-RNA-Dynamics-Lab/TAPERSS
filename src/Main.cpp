@@ -34,10 +34,14 @@ void initialize(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray&
 	}
 
 	run_info.init_timer.stop_timer();
+	printf("Initialization Time: ");
+	run_info.init_timer.print();
 }
 
 void run(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_library, OutputString& output, RunInfo& run_info)
 {
+	printf("Starting Run...\n");
+	run_info.run_timer.start_timer();
 	switch(run_info.run_type)
 	{
 		case RunType::combinatorial:
@@ -56,6 +60,9 @@ void run(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_lib
 		case RunType::runtype_undef:
 			break;
 	}
+	run_info.run_timer.stop_timer();
+	printf("Calculation Time: ");
+	run_info.run_timer.print();
 }
 
 void destroy_run_info(RunInfo& run_info)

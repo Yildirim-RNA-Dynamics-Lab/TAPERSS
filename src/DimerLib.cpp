@@ -397,7 +397,12 @@ void prepare_run_info_lib_bounds(RunInfo& run_info, uint32_t lib_len, uint32_t i
 {
 	uint32_t split_idx = run_info.frag_lib_bounds[idx].idx1;
 	uint32_t split_len = run_info.frag_lib_bounds[idx].idx2;
-	uint32_t splits = ceil(lib_len/split_len);
+	if(split_len == 0) {
+		run_info.frag_lib_bounds[idx].idx1 = 0;
+		run_info.frag_lib_bounds[idx].idx2 = lib_len;
+		return;
+	}
+	uint32_t splits = ceil((float)lib_len/(float)split_len);
 	run_info.frag_lib_bounds[idx].idx1 = split_len * split_idx;
 	if(split_idx == splits - 1) {
 		run_info.frag_lib_bounds[idx].idx2 = lib_len;
@@ -434,22 +439,23 @@ void load_libs(RunInfo& run_info, DimerLibArray &rtn_lib_array, bool for_WC)
 	printf("Loading %s libraries...\n", for_WC ? "watson-crick pair" : "fragment");
 
 	for (uint32_t i = 0; i < n_libs; i++) {
-		if(duplicate_record[i] != i) {
-			rtn_lib_array.map_duplicate(i, duplicate_record[i]);
-			printf("%d: %s (Points to library %lu)\n", i, lib_files[i], duplicate_record[i]);
-			continue;
-		}
-		bool first_itr = true;
 		model_info[model_count] = model_info[atom_count] = 0;
-
 		FILE *lib_file = fopen(lib_files[i], "r");
 		if (lib_file == NULL) {
 			printf("Cannot open library file: %s\n", lib_files[i]);
 			exit(3);
 		}
-		printf("%d: %s ", i, lib_files[i]);
-
 		get_model_count(lib_file, model_info);
+		if(!for_WC) {prepare_run_info_lib_bounds(run_info, model_info[model_count], i);}
+
+		if(duplicate_record[i] != i) {
+			rtn_lib_array.map_duplicate(i, duplicate_record[i]);
+			printf("%d: %s (Points to library %lu)\n", i, lib_files[i], duplicate_record[i]);
+			continue;
+		}
+
+		bool first_itr = true;
+		printf("%d: %s ", i, lib_files[i]);
 		printf("Models: %d, Atoms per model: %d\n", model_info[model_count], model_info[atom_count]);
 
 		if(for_WC) {
@@ -457,7 +463,6 @@ void load_libs(RunInfo& run_info, DimerLibArray &rtn_lib_array, bool for_WC)
 		} else {
 			model_info[atom_count] += 2; //Plus 2 B/C COM for each DNT will be included in data matrix
 			rtn_lib_array.alloc_lib(model_info[model_count], model_info[atom_count], 2); 
-			prepare_run_info_lib_bounds(run_info, model_info[model_count], i);
 		}
 
 		data_mats = rtn_lib_array[i]->data_matrices;

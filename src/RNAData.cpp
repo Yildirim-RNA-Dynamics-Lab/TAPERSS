@@ -512,7 +512,7 @@ void RNADataArray::initialize(RunInfo& run_info, DimerLibArray& library, DimerLi
 			wc_rmsd[i] = 0.00;
 		}
 	}
-	overwrite_initialize(0,0, library);
+	overwrite_initialize(0,run_info.frag_lib_bounds[0].idx1, library);
 	generate_string_prototype(run_info);
 }
 
@@ -801,7 +801,7 @@ int RNADataArray::out_string_header_coord(RunInfo& run_info)
 	string_index = jump_pos1;
 	for (int i = 0; i < count; i++)
 	{
-		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]);
+		string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]  + 1);
 		if (i != count - 1)
 		{
 			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
@@ -839,7 +839,7 @@ int RNADataArray::out_string_header(RunInfo& run_info)
 		string_index = jump_pos1;
 		for (int i = 0; i < count; i++)
 		{
-			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1]);
+			string_index += snprintf(&string_out[string_index], string_buffer - string_index, "%d", sequence[i].position_in_lib[1] + 1);
 			if (i != count - 1)
 			{
 				string_index += snprintf(&string_out[string_index], string_buffer - string_index, "-");
