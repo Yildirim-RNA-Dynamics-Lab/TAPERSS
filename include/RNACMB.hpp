@@ -19,7 +19,7 @@
 #define IDX_FLAT2D(row, col, n_col) (row * n_col + col)
 #define DEBUG_SWITCH false
 #define DEBUG(a) if(DEBUG_SWITCH == true) {a;}
-#define DEBUG_PRINT(s) do { char DEBUG_STRING[2000]; sprintf(DEBUG_STRING, "%s", s); printf("%s:%d: %s\n", __FILE__,__LINE__,DEBUG_STRING) } while (0)
+#define DEBUG_PRINT(...) do { char DEBUG_STRING[2000]; sprintf(DEBUG_STRING, __VA_ARGS__); printf("%s:%d: %s", __FILE__,__LINE__,DEBUG_STRING); } while (0)
 #define DIE do { printf("DIED at line %d in file %s!\n", __LINE__, __FILE__); exit(2);} while (0)
 
 enum STRUCTFILTER_TYPE{HAIRPIN, INTERNAL_LOOP, NONE};
@@ -140,6 +140,12 @@ struct RunInfo {
 	IndexPair<size_t>*	frag_lib_bounds = nullptr;
 	Timer								init_timer;
 	Timer								run_timer;
+	void print_stats() {
+		printf("Total number of structures built: %lu\n", n_total_structs_built);
+		if(run_options & RunOpts::use_structure_filter) {
+			printf("Number of structures saved: %lu\n", n_filter_structs_built);
+		}
+	}
 };
 
 

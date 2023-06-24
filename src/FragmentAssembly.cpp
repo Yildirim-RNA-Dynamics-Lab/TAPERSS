@@ -87,6 +87,8 @@ AttachStatus fragment_assembly_ss(DimerLibArray &Lib, RNADataArray &assembled, C
 	for (int i = library_position; i < manager.lib_bounds[dnmp_position].idx2; i++) {
 		assembled.overwrite(dnmp_position, i, Lib);
 		manager.attach_attempt(dnmp_position, i);
+		//DEBUG_PRINT(" ");
+		//assembled.print_index();
 		if (rotate(assembled.current(), assembled[dnmp_position]) != AttachStatus::ATTACHED) {
 			continue;
 		}

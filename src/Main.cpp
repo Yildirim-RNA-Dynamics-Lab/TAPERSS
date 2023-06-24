@@ -60,9 +60,11 @@ void run(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_lib
 		case RunType::runtype_undef:
 			break;
 	}
+	printf("Done.\n");
 	run_info.run_timer.stop_timer();
 	printf("Calculation Time: ");
 	run_info.run_timer.print();
+	run_info.print_stats();
 }
 
 void destroy_run_info(RunInfo& run_info)

@@ -204,7 +204,6 @@ void parse_parallel_input(RunInfo& run_info)
 	} else {
 		uint32_t idx_len = get_index_int_pair(run_info.parallel_lib_idx, run_info.frag_lib_bounds, 1);
 		uint32_t lib_len = get_index_int_pair(run_info.parallel_lib_len, run_info.frag_lib_bounds, 2);
-		printf("%d %d\n", idx_len, lib_len);
 		if(idx_len != lib_len || idx_len != run_info.n_fragments) {
 			fprintf(stderr, "Parallel run setup error: incorrect number of library segments lengths or indices!\n");
 			exit(3);

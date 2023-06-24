@@ -409,6 +409,7 @@ void prepare_run_info_lib_bounds(RunInfo& run_info, uint32_t lib_len, uint32_t i
 	} else {
 		run_info.frag_lib_bounds[idx].idx2 = (split_len * (split_idx + 1));
 	}
+	DEBUG_PRINT("Lib %d, BOUNDS %lu - %lu\n", idx, run_info.frag_lib_bounds[idx].idx1, run_info.frag_lib_bounds[idx].idx2);
 }
 
 /**
