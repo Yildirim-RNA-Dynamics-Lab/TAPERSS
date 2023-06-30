@@ -32,6 +32,7 @@ void fill_if_empty(CMB_Manager &manager, RNADataArray &assembled, DimerLibArray 
 {
 	uint32_t dnmp_pos = assembled.iterator + 1;
 	uint32_t lib_pos = manager.attach_attempted[dnmp_pos] + 1;
+	//DEBUG_PRINT("Filling Empty RNAData with index (%d:%d)\n", dnmp_pos, lib_pos);
 	assembled.overwrite(dnmp_pos, lib_pos, Lib);
 	assembled.keep();
 	manager.attach_attempt(dnmp_pos, lib_pos);

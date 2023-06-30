@@ -17,9 +17,10 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA, RunInfo& run_info)
 	{
 		lib_bounds[i].idx1 = run_info.frag_lib_bounds[i].idx1;
 		lib_bounds[i].idx2 = run_info.frag_lib_bounds[i].idx2;
-	attach_attempted[i] = lib_bounds[i].idx1 - 1;
+		attach_attempted[i] = lib_bounds[i].idx1 - 1;
 	}
 
+	attach_attempted[0] = lib_bounds[0].idx1;
 	last_attempted[0] = 0;
 	last_attempted[1] = lib_bounds[0].idx1;
 }
@@ -45,6 +46,7 @@ bool CMB_Manager::check_lib_completion()
 
 	for (int i = last_attempted[0]; i >= 0; i--) {
 		if (attach_attempted[i] == lib_bounds[i].idx2 - 1) {// Checks which libraries have had all conformations tested
+			//DEBUG_PRINT("Lib %d is at end (%d vs %d); removing and resesting to (%d)\n", i, attach_attempted[i], lib_bounds[i].idx2 - 1, lib_bounds[i].idx1 - 1);
 			libs_completed[i] = true;
 			attach_attempted[i] = lib_bounds[i].idx1 - 1;                   // Reset attempts for completed lib
 			rollback_count++;                           // Track how many libraries have been fully tested.
