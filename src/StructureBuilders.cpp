@@ -2,7 +2,7 @@
 
 void build_structure_from_index(RNADataArray &assembled, DimerLibArray& frag_lib, OutputString &o_string, RunInfo& run_info)
 {
-	assembled.overwrite(0, run_info.index[0], frag_lib);
+	assembled.overwrite_initialize(0, run_info.index[0], frag_lib);
 	for (int i = 1; i <= assembled.iterator_max; i++) {
 		assembled.overwrite(i, run_info.index[i], frag_lib);
 		rotate(assembled.current(), assembled[i]);
@@ -14,6 +14,7 @@ void build_structure_from_index(RNADataArray &assembled, DimerLibArray& frag_lib
 	assembled.update_energy();
 	o_string.add_string(assembled.overwrite_string_prototype(run_info));
 	run_info.n_total_structs_built++;
+	run_info.n_filter_structs_built++;
 }
 
 void build_structure_from_index_ds(RNADataArray &assembled, DimerLibArray &frag_lib, DimerLibArray &wc_lib, OutputString &o_string, RunInfo& run_info)
@@ -36,6 +37,7 @@ void build_structure_from_index_ds(RNADataArray &assembled, DimerLibArray &frag_
 	if(run_info.run_options & RunOpts::use_structure_filter) { WC_full_check<false>(assembled, start, run_info); }
 	o_string.add_string(assembled.overwrite_string_prototype(run_info));
 	run_info.n_total_structs_built++;
+	run_info.n_filter_structs_built++;
 }
 
 void build_structure_from_index_list(RNADataArray &assembled, DimerLibArray &frag_lib, DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)

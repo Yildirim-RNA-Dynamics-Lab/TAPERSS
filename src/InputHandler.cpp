@@ -447,7 +447,7 @@ void validate_run_info(RunInfo& run_info, char* tmp_idx)
 		warn_count++;
 	}
 	if(run_info.memory_limit == 0) {
-		printf("Warning: Memory limit not set or set to 0. Using default value instead...\n");
+		printf("Note: Buffer memory limit not set or set to 0. Using default value instead...\n");
 		run_info.memory_limit = DEFAULT_MEMORY_LIMIT;
 		warn_count++;
 	}
@@ -602,14 +602,6 @@ void input_handler(int argc, char *ARGV[], RunInfo& run_info)
 					break;
 				case 's':
 					strcpy(run_info.sequence, ARGV[i + 1]);
-					break;
-				case 't':
-					if (!strcasecmp(ARGV[i + 1], "ss")) {
-						run_info.structure_type = StrType::single_strand;
-					}
-					else if (!strcasecmp(ARGV[i + 1], "ds")) {
-						run_info.structure_type = StrType::double_strand;
-					}
 					break;
 				case 'c':
 					run_info.run_options |= RunOpts::write_coordinates;

@@ -227,7 +227,7 @@ void get_model_count(FILE *fp, int *i)
 	rewind(fp);
 }
 /**
- * @brief Calculates the centroid of each residue for the given gsl_matrix (coordinates) with its associated atom_info. This for use with our course
+ * @brief Calculates the centroid of each residue for the given gsl_matrix (coordinates) with its associated atom_info. This for use with our coarse
  * grain steric clash check method. It assumes the given matrix has enough room for 2 additional XYZ coordinates which correspond to the 
  * 2 residue centroids. Centroids are calculated using the entire nucleotide for both residues, meaning the phophate group belonging to residue 2
  * is also included for residue 1.
@@ -254,14 +254,12 @@ void calculate_dnt_COM(gsl_matrix *A, atom_info *A_info)
 		gsl_matrix_set(A_1, i, 1, gsl_matrix_get(A, i, 1));
 		gsl_matrix_set(A_1, i, 2, gsl_matrix_get(A, i, 2));
 	}
-
 	for(int i = n_r1; i < n_r1 + 3; i++)
 	{
 		gsl_matrix_set(A_1, i , 0, gsl_matrix_get(A, A_info->get_idx_of_atom(phosphate_atoms[i - n_r1], 1), 0));
 		gsl_matrix_set(A_1, i , 1, gsl_matrix_get(A, A_info->get_idx_of_atom(phosphate_atoms[i - n_r1], 1), 1));
 		gsl_matrix_set(A_1, i , 2, gsl_matrix_get(A, A_info->get_idx_of_atom(phosphate_atoms[i - n_r1], 1), 2));
 	}
-
 	for(int i = n_r1; i < n_r1 + n_r2; i++)
 	{
 		gsl_matrix_set(A_2, i - n_r1, 0, gsl_matrix_get(A, i, 0));

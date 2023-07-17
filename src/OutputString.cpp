@@ -3,6 +3,10 @@
 void OutputString::initialize(RunInfo& run_info, char* string_prototype)
 {
 	output_file = fopen(run_info.output_file, "w");
+	if(output_file == NULL) {
+		fprintf(stderr, "Cannot open output file: %s!\n", run_info.output_file);
+		exit(2);
+	}
 	max_size = strlen(string_prototype); 
 	max_string = (uint32_t)(run_info.memory_limit / (max_size + sizeof(char *)));
 	string_storage = (char **)malloc(sizeof(char *) * max_string);

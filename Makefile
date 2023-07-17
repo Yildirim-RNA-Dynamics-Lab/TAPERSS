@@ -1,4 +1,4 @@
-CC = clang
+CC = g++
 
 CFLAGS = -Wall
 CFLAGS += -W
@@ -20,7 +20,7 @@ BINDIR = ./bin/
 SRCDIR = ./src/
 INCDIR = ./include/
 
-_OBJ = Atom_info n_lowest_energy RNAData RNADataArrayInternalLoop steric_clash_check FragmentAssembly CMB_Manager Combinatorial_Addition DimerLib WatsonCrickPair InputHandler Kabsch OutputString RNA_Math StructureBuilders HopcroftKarp Main Globals
+_OBJ = Atom_info n_lowest_energy RNAData steric_clash_check FragmentAssembly CMB_Manager Combinatorial_Addition DimerLib WatsonCrickPair InputHandler Kabsch OutputString RNA_Math StructureBuilders HopcroftKarp Main Globals
 DBUGOBJ = $(patsubst %, %_debug.o,$(_OBJ))
 PRFOBJ = $(patsubst %, %_profiled.o,$(_OBJ))
 PRODOBJ = $(patsubst %, %_production.o,$(_OBJ))
@@ -28,9 +28,9 @@ SRC = $(patsubst %,$(SRCDIR)%.cpp,$(_OBJ))
 
 vpath %.cpp $(SRCDIR)
 
-debug: 		$(BINDIR)RNACMB_debug
-profile: 	$(BINDIR)RNACMB_profile 
-production: $(BINDIR)RNACMB
+production: $(BINDIR)TAPERSS
+debug: 		$(BINDIR)TAPERSS_debug
+profile: 	$(BINDIR)TAPERSS_profile 
 
 $(DBUGOBJ): 
 	$(CC) $(CFLAGS) -g -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _debug.o,.cpp,$@) -I $(INCDIR)
@@ -41,15 +41,14 @@ $(PRODOBJ):
 $(PRFOBJ): 
 	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) -I $(INCDIR) -pg
 
-$(BINDIR)RNACMB_debug: $(DBUGOBJ)
+$(BINDIR)TAPERSS_debug: $(DBUGOBJ)
 	$(CC) $(CFLAGS) -g -o $@ $(patsubst %, $(OBJDIR)%, $(DBUGOBJ)) $(LIBS) -I $(INCDIR)
 
-$(BINDIR)RNACMB_profile: $(PRFOBJ)
+$(BINDIR)TAPERSS_profile: $(PRFOBJ)
 	$(CC) $(CFLAGS) -o $@ $(patsubst %, $(OBJDIR)%, $(PRFOBJ)) $(LIBS) -I $(INCDIR) -pg
 
-$(BINDIR)RNACMB: $(PRODOBJ)
+$(BINDIR)TAPERSS: $(PRODOBJ)
 	$(CC) $(CFLAGS) -DGSL_RANGE_CHECK_OFF -O3 -o $@ $(patsubst %, $(OBJDIR)%, $(PRODOBJ)) $(LIBS) -I $(INCDIR)
 
 clean:
-	rm $(OBJDIR)*.o
-	rm $(BINDIR)RNACMB_profile $(BINDIR)RNACMB_debug $(BINDIR)RNACMB
+	rm -f $(OBJDIR)*.o
