@@ -5,3 +5,5 @@ compile_commands.json
 tests/combinatorial_run_test/outputs
 tests/combinatorial_run_test/out.log
 tests/str_libraries/frag_lib/model_log.dat
+tests/combinatorial_run_test/idx_list.test
+tests/combinatorial_run_test/inputfile_idxlist.txt

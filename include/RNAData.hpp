@@ -12,10 +12,15 @@ constexpr atom_id targetC[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};
 constexpr atom_id targetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, C1p, C2p, C3p, C4p, O4p}; // 14
 constexpr atom_id targetU[] = {N1, C2, N3, C4, C5, C6, C1p, C2p, C3p, C4p, O4p};             // 11
 
-constexpr atom_id WCtargetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, /* C1p, C2p, C3p, C4p, O4p */};
-constexpr atom_id WCtargetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, /* C1p, C2p, C3p, C4p, O4p */};
-constexpr atom_id WCtargetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6,  /* C1p, C2p, C3p, C4p, O4p */};
-constexpr atom_id WCtargetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, /* C1p, C2p, C3p, C4p, O4p */};
+//constexpr atom_id WCtargetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N6, /* C1p, C2p, C3p, C4p, O4p */};
+//constexpr atom_id WCtargetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, /* C1p, C2p, C3p, C4p, O4p */};
+//constexpr atom_id WCtargetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, C4, N2, O6,  /* C1p, C2p, C3p, C4p, O4p */};
+//constexpr atom_id WCtargetU[] = {N2, C2, N3, C4, C5, C6, O4, O2, /* C1p, C2p, C3p, C4p, O4p */};
+
+constexpr atom_id WCtargetA[] = {N9, C8, N7, C5, C6, N1, C2, N3, /*C4, N6, C1p, C2p, C3p, C4p, O4p*/};
+constexpr atom_id WCtargetC[] = {N1, C2, N3, C4, C5, C6, N4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
+constexpr atom_id WCtargetG[] = {N9, C8, N7, C5, C6, N1, C2, N3, /*C4, N2, O6, C1p, C2p, C3p, C4p, O4p*/};
+constexpr atom_id WCtargetU[] = {N1, C2, N3, C4, C5, C6, O4, O2, /*C1p, C2p, C3p, C4p, O4p*/};
 
 struct RNAData
 {

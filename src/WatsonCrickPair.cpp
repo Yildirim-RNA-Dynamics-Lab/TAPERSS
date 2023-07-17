@@ -64,10 +64,11 @@ template <bool RTN_ON_FAIL> bool WC_full_check(RNADataArray& assembled, uint sta
 		size_t res2 = assembled.wc_pair_res[i].idx2;
 		WC_prepare_structure_matrix(i, assembled[idx1], res1, assembled[idx2], res2);
 		RMSD = WC_check_pair(i);
-		if(RMSD <= run_info.wc_rmsd_limit) {
-			assembled.update_WC_rmsd(RMSD, i);
-		} else if (RTN_ON_FAIL){
-			return false;
+		assembled.update_WC_rmsd(RMSD, i);
+		if (RTN_ON_FAIL) {
+			if(RMSD > run_info.wc_rmsd_limit) {
+				return false;
+			}
 		}
 	}
 	return true;
