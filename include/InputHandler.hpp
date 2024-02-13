@@ -1,7 +1,7 @@
 #ifndef INPUTHANDLER_HPP
 #define INPUTHANDLER_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 
 
 void get_DNMP_lib_names(char* sequence, char** rtn, int N_diNts);

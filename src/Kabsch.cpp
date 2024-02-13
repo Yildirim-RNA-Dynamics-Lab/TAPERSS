@@ -1,6 +1,5 @@
 #include "Kabsch.hpp"
 
-
 gsl_block  *KABSCH_MEMBLOCK;
 gsl_matrix *H_KABSCH;   
 gsl_matrix *V_KABSCH; 
@@ -52,7 +51,10 @@ double get_determinant(gsl_matrix *A, bool inPlace)
 
   return det;
 }
-
+/**
+* Reserves memory for kabsch operations. M (rows) and N (columns) are the size of the largest possible matrix that will be used for matrix operations 
+* related to kabsch. This includes any matrix multiplications done using apply_rotation_matrix as well.
+**/
 void kabsch_create(size_t M, size_t N)
 {
   size_t real_mem_size = (6 * MATRIX_DIMENSION2 * MATRIX_DIMENSION2) + (2 * MATRIX_DIMENSION2) + (N * M * 3);//6 3x3 Matrices + 2 3-long vectors + additional needed
@@ -112,18 +114,18 @@ gsl_matrix* kabsch_get_work_matrix(size_t M, size_t N)
 
 void kabsch_destroy()
 {
-    gsl_matrix_free(H_KABSCH);
-    gsl_matrix_free(V_KABSCH);
-    gsl_matrix_free(VUt_KABSCH);
-    gsl_matrix_free(DIA_KABSCH);
-    gsl_matrix_free(TEMP_KABSCH);
-    gsl_matrix_free(R_KABSCH);
-    gsl_matrix_free(P_KABSCH);
-    gsl_matrix_free(PWORK_KABSCH);
-    gsl_matrix_free(Q_KABSCH);
-    gsl_vector_free(S_KABSCH);
-    gsl_vector_free(WORK_KABSCH);
-    gsl_block_free(KABSCH_MEMBLOCK);
+	gsl_matrix_free(H_KABSCH);
+	gsl_matrix_free(V_KABSCH);
+	gsl_matrix_free(VUt_KABSCH);
+	gsl_matrix_free(DIA_KABSCH);
+	gsl_matrix_free(TEMP_KABSCH);
+	gsl_matrix_free(R_KABSCH);
+	gsl_matrix_free(P_KABSCH);
+	gsl_matrix_free(PWORK_KABSCH);
+	gsl_matrix_free(Q_KABSCH);
+	gsl_vector_free(S_KABSCH);
+	gsl_vector_free(WORK_KABSCH);
+	gsl_block_free(KABSCH_MEMBLOCK);
 }
 
 gsl_matrix* kabsch_allocate_work_matrix(gsl_matrix *P)
@@ -143,7 +145,7 @@ gsl_matrix* kabsch_get_rotation_matrix()
   return R_KABSCH;
 }
 
-void kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_matrix *P_WORK, double *__restrict__ COMP, double *__restrict__ COMQ)
+gsl_matrix* kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_matrix *P_WORK, double *__restrict__ COMP, double *__restrict__ COMQ)
 {
   double Determinant;
   get_matrix_COM(P, COMP);
@@ -159,6 +161,7 @@ void kabsch_calculate_rotation_matrix_Nx3fast(gsl_matrix *P, gsl_matrix *Q, gsl_
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, V_KABSCH, TEMP_KABSCH, 0.0, R_KABSCH);
   gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, R_KABSCH, P, 0.0, P_WORK);
   gsl_matrix_transpose_memcpy(P, P_WORK);
+	return R_KABSCH;
 }
 
 

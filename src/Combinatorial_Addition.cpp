@@ -18,9 +18,11 @@ void output_handler(RNADataArray &assembled, OutputString &o_string, RunInfo& ru
 	assembled.update_energy();
 	if(run_info.run_options & RunOpts::build_limit_by_energy) {
 		int idx;
-		if((idx = add_to_n_lowest_E(assembled.structure_energy)) != -1) {
-			o_string.insert_string(assembled.overwrite_string_prototype(run_info), idx);
+		if((idx = add_to_n_lowest_E(assembled.structure_energy, assembled)) != -1) {
+			assembled.model_count = idx + 1;
+			//o_string.insert_string(assembled.overwrite_string_prototype(run_info), idx);
 		}
+		
 	} else {
 		o_string.add_string(assembled.overwrite_string_prototype(run_info));
 	}
@@ -56,29 +58,13 @@ template <AttachStatus status> bool rollback_handler(CMB_Manager &manager, RNADa
 template bool rollback_handler<AttachStatus::ATTACHED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
 template bool rollback_handler<AttachStatus::FAILED>(CMB_Manager &manager, RNADataArray &assembled,  DimerLibArray &Lib);
 
-typedef AttachStatus(*FragAssemPtr)(DimerLibArray&, DimerLibArray&, RNADataArray&, CMB_Manager&);
-FragAssemPtr setup_frag_assembly_branch(uint32_t opts) 
-{
-	FragAssemPtr p;
-	if(opts & RunOpts::strtype_ds) {
-		if(opts & RunOpts::str_filter_uses_ds_closing_bp) {
-			p = &fragment_assembly<RunOpts::strtype_ds | RunOpts::str_filter_uses_ds_closing_bp>;
-		} else {
-			p = &fragment_assembly<RunOpts::strtype_ds>;
-		}
-	} else {
-		p = &fragment_assembly<0>;
-	}
-	return p;
-}
-
-void run_combinatorial(RNADataArray &assembled, DimerLibArray& frag_lib, DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)
+template <uint32_t OPTS> void run_combinatorial_internal(RNADataArray &assembled, DimerLibArray& frag_lib, 
+		DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)
 {
 	CMB_Manager manager(frag_lib, run_info);
-	FragAssemPtr fragment_assembly_ptr = setup_frag_assembly_branch(run_info.run_options);
 	bool run_done = false;
 	while(run_done == false) {
-		switch((*fragment_assembly_ptr)(frag_lib, wc_lib, assembled, manager)) {
+		switch(fragment_assembly<OPTS>(frag_lib, wc_lib, assembled, manager, run_info)) {
 			case AttachStatus::ATTACHED:
 				assembled.keep();
 				break;
@@ -91,5 +77,19 @@ void run_combinatorial(RNADataArray &assembled, DimerLibArray& frag_lib, DimerLi
 			if (run_info.run_options & RunOpts::blind_build_limit){ if(early_exit_handler(run_info)) break; }
 			run_done = rollback_handler<AttachStatus::ATTACHED>(manager, assembled, frag_lib);
 		}
+	}
+}
+
+void run_combinatorial(RNADataArray &assembled, DimerLibArray& frag_lib, DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)
+{
+	CMB_Manager manager(frag_lib, run_info);
+	if(run_info.run_options & RunOpts::strtype_ds) {
+		if(run_info.run_options & RunOpts::str_filter_uses_ds_closing_bp) {
+			run_combinatorial_internal<RunOpts::strtype_ds | RunOpts::str_filter_uses_ds_closing_bp>(assembled, frag_lib, wc_lib, o_string, run_info);
+		} else {
+			run_combinatorial_internal<RunOpts::strtype_ds>(assembled, frag_lib, wc_lib, o_string, run_info);
+		}
+	} else {
+		run_combinatorial_internal<0>(assembled, frag_lib, wc_lib, o_string, run_info);
 	}
 }

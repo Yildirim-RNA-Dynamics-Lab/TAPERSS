@@ -1,4 +1,4 @@
-CC = g++
+CC = $(GCC)
 
 CFLAGS = -Wall
 CFLAGS += -W
@@ -13,6 +13,7 @@ CFLAGS += -DHAVE_INLINE
 
 LIBS = -lgsl
 LIBS += -lgslcblas
+LIBS += -lm
 LIBS += -lstdc++
 
 OBJDIR = ./bin/obj/
@@ -20,7 +21,10 @@ BINDIR = ./bin/
 SRCDIR = ./src/
 INCDIR = ./include/
 
-_OBJ = Atom_info n_lowest_energy RNAData steric_clash_check FragmentAssembly CMB_Manager Combinatorial_Addition DimerLib WatsonCrickPair InputHandler Kabsch OutputString RNA_Math StructureBuilders HopcroftKarp Main Globals
+_OBJ = Atom_info n_lowest_energy RNAData steric_clash_check \
+			 FragmentAssembly CMB_Manager Combinatorial_Addition DimerLib \
+			 WatsonCrickPair InputHandler Kabsch OutputString RNA_Math \
+			 StructureBuilders HopcroftKarp Main 
 DBUGOBJ = $(patsubst %, %_debug.o,$(_OBJ))
 PRFOBJ = $(patsubst %, %_profiled.o,$(_OBJ))
 PRODOBJ = $(patsubst %, %_production.o,$(_OBJ))
@@ -28,17 +32,19 @@ SRC = $(patsubst %,$(SRCDIR)%.cpp,$(_OBJ))
 
 vpath %.cpp $(SRCDIR)
 
+
 production: $(BINDIR)TAPERSS
 debug: 		$(BINDIR)TAPERSS_debug
 profile: 	$(BINDIR)TAPERSS_profile 
 
-$(DBUGOBJ): 
+
+$(DBUGOBJ): check-compiler
 	$(CC) $(CFLAGS) -g -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _debug.o,.cpp,$@) -I $(INCDIR)
 
-$(PRODOBJ): 
+$(PRODOBJ): check-compiler
 	$(CC) $(CFLAGS) -O3 -DGSL_RANGE_CHECK_OFF -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _production.o,.cpp,$@) -I $(INCDIR)
 
-$(PRFOBJ): 
+$(PRFOBJ): check-compiler 
 	$(CC) $(CFLAGS) -o $(OBJDIR)$@ -c $(SRCDIR)$(subst _profiled.o,.cpp,$@) -I $(INCDIR) -pg
 
 $(BINDIR)TAPERSS_debug: $(DBUGOBJ)
@@ -49,6 +55,11 @@ $(BINDIR)TAPERSS_profile: $(PRFOBJ)
 
 $(BINDIR)TAPERSS: $(PRODOBJ)
 	$(CC) $(CFLAGS) -DGSL_RANGE_CHECK_OFF -O3 -o $@ $(patsubst %, $(OBJDIR)%, $(PRODOBJ)) $(LIBS) -I $(INCDIR)
+
+check-compiler:
+ifndef GCC
+	$(error Environment variable GCC is not set)
+endif
 
 clean:
 	rm -f $(OBJDIR)*.o

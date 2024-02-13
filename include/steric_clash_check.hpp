@@ -1,7 +1,7 @@
 #ifndef STERIC_CLASH_CHECK_HPP
 #define STERIC_CLASH_CHECK_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #include "RNA_Math.hpp"
 #include "RNAData.hpp"
 #include "RNADataArrayInternalLoop.hpp"

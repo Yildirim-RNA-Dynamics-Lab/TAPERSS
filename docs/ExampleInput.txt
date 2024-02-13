@@ -1,9 +1,14 @@
+#To be run from TAPERSS directory. This example will build 10 tetraloops in combinatorial fashion and stop, as specified by STRUCTURE-COUNT-LIMIT.
+#Run with './bin/TAPERSS -i ./docs/ExampleInput.txt'
 SEQUENCE = AGAAAU
 OUTPUT-FILE = AGAAAU_Output.txt
+WRITE-COORDINATES = TRUE
 RUN-TYPE = COMBINATORIAL
+SECONDARY-STRUCTURE-FILTER = (....)
 OVERLAP-RMSD-LIMIT = 0.5
 WATSON-CRICK-RMSD-LIMIT = 0.5
-SECONDARY-STRUCTURE-FILTER = (....)
-WRITE-COORDINATES = TRUE
-LIBRARY-PROTOTYPE = ./tests/str_libraries/frag_lib/XX_library_combined.txt
-WATSON-CRICK-LIBRARY-PROTOTYPE = ./tests/str_libraries/wc_lib/WC_XX_library.txt
+LIBRARY-PROTOTYPE = ./str_libraries/frag_lib/XX_library_combined.txt
+WATSON-CRICK-LIBRARY-PROTOTYPE = ./str_libraries/wc_lib/WC_XX_library.txt
+STRUCTURE-COUNT-LIMIT-TYPE = blind
+STRUCTURE-COUNT-LIMIT = 10
+MEMORY-BUFFER-SIZE = 500 #Kilobytes

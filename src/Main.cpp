@@ -1,5 +1,5 @@
 //Started by Ivan Riveros on: **03/5/21**
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
 #include "RNAData.hpp"
@@ -30,7 +30,7 @@ void initialize(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray&
 	kabsch_create(frag_library.LargestAtomCount, MATRIX_DIMENSION2);
 	HK_create(frag_library.PositiveAtomCount, frag_library.NegativeAtomCount);
 	if(run_info.run_options & RunOpts::build_limit_by_energy) {
-		create_n_lowest_E(run_info.build_limit);
+		create_n_lowest_E(run_info.build_limit, model);
 	}
 
 	run_info.init_timer.stop_timer();
@@ -60,6 +60,23 @@ void run(RNADataArray& model, DimerLibArray& frag_library, DimerLibArray& wc_lib
 		case RunType::runtype_undef:
 			break;
 	}
+
+	if(run_info.run_options & RunOpts::build_limit_by_energy) {
+		size_t old_models = run_info.n_total_structs_built;
+		size_t ubound = run_info.build_limit;
+		run_info.n_filter_structs_built = 0;
+		model.model_count = 0;
+		if(ubound > old_models) {
+			ubound = old_models;
+		}
+		for(uint i = 0; i < ubound; i++) {
+			model.rollback_by(model.iterator);
+			update_run_info_index(run_info);
+			build_structure_from_index(model, frag_library, output, run_info);
+		}
+		run_info.n_total_structs_built = old_models;
+	}
+
 	printf("Done.\n");
 	run_info.run_timer.stop_timer();
 	printf("Calculation Time: ");

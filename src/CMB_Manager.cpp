@@ -13,8 +13,7 @@ CMB_Manager::CMB_Manager(DimerLibArray &LA, RunInfo& run_info)
 	libs_completed = (bool *)calloc(count, sizeof(bool));
 
 	memset(attach_attempted, -1, count * sizeof(int32_t));
-	for (uint32_t i = 0; i < count; i++)
-	{
+	for (uint32_t i = 0; i < count; i++) {
 		lib_bounds[i].idx1 = run_info.frag_lib_bounds[i].idx1;
 		lib_bounds[i].idx2 = run_info.frag_lib_bounds[i].idx2;
 		attach_attempted[i] = lib_bounds[i].idx1 - 1;

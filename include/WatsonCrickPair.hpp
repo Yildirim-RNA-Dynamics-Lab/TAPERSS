@@ -4,7 +4,7 @@
 #include "RNAData.hpp"
 #include "DimerLib.hpp"
 #include "Kabsch.hpp"
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 
 void overwrite_WC_submatrix_gsl(gsl_matrix *A, gsl_matrix *B, gsl_matrix *WC_pair);
 //gsl_matrix *make_WC_submatrix(RNAData *A, RNAData *B); // Deprecated

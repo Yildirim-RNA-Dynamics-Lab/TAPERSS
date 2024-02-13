@@ -5,7 +5,7 @@ void build_structure_from_index(RNADataArray &assembled, DimerLibArray& frag_lib
 	assembled.overwrite_initialize(0, run_info.index[0], frag_lib);
 	for (int i = 1; i <= assembled.iterator_max; i++) {
 		assembled.overwrite(i, run_info.index[i], frag_lib);
-		rotate(assembled.current(), assembled[i]);
+		attach_5p_to_3p(assembled.current(), assembled[i], run_info);
 		assembled.keep();
 	}
 	if (run_info.run_options & RunOpts::use_structure_filter) {
@@ -25,12 +25,12 @@ void build_structure_from_index_ds(RNADataArray &assembled, DimerLibArray &frag_
 		assembled.overwrite(i, run_info.index[i], frag_lib);
 		if (assembled.should_prepare_right(i) == true) {
 			if(run_info.run_options & RunOpts::str_filter_uses_ds_closing_bp) {
-				prepare_right<RunOpts::str_filter_uses_ds_closing_bp>(assembled[i], wc_lib, assembled);
+				prepare_right<RunOpts::str_filter_uses_ds_closing_bp>(assembled[i], wc_lib, assembled, run_info);
 			} else {
-				prepare_right<0>(assembled[i], wc_lib, assembled);
+				prepare_right<0>(assembled[i], wc_lib, assembled, run_info);
 			}
 		} else {
-			rotate(assembled.current(), assembled[i]);
+			attach_5p_to_3p(assembled.current(), assembled[i], run_info);
 		}
 		assembled.keep();
 	}
@@ -43,6 +43,10 @@ void build_structure_from_index_ds(RNADataArray &assembled, DimerLibArray &frag_
 void build_structure_from_index_list(RNADataArray &assembled, DimerLibArray &frag_lib, DimerLibArray& wc_lib, OutputString &o_string, RunInfo& run_info)
 {
 	FILE* index_list = fopen(run_info.index_list_file, "r");
+	if(index_list == NULL) {
+		fprintf(stderr, "Error: Could not open index list file: %s\n", run_info.index_list_file);
+		exit(2);
+	}
 	while(get_next_index_from_file(index_list, run_info)) {
 		if(run_info.structure_type == StrType::double_strand) {
 			build_structure_from_index_ds(assembled, frag_lib, wc_lib, o_string, run_info);

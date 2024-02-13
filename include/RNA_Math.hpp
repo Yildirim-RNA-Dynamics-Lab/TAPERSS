@@ -1,7 +1,7 @@
 #ifndef RNA_MATH_HPP
 #define RNA_MATH_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #define print_gsl_matrix(M) gsl_matrix_print(M, #M);
 #define print_gsl_matrix_row(M, i) gsl_matrix_print_row(M, i);
 

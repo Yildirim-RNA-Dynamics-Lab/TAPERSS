@@ -15,8 +15,8 @@
 #include <gsl/gsl_linalg.h>
 
 /* Semi-useful preprocessor functions */
-#define square(a) (a * a)
-#define IDX_FLAT2D(row, col, n_col) (row * n_col + col)
+#define square(a) ((a) * (a))
+#define IDX_FLAT2D(row, col, n_col) ((row) * (n_col) + (col))
 #define DEBUG_SWITCH false
 #define DEBUG(a) if(DEBUG_SWITCH == true) {a;}
 #define DEBUG_PRINT(...) do { printf("%s:%d: ", __FILE__,__LINE__); printf(__VA_ARGS__);  } while (0)
@@ -43,8 +43,8 @@ constexpr float RADIUS_P   = 0.75;
 constexpr float RADIUS_O   = 0.75;
 constexpr float INTERACTION_DISTANCE = 3.6;
 constexpr float DEFAULT_RMSD_LIMIT = 0.5;
-constexpr float DEFAULT_WC_RMSD_LIMIT = 2.5;
-constexpr char  DEFAULT_OUTPUT_FILENAME[] = "TAPERSS_Output.dat";
+constexpr float DEFAULT_WC_RMSD_LIMIT = 0.5;
+constexpr char  DEFAULT_OUTPUT_FILENAME[] = "RNACMB_Output.dat";
 constexpr bool STRUCTURE_BUILD_LIMIT = false;
 constexpr bool PERFORM_CHECKS_ON_CUSTOM_BUILD = true;
 constexpr uint8_t MATRIX_DIMENSION2 = 3; //DIM2 = 3, for X,Y,Z
@@ -52,37 +52,6 @@ constexpr size_t DEFAULT_MEMORY_LIMIT = 5 * 1048576; //5MB
 
 constexpr int GLOBAL_MAX_STRINGS = 1000;
 constexpr int GLOBAL_STANDARD_STRING_LENGTH = 2048; //2kB
-
-/* Global Variables */
-extern uint64_t rna_dat_tracker;
-extern uint64_t steric_clash_checks_attempted;
-extern uint64_t steric_clash_checks_skipped;
-
-extern char GLOBAL_INPUT_SEQUENCE[GLOBAL_STANDARD_STRING_LENGTH];
-extern char GLOBAL_INPUT_INDICES[GLOBAL_STANDARD_STRING_LENGTH];
-extern char GLOBAL_INPUT_FILE[GLOBAL_STANDARD_STRING_LENGTH];
-extern char GLOBAL_OUTPUT_FILE[GLOBAL_STANDARD_STRING_LENGTH];
-extern char GLOBAL_IO_ACTION[5];
-
-extern bool GLOBAL_RUN_COMBINATORIAL;
-extern bool GLOBAL_RUN_BUILD_STRUCTURE;
-extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST;
-extern bool GLOBAL_RUN_BUILD_STRUCTURE_LIST_TESTING; /* This will probably be a temporary setting */
-extern bool GLOBAL_WRITE_COORDINATES;
-extern bool GLOBAL_USE_N_LOWEST;
-//extern bool GLOBAL_PERFORM_HAIRPIN_CHECK;
-//extern bool GLOBAL_PERFORM_HBOND_CHECK;
-extern STRUCTFILTER_TYPE GLOBAL_PERFORM_STRUCTCHECK;
-
-extern double GLOBAL_RMSD_LIMIT;
-extern double GLOBAL_WC_RMSD_LIMIT;
-extern double GLOBAL_SCC_LIMIT;
-extern uint32_t **GLOBAL_INPUT_INDICES_LIST;
-extern uint32_t GLOBAL_STRUCTURE_LIMIT_COUNT;
-extern uint32_t GLOBAL_N_LOWEST;
-
-extern char LIBRARY_FILENAME_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];        // = "../AGAAAU_test/XX_library_combined.txt";
-extern char WATSON_CRICK_LIBRARY_PROTOTYPE[GLOBAL_STANDARD_STRING_LENGTH];    // = "../AGAAAU_test/WC_XX_library.txt";
 
 struct Timer {
 	clock_t start,end;
@@ -95,10 +64,10 @@ struct Timer {
 	}
 	void print() {
 		time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-		int h = time_used / (60 * 60);
-		int m = (time_used - (h * 60 * 60)) / 60;
-		int s = time_used - ((h * 60 * 60) + (m * 60));
-		int ms = (time_used - ((h * 60 * 60) + (m * 60) + s)) * 1000;
+		uint h = time_used / (60 * 60);
+		uint m = (time_used - (h * 60 * 60)) / 60;
+		uint s = time_used - ((h * 60 * 60) + (m * 60));
+		uint ms = (time_used - ((h * 60 * 60) + (m * 60) + s)) * 1000;
 		printf("%dh:%dm:%ds:%dms\n", h, m, s, ms);
 	}
 };
@@ -106,6 +75,11 @@ struct Timer {
 template <typename T> struct IndexPair {
 	T idx1;
 	T idx2;
+	T operator[](uint i) {
+		//Pointer cast allows this to be branchless, just don't index greater than 1
+		T* ptr_hack = (T*)&(this->idx1);
+		return ptr_hack[i];
+	}
 };
 
 struct RunInfo {
@@ -142,11 +116,9 @@ struct RunInfo {
 	Timer								run_timer;
 	void print_stats() {
 		printf("Total number of structures built: %lu\n", n_total_structs_built);
-		if(run_options & RunOpts::use_structure_filter) {
+		if(run_options & RunOpts::use_structure_filter || run_options & RunOpts::build_limit_by_energy || run_options & RunOpts::blind_build_limit) {
 			printf("Number of structures saved: %lu\n", n_filter_structs_built);
 		}
 	}
 };
-
-
 #endif

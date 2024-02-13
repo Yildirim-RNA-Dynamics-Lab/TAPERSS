@@ -1,7 +1,7 @@
 #ifndef RNA_DATA_HPP
 #define RNA_DATA_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
 #include "RNA_Math.hpp"
@@ -35,9 +35,9 @@ struct RNAData
 	flag *_flag;                    // Pointer to flag to update library, not necessary for combinatorial but will be useful for other sampling methods
 	uint32_t count;                 // Number of atoms in structure
 
-	int position_in_lib[2];         // What library and model data originates from
-	int count_per_sub[2];           // How many atoms are in each "submatrix" (submatrix_rows)
-	int count_per_Steric[2];        // How many atoms are in each StericIndices
+	IndexPair<size_t> position_in_lib;         // What library and model data originates from
+	IndexPair<size_t> count_per_sub;           // How many atoms are in each "submatrix" (submatrix_rows)
+	IndexPair<size_t> count_per_Steric;        // How many atoms are in each StericIndices
 	size_t ResBoundaries[4];        // [0]= Start of residue 1 row indices, [1]= End of Res 1 row idx. [2],[3]: Start, End of Res 2 row idx
 	size_t count_per_Energy[4];     // How many atoms are in each EnergyIndices
 	size_t count_per_WC_sub[2];     // How many atoms are in each WC_submatrix
@@ -67,7 +67,7 @@ struct RNAData
 	void print_offset(int res, int position);
 	int to_string_offset(int res, int position, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
 	int generate_string_prototype(int res, int position, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
-	int overwrite_string_prototype(int res, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
+	int overwrite_string_prototype(int res, int position, char *s, int buffer_size, int string_index, uint32_t& idx_offset);
 };
 
 struct DoubleStrandData
@@ -111,7 +111,6 @@ struct RNADataArray
 	int header_length;
 	int model_count;
 	bool string_initialized = false;
-	bool string_print_coordinates = GLOBAL_WRITE_COORDINATES;
 	bool TMP_END = false;
 
 	int atom_sum;

@@ -1,7 +1,7 @@
 #ifndef RNADATAINTERNALLOOP_HPP
 #define RNADATAINTERNALLOOP_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #include "RNAData.hpp"
 #include "Kabsch.hpp"
 #include "WatsonCrickPair.hpp"

@@ -3,7 +3,7 @@
 
 void trim_whitespace(char* s)
 {
-	const char whitespace[] = {' ', '\t', '\n'};
+	const char whitespace[] = {' ', '\t', '\n', '\0'};
 	size_t str_len = strlen(s);
 	size_t match_loc = strcspn(s, whitespace);
 	unsigned int idx = 0;
@@ -87,26 +87,26 @@ uint32_t get_WC_partner_single(RunInfo& run_info, size_t idx1, size_t idx2, size
 	WC_pair[1] = run_info.sequence[idx2];
 	WC_pair[2] = '\0';
 
-	if (WC_pair[0] == 'A') {
-		if (WC_pair[1] != 'U') {
+	if (WC_pair[0] == 'A' || WC_pair[0] == 'a') {
+		if (WC_pair[1] != 'U' && WC_pair[1] != 'u') {
 			printf("Error: Non-Watson Crick pair attempted: %s\n", WC_pair);
 			return 1;
 		}
 	}
-	else if (WC_pair[0] == 'U') {
-		if (WC_pair[1] != 'A' && WC_pair[1] != 'G') {
+	else if (WC_pair[0] == 'U' || WC_pair[0] == 'u') {
+		if (WC_pair[1] != 'A' && WC_pair[1] != 'a' && WC_pair[1] != 'G' && WC_pair[1] != 'g') {
 			printf("Error: Non-Watson Crick pair attempted: %s\n", WC_pair);
 			return 1;
 		}
 	}
-	else if (WC_pair[0] == 'C') {
-		if (WC_pair[1] != 'G') {
+	else if (WC_pair[0] == 'C' || WC_pair[0] == 'c') {
+		if (WC_pair[1] != 'G' && WC_pair[1] != 'g') {
 			printf("Error: Non-Watson Crick pair attempted: %s\n", WC_pair);
 			return 1;
 		}
 	}
-	else if (WC_pair[0] == 'G') {
-		if (WC_pair[1] != 'C' && WC_pair[1] != 'U') {
+	else if (WC_pair[0] == 'G' || WC_pair[0] == 'g') {
+		if (WC_pair[1] != 'C' && WC_pair[1] != 'c' && WC_pair[1] != 'U' && WC_pair[1] != 'u') {
 			printf("Error: Non-Watson Crick pair attempted: %s\n", WC_pair);
 			return 1;
 		}
@@ -153,6 +153,7 @@ uint32_t get_index_int(char *index, uint32_t *indices)
 		if (c == '-') {
 			buffer[buf_c] = '\0';
 			indices[count] = atoi(buffer);
+			indices[count] -= 1;
 			buf_c = 0;
 			count++;
 			continue;
@@ -161,6 +162,7 @@ uint32_t get_index_int(char *index, uint32_t *indices)
 	}
 	buffer[buf_c] = '\0';
 	indices[count] = atoi(buffer);
+	indices[count] -= 1;
 	return count;
 }
 
@@ -215,6 +217,15 @@ uint8_t parse_dot_backet(RunInfo& run_info, size_t len, uint32_t* pair_record)
 {
 	uint32_t open_brkt = 0;
 	uint32_t clse_brkt = 0;
+	size_t x_loc;
+
+	if(run_info.structure_type == StrType::double_strand) {
+		x_loc = run_info.ds_strand1_n_frags + 1;
+		if(run_info.dot_bracket[x_loc] == ')' || run_info.dot_bracket[x_loc] == '(') {
+			fprintf(stderr, "Error: \"Bracket\" nucleotide found in \"x\" location in dot-bracket structure!\n");
+			return 0;
+		}
+	}
 
 	for(size_t i = 0; i < len; i++) {
 		if(run_info.dot_bracket[i] == '(') {
@@ -229,6 +240,11 @@ uint8_t parse_dot_backet(RunInfo& run_info, size_t len, uint32_t* pair_record)
 		return 0;
 	}
 
+	if(clse_brkt == 0) {
+		fprintf(stderr, "Warning: input dot-bracket structure contains no brackets!\n");
+		return 2;
+	}
+
 	for(size_t i = 0; i < len; i++) { pair_record[i] = i; }
 	for(size_t i = 0; i < len; i++) {
 		if(run_info.dot_bracket[i] == '(') {
@@ -241,7 +257,22 @@ uint8_t parse_dot_backet(RunInfo& run_info, size_t len, uint32_t* pair_record)
 					if(open_brkt != clse_brkt) { clse_brkt++; }
 					else { 
 						run_info.n_wc_pairs++; 
-						pair_record[i] = j;
+						if(run_info.structure_type == StrType::double_strand) {
+							size_t my_j = j;
+							size_t my_i = i;
+							if(j > x_loc) {
+								//my_j -= 1;
+							}	
+							if(i > x_loc) {
+								//my_i -= 1;
+							}
+							pair_record[my_i] = my_j;
+							//DEBUG_PRINT("pair_record[%lu] = %lu\n", my_i, my_j);
+						} else {
+							pair_record[i] = j;
+							//DEBUG_PRINT("pair_record[%lu] = %lu\n", i, j);
+						}
+						break;
 					}
 				}
 			}
@@ -271,13 +302,23 @@ void read_input_file(char *file_name, RunInfo& run_info, char* idx_tmp)
 		printf("Could not open file: %s\n", file_name);
 		exit(3);
 	}
-	GLOBAL_OUTPUT_FILE[0] = '\0';
 	char line[GLOBAL_STANDARD_STRING_LENGTH];
 	while (fgets(line, sizeof(line), input)) {
+		uint i = 0;
+		for(i = 0; isspace(line[i]); i++) {;}
+		if(line[i] == '#') { continue; }
 		char *header = strtok(line, "=");
+		if(header == NULL) {
+			continue;
+		}
 		char *str1 = strtok(NULL, "=");
+		if(str1 == NULL) {
+			fprintf(stderr, "Warning: Unmatched option \"%s\" in input file: %s\n", header, file_name);
+			continue;
+		}
 		trim_whitespace(header);
 		trim_whitespace(str1);
+		if(header[0] == '#') { continue; }
 		if (!strcasecmp(header, "sequence")) {
 			strcpy(run_info.sequence, str1);
 			continue;
@@ -332,7 +373,9 @@ void read_input_file(char *file_name, RunInfo& run_info, char* idx_tmp)
 			strcpy(run_info.dot_bracket, str1);
 			run_info.run_options |= RunOpts::use_structure_filter;
 			continue;
-		} else {
+		} else if (!strcasecmp(header, "memory-buffer-size")){
+			run_info.memory_limit = atoi(str1) * 1024;
+		}	else {
 			printf("Warning: Ignored unknown option in input file: %s\n", header);
 		}
 	}
@@ -345,6 +388,7 @@ uint32_t complete_run_info(RunInfo& run_info, char* idx_tmp, uint32_t err_count)
 		uint32_t name_position = strcspn(run_info.wc_library_prototype, "X");
 		uint32_t x_loc = strcspn(run_info.sequence, "x");
 		run_info.structure_type = StrType::double_strand;	
+		run_info.run_options |= RunOpts::strtype_ds;
 		run_info.n_fragments = strlen(run_info.sequence) - 3;
 		run_info.ds_strand1_n_frags = x_loc - 1;
 		run_info.ds_strand2_n_frags = run_info.n_fragments - run_info.ds_strand1_n_frags;
@@ -369,15 +413,26 @@ uint32_t complete_run_info(RunInfo& run_info, char* idx_tmp, uint32_t err_count)
 			return err_count;
 		}
 		uint32_t* tmp_pair_record = (uint32_t*)malloc(sizeof(uint32_t) * len_db);
-		if(!parse_dot_backet(run_info, len_db, tmp_pair_record)) {err_count++; return err_count;}
-		run_info.wc_lib_list = (char **)malloc(sizeof(char *) * run_info.n_wc_pairs);
-		run_info.wc_pair_list = (IndexPair<size_t>*)malloc(sizeof(IndexPair<size_t>) * run_info.n_wc_pairs);
-		err_count += get_WC_partner_full(run_info, len_db, tmp_pair_record);
-		free(tmp_pair_record);
-		find_duplicates(run_info, true);
+		switch(parse_dot_backet(run_info, len_db, tmp_pair_record)) 
+		{
+			case 0:
+				err_count++; 
+				return err_count;
+			case 1:
+				run_info.wc_lib_list = (char **)malloc(sizeof(char *) * run_info.n_wc_pairs);
+				run_info.wc_pair_list = (IndexPair<size_t>*)malloc(sizeof(IndexPair<size_t>) * run_info.n_wc_pairs);
+				err_count += get_WC_partner_full(run_info, len_db, tmp_pair_record);
+				free(tmp_pair_record);
+				find_duplicates(run_info, true);
+				break;
+			case 2:
+				run_info.run_options ^= RunOpts::use_structure_filter;
+				break;
+		}
 	}
 
-	if(run_info.run_type == RunType::build_from_index || run_info.run_type == RunType::build_from_index_list) {
+	if(run_info.run_type == RunType::build_from_index || run_info.run_type == RunType::build_from_index_list 
+			|| run_info.run_options & RunOpts::build_limit_by_energy) {
 		run_info.index = (uint32_t*)malloc(sizeof(uint32_t) * (strlen(run_info.sequence) - 1));
 	}
 	if(run_info.run_type == RunType::build_from_index) {
@@ -447,7 +502,7 @@ void validate_run_info(RunInfo& run_info, char* tmp_idx)
 		warn_count++;
 	}
 	if(run_info.memory_limit == 0) {
-		printf("Note: Buffer memory limit not set or set to 0. Using default value instead...\n");
+		printf("Warning: Buffer memory limit not set or set to 0. Using default value instead...\n");
 		run_info.memory_limit = DEFAULT_MEMORY_LIMIT;
 		warn_count++;
 	}
@@ -488,14 +543,14 @@ void print_run_info(RunInfo& run_info)
 	printf("\tSequence: %s\n", run_info.sequence);
 	switch(run_info.run_type) {
 		case RunType::build_from_index:
-			printf("Index Set: ");
+			printf("\tIndex Set: ");
 			for(uint32_t i = 0; i < run_info.n_fragments; i++) {
 				printf("%u", run_info.index[i]);
 				if(i != run_info.n_fragments - 1) { printf("-"); }
 			}
 			break;
 		case RunType::build_from_index_list:
-			printf("Index Set File: %s\n", run_info.index_list_file);
+			printf("\tIndex Set File: %s\n", run_info.index_list_file);
 			break;
 		default:
 			break;
@@ -526,7 +581,7 @@ void print_run_info(RunInfo& run_info)
 	if(run_info.run_options & RunOpts::blind_build_limit) {
 		printf("%lu. (Exits once %lu structures are built)\n", run_info.build_limit, run_info.build_limit);
 	} else if (run_info.run_options & RunOpts::build_limit_by_energy) {
-		printf("%lu. (Will build all structures, but print the lowest %lu)\n", run_info.build_limit, run_info.build_limit);
+		printf("%lu. (Will build all structures, but save only the lowest %lu)\n", run_info.build_limit, run_info.build_limit);
 	} else {
 		printf("No limit\n");
 	}
@@ -535,7 +590,6 @@ void print_run_info(RunInfo& run_info)
 		printf("\tParallel library segment lengths: %s\n", run_info.parallel_lib_len);
 		printf("\tParallel library segment index set: %s\n", run_info.parallel_lib_idx);
 	} 
-
 }
 
 void parse_long_cmdline_opt(char* ARGV[], RunInfo& run_info, size_t idx, char* idx_tmp)
@@ -589,11 +643,9 @@ void input_handler(int argc, char *ARGV[], RunInfo& run_info)
 		printf("No Input\n");
 		exit(1);
 	}
-	for (int i = 0; i < argc; i++)
-	{
+	for (int i = 0; i < argc; i++) {
 		if (ARGV[i][0] == '-') {
-			switch (ARGV[i][1])
-			{
+			switch (ARGV[i][1]) {
 				case 'i':
 					read_input_file(ARGV[i + 1], run_info, idx_tmp);
 					break;
@@ -619,9 +671,3 @@ void input_handler(int argc, char *ARGV[], RunInfo& run_info)
 	print_run_info(run_info);
 }
 
-void free_libs(char **A, int s)
-{
-	for (int i = 0; i < s; i++)
-		free(A[i]);
-	free(A);
-}

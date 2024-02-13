@@ -137,9 +137,9 @@ void DimerLibArray::get_charged_atom_map()
 	for(uint32_t i = 0; i < count; i++) {
 		for(uint32_t j = 0; j < LargestAtomCount; j++) {
 			if(j < library[i]->atom_data->count) {
-				if(i != 0 && library[i]->atom_data->dnt_pos[j] != 2) {
-					continue;
-				}
+				//if((i != 0 || i != run_info.ds_strand1_n_frags) && library[i]->atom_data->dnt_pos[j] != 2) {
+				//	continue;
+				//}
 				if(library[i]->atom_data->charges[j] == atom_charge::POSITIVE) {
 					PositiveAtomMap[IDX_FLAT2D(i,j,LargestAtomCount)] = PosMapTracker;
 					PosMapTracker++;

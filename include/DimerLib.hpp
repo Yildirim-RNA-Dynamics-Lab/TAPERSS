@@ -3,7 +3,7 @@
 
 #include "Atom_info.hpp"
 #include "RNA_Math.hpp" //Temporary for testing...
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 
 enum flag{NO_FLAG, USED, NOT_USABLE};
 

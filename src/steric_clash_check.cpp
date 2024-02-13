@@ -48,8 +48,7 @@ AttachStatus cg_scc(RNADataArray& model, RNAData* new_frag)
 		if(status == AttachStatus::FAILED) {return status;}
 	}
 
-	if(model.PassedCOMCheck[model.count] == false)
-	{
+	if(model.PassedCOMCheck[model.count] == false) {
 		status = scc_check_last(model[model.count - 1]->data_matrix, model[model.count - 1]->StericIndices[1], 
 				model[model.count - 1]->count_per_Steric[1], new_frag->data_matrix, 
 				new_frag->ResBoundaries[2], new_frag->ResBoundaries[3]);
@@ -58,7 +57,7 @@ AttachStatus cg_scc(RNADataArray& model, RNAData* new_frag)
 
 	for(int i = 0; i < model.count - 1; i++) {
 		if(model.PassedCOMCheck[i + 1] == false) {
-			status =scc_full_check_all(model[i]->data_matrix, model[i]->ResBoundaries[2], model[i]->ResBoundaries[3],
+			status = scc_full_check_all(model[i]->data_matrix, model[i]->ResBoundaries[2], model[i]->ResBoundaries[3],
 					new_frag->data_matrix, new_frag->ResBoundaries[2], new_frag->ResBoundaries[3]);
 			if(status == AttachStatus::FAILED) {return status;}
 		}
@@ -102,42 +101,32 @@ AttachStatus cg_scc_ds_check_new_2nd(RNADataArray& model, RNAData* new_frag)
 {
 	cg_scc_ds_check_com<false>(model.COMS, model.Radii, model.count, new_frag->data_matrix, new_frag->get_residue_COM_index(0), new_frag->COM_Radii[0], 
 			model.PassedCOMCheck, model.ds_data.strand1_size);
-	if(model.PassedCOMCheck[0] == false)
-	{
+	if(model.PassedCOMCheck[0] == false) {
 		if(scc_full_check_all(model[0]->data_matrix, model[0]->ResBoundaries[0], model[0]->ResBoundaries[1],
-					new_frag->data_matrix, new_frag->ResBoundaries[0], new_frag->ResBoundaries[1]) == false)
-		{
+					new_frag->data_matrix, new_frag->ResBoundaries[0], new_frag->ResBoundaries[1]) == false) {
 			return AttachStatus::FAILED;
 		}
 	}
-	for(int i = 0; i < model.count; i++)
-	{
-		if(model.PassedCOMCheck[i + 1] == false)
-		{
+	for(int i = 0; i < model.count; i++) {
+		if(model.PassedCOMCheck[i + 1] == false) {
 			if(scc_full_check_all(model[i]->data_matrix, model[i]->ResBoundaries[2], model[i]->ResBoundaries[3],
-						new_frag->data_matrix, new_frag->ResBoundaries[0], new_frag->ResBoundaries[1]) == false)
-			{
+						new_frag->data_matrix, new_frag->ResBoundaries[0], new_frag->ResBoundaries[1]) == false) {
 				return AttachStatus::FAILED;
 			}
 		}
 	}
 	cg_scc_ds_check_com<false>(model.COMS, model.Radii, model.count, new_frag->data_matrix, new_frag->get_residue_COM_index(1), new_frag->COM_Radii[1], 
 			model.PassedCOMCheck, model.ds_data.strand1_size);
-	if(model.PassedCOMCheck[0] == false)
-	{
+	if(model.PassedCOMCheck[0] == false) {
 		if(scc_full_check_all(model[0]->data_matrix, model[0]->ResBoundaries[0], model[0]->ResBoundaries[1],
-					new_frag->data_matrix, new_frag->ResBoundaries[2], new_frag->ResBoundaries[3]) == false)
-		{
+					new_frag->data_matrix, new_frag->ResBoundaries[2], new_frag->ResBoundaries[3]) == false) {
 			return AttachStatus::FAILED;
 		}
 	}
-	for(int i = 0; i < model.count; i++)
-	{
-		if(model.PassedCOMCheck[i + 1] == false)
-		{
+	for(int i = 0; i < model.count; i++) {
+		if(model.PassedCOMCheck[i + 1] == false) {
 			if(scc_full_check_all(model[i]->data_matrix, model[i]->ResBoundaries[2], model[i]->ResBoundaries[3],
-						new_frag->data_matrix, new_frag->ResBoundaries[2], new_frag->ResBoundaries[3]) == false)
-			{
+						new_frag->data_matrix, new_frag->ResBoundaries[2], new_frag->ResBoundaries[3]) == false) {
 				return AttachStatus::FAILED;
 			}
 		}

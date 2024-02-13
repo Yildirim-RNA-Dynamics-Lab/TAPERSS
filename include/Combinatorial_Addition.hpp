@@ -1,7 +1,7 @@
 #ifndef COMBINATORIAL_ADDITION_HPP
 #define COMBINATORIAL_ADDITION_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
 #include "RNAData.hpp"

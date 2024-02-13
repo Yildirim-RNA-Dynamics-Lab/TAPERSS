@@ -1,7 +1,7 @@
 #ifndef CMB_MANAGER_HPP
 #define CMB_MANAGER_HPP
 
-#include "RNACMB.hpp"
+#include "TAPERSS.hpp"
 #include "Atom_info.hpp"
 #include "DimerLib.hpp"
 #include "RNAData.hpp"
