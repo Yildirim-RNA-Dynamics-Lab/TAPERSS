@@ -1,23 +1,21 @@
-#####################################################################################################
-#                                        TAPERSS                                                    #
-#         (Theoretical Analyses, Prediction, and Evaluation of RNA Structures from Sequence)        #
-#                                                                                                   #
-#               Combinatorial Method for RNA structure Prediction. Written in C++.                  #
-#             Developed by Ivan Riveros and Ilyas Yildirim in part using initial code               #
-#                              from Dr. Kye Won Wang as a guide.                                    #
-#                                                                                                   #
-# To cite the code:                                                                                 #
-# Riveros, I. I. and Yildirim, I., "Prediction of 3D RNA Structures from Sequence Using Energy      #
-# Landscapes of RNA Dimers: Application to RNA Tetraloops", J. Chem. Theory Comput.,                #
-# doi.org/10.1021/acs.jctc.4c00189, 2024.                                                           #
-#####################################################################################################
+#                                        TAPERSS                                                    
+         (Theoretical Analyses, Prediction, and Evaluation of RNA Structures from Sequence)                                                                                                           #
+               Combinatorial Method for RNA structure Prediction. Written in C++.                  
+             Developed by Ivan Riveros and Ilyas Yildirim in part using initial code               
+                              from Dr. Kye Won Wang as a guide.                                    
+                                                                                                   
+ To cite the code:                                                                                 
+ Riveros, I. I. and Yildirim, I., "Prediction of 3D RNA Structures from Sequence Using Energy      
+ Landscapes of RNA Dimers: Application to RNA Tetraloops", J. Chem. Theory Comput.,                
+ doi.org/10.1021/acs.jctc.4c00189, 2024.                                                           
+
 # For potential issues and solutions, see the bottom of this document.
 
 # Note:
 Run time varies heavily based on sequence, overlap RMSD cutoff, and hardware. Lower RMSD cutoff values 
 will result in few structures and shorter runtimes. Based on tests, a 6-long sequence with an overlap 
 cutoff of 0.5 running on an Intel i7-8700K CPU takes approximately 2-4 hours to complete.
-######################################################################################################
+
 # To compile the code:
 From the ./TAPERSS directory run 'make'.
 
@@ -37,8 +35,8 @@ a debian based operating system, you may install GSL with:
 	sudo apt-get install libgsl-dev
 
 For other linux-based operating systems, you must use the coresponding package manager for your distribution.
-***This code has only been tested on linux-based operating systems.***
-######################################################################################################
+**This code has only been tested on linux-based operating systems.**
+
 # How to use:
 
 To run with an input file: ./bin/TAPERSS -i [FILE]
@@ -46,7 +44,7 @@ To run with an input file: ./bin/TAPERSS -i [FILE]
 #How to format the input file:
                                 OPTION1 = [SELECTION1]
                                 OPTION2 = [SELECTION2]
-######################################################################################################
+
 # OPTION1:
 
 Example input shown in ./docs/ExampleInput.txt. All options are case-insensitive.
@@ -108,7 +106,6 @@ Options:
 						This is to prevent slowdowns as a result of I/O processing. The larger the size, the larger the memory consumption 
 						of the program, but the less I/O is performed. If not specified, a default size of 5MB is used.
 
-######################################################################################################
 # OPTION 2:
 
 To run using flags:
@@ -132,7 +129,7 @@ Flags:
     --wc-lib-prototype [PROTOTYPE] 		Same as WATSON-CRICK-LIBRARY-PROTOTYPE described above.
     --str-count-limit-type [TYPE] 		Same as STRUCTURE-COUNT-LIMIT-TYPE.
     --str-count-limit [INTEGER] 		Same as STRUCTURE-COUNT-LIMIT.
-######################################################################################################
+
 # Potential problems and solutions:
 
 The output files generated are very large: 
