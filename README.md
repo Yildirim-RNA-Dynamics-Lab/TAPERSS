@@ -112,20 +112,23 @@ Below are the available flags. You may use both the inputfile and normal flags. 
 
 # Potential problems and solutions:
 
-The output files generated are very large: 
-    As this is a combinatorial method, as the number of nucleotides in a sequence increases, the number of potential structures increases
-    dramatically. It is not unexpected to generate over 1 billion structures for a 6-long nucleotide. To have more compact output, you may 
-		try setting "WRITE-COORDINATES" to "FALSE" and use a low "OVERLAP-RMSD-LIMIT", less than 0.2 Angstroms. Using a lower "OVERLAP-RMSD-LIMIT" 
-		will significantly reduce the number structures generated. A secondary structure filter will also reduce storage, but will only write those 
-		which pass the filter to file.
+*The output files generated are very large*: 
 
-The MEMORY-BUFFER-SIZE option may in some circumstances cause a "segmentation fault" error:
-    If this is the case, try either removing or commenting out the MEMORY-BUFFER-OPTION to use the default size of 5MB, or attempt to increase/decrease the
-		memory used manually.
+As this is a combinatorial method, as the number of nucleotides in a sequence increases, the number of potential structures increases
+dramatically. It is not unexpected to generate over 1 billion structures for a 6-long nucleotide. To have more compact output, you may 
+try setting "WRITE-COORDINATES" to "FALSE" and use a low "OVERLAP-RMSD-LIMIT", less than 0.2 Angstroms. Using a lower "OVERLAP-RMSD-LIMIT" 
+will significantly reduce the number structures generated. A secondary structure filter will also reduce storage, but will only write those 
+which pass the filter to file.
 
-The "energy" structure-build-limit-type option is causing segmentation faults, or strange outputs:
-    This option is work in progress, and was implemented only to get a very small number of structures for a 6 nucleotide long sequence. 
-		If you are to use this option, ensure the WRITE-COORDINATES option is set to "TRUE", and that the number of structures specified 
-		in the "STRUCTURE-COUNT-LIMIT" is less than 10.
+*The MEMORY-BUFFER-SIZE option may in some circumstances cause a "segmentation fault" error*:
+
+If this is the case, try either removing or commenting out the MEMORY-BUFFER-OPTION to use the default size of 5MB, or attempt to increase/decrease the
+memory used manually.
+
+*The "energy" structure-build-limit-type option is causing segmentation faults, or strange outputs*:
+
+This option is work in progress, and was implemented only to get a very small number of structures for a 6 nucleotide long sequence. 
+If you are to use this option, ensure the WRITE-COORDINATES option is set to "TRUE", and that the number of structures specified 
+in the "STRUCTURE-COUNT-LIMIT" is less than 10.
 
 
