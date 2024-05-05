@@ -1,8 +1,15 @@
 #####################################################################################################
-#############                                                                           #############
-#############    Combinatorial Method for RNA structure Prediction. Written in C++.     #############
-############# Developed by Ivan Riveros in part using code from Kye Won Wang as a guide #############
-#############                                                                           #############
+#                                        TAPERSS                                                    #
+#         (Theoretical Analyses, Prediction, and Evaluation of RNA Structures from Sequence)        #
+#                                                                                                   #
+#               Combinatorial Method for RNA structure Prediction. Written in C++.                  #
+#             Developed by Ivan Riveros and Ilyas Yildirim in part using initial code               #
+#                              from Dr. Kye Won Wang as a guide.                                    #
+#                                                                                                   #
+# To cite the code:                                                                                 #
+# Riveros, I. I. and Yildirim, I., "Prediction of 3D RNA Structures from Sequence Using Energy      #
+# Landscapes of RNA Dimers: Application to RNA Tetraloops", J. Chem. Theory Comput.,                #
+# doi.org/10.1021/acs.jctc.4c00189, 2024.                                                           #
 #####################################################################################################
 # For potential issues and solutions, see the bottom of this document.
 
